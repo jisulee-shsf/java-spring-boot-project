@@ -19,8 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true)
 public class WebSecurityConfig {
+
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
@@ -61,6 +61,7 @@ public class WebSecurityConfig {
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/**").permitAll()
                         .requestMatchers(HttpMethod.PUT,"/api/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH,"/api/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE,"/api/**").permitAll()
                         .anyRequest().permitAll()

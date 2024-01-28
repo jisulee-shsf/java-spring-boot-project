@@ -1,6 +1,5 @@
 package com.sparta.giftforyou.global.jwt;
 
-
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -37,11 +36,11 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    public String createToken(String username) {
+    public String createToken(String email) {
         Date date = new Date();
         String token = BEARER_PREFIX +
                 Jwts.builder()
-                        .setSubject(username) // 사용자 식별값 설정
+                        .setSubject(email) // 사용자 식별값 설정
                         .setExpiration(new Date(date.getTime() + TOKEN_TIME)) // 만료 시간 설정
                         .setIssuedAt(date) // 발급 일자 설정
                         .signWith(key, signatureAlgorithm) // 암호화 알고리즘 설정
@@ -50,7 +49,7 @@ public class JwtUtil {
         return token;
     }
 
-    public String addJwtToCookie(String token, HttpServletResponse res) {
+    public static String addJwtToCookie(String token, HttpServletResponse res) {
 //            token = URLEncoder.encode(token, "utf-8").replaceAll("\\+", "%20"); // BEARER_PREFIX 공백 대체
         String valueToken = substringToken(token);
         log.info("[addJwtToCookie] valueToken: " + valueToken);
@@ -60,7 +59,7 @@ public class JwtUtil {
         return valueToken;
     }
 
-    public String substringToken(String token) {
+    public static String substringToken(String token) {
         log.info("[before substringToken] token: " + token);
         if (StringUtils.hasText(token) && token.startsWith(BEARER_PREFIX)) { // 공백 또는 null 여부 & BEARER_PREFIX로 시작 여부 확인
             String tokenValue = token.substring(7); // BEARER_PREFIX 제거
@@ -89,6 +88,7 @@ public class JwtUtil {
     }
 
     public Claims getUserInfoFromToken(String tokenValue) {
+
         log.info("[getUserInfoFromToken] tokenValue: " + tokenValue);
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue).getBody();
     }

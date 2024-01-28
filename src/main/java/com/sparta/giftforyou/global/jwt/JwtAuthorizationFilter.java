@@ -1,6 +1,5 @@
 package com.sparta.giftforyou.global.jwt;
 
-
 import com.sparta.giftforyou.global.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -20,6 +19,7 @@ import java.io.IOException;
 
 @Slf4j
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
 
@@ -32,8 +32,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
         String tokenValue = jwtUtil.getTokenFromRequest(req);
         if (StringUtils.hasText(tokenValue)) {
-            log.info(tokenValue);
-
+            log.info("[getTokenFromRequest] tokenValue: " + tokenValue);
             if (!jwtUtil.validateToken(tokenValue)) {
                 log.error("Token Error");
                 return;
@@ -51,15 +50,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         filterChain.doFilter(req, res);
     }
 
-    public void setAuthentication(String username) {
+    public void setAuthentication(String email) {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-        Authentication authentication = createAuthentication(username);
+        Authentication authentication = createAuthentication(email);
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
     }
 
-    private Authentication createAuthentication(String username) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+    private Authentication createAuthentication(String email) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        return new UsernamePasswordAuthenticationToken(userDetails, null, null);
     }
 }

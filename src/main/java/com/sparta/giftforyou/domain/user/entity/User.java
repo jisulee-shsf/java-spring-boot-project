@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,7 +20,7 @@ public class User {
     private String password;
 
     @Column
-    private String username;
+    private String nickname; // username 변경
 
     @Column(unique = true)
     private String phoneNumber;
@@ -27,17 +28,17 @@ public class User {
     @Column
     private Long kakaoId;
 
-    public User(String email, String password, String username, String phoneNumber) {
+    public User(String email, String password, String nickname, String phoneNumber) {
         this.email = email;
         this.password = password;
-        this.username = username;
+        this.nickname = nickname;
         this.phoneNumber = phoneNumber;
     }
 
-    public User(String email, String password, String username, Long kakaoId) {
+    public User(String email, String password, String nickname, Long kakaoId) {
         this.email = email;
         this.password = password;
-        this.username = username;
+        this.nickname = nickname;
         this.kakaoId = kakaoId;
     }
 

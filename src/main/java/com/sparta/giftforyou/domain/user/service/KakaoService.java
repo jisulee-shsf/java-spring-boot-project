@@ -46,7 +46,7 @@ public class KakaoService {
         String accessToken = getToken(code);
         KakaoUserInfoDto kakaoUserInfoDto = getKakaoUserInfo(accessToken);
         User kakaoUser = registerKakaoUserIfNeeded(kakaoUserInfoDto);
-        String token = jwtUtil.createToken(kakaoUserInfoDto.getUsername());
+        String token = jwtUtil.createToken(kakaoUserInfoDto.getEmail());
         return token;
     }
 
@@ -104,10 +104,10 @@ public class KakaoService {
         );
 
         JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
-        Long id = jsonNode.get("id").asLong();
+        Long kakaoId = jsonNode.get("id").asLong();
         String nickname = jsonNode.get("properties").get("nickname").asText();
         String email = jsonNode.get("kakao_account").get("email").asText();
-        return new KakaoUserInfoDto(id, nickname, email);
+        return new KakaoUserInfoDto(kakaoId, nickname, email);
     }
 
     private User registerKakaoUserIfNeeded(KakaoUserInfoDto kakaoUserInfo) {
@@ -123,7 +123,7 @@ public class KakaoService {
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                kakaoUser = new User(kakaoUserInfo.getEmail(), encodedPassword, kakaoUserInfo.getUsername(), kakaoId);
+                kakaoUser = new User(kakaoUserInfo.getEmail(), encodedPassword, kakaoUserInfo.getNickname(), kakaoId);
             }
             userRepository.save(kakaoUser);
         }

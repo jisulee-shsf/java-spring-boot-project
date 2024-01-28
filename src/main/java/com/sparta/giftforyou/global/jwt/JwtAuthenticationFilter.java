@@ -46,10 +46,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        log.info("[login]: 로그인 완료");
-        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
+        log.info("[login] 로그인 완료");
+        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getEmail();
 
-        log.info("[login]: JWT 생성");
+        log.info("[login] JWT 생성");
         String token = jwtUtil.createToken(email);
         String valueToken = jwtUtil.addJwtToCookie(token, response);
 
@@ -61,7 +61,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        log.info("[login]: 로그인 실패", failed.getMessage());
+        log.info("[login] 로그인 실패");
         response.setStatus(401);
     }
 }

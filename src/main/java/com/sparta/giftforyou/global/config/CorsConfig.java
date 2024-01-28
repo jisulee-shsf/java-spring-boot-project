@@ -19,7 +19,7 @@ public class CorsConfig {
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
-        config.addExposedHeader("*"); //클라이언트가 응답에 접근할 수 있는 header 추가
+        config.addExposedHeader("*");
         config.setMaxAge(3600L);
 
         source.registerCorsConfiguration("/api/**", config);

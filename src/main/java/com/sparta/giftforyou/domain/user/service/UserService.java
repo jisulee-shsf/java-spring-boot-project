@@ -26,12 +26,13 @@ public class UserService {
     }
 
     public ResponseEntity<String> signup(SignupRequestDto requestDto, BindingResult bindingResult) {
-        log.info("[signup]: 회원가입 시도");
+        log.info("[signup] 회원가입 시도");
 
         // 회원가입 정보 유효성 검사
         List<FieldError> fieldErrors = bindingResult.getFieldErrors();
         if (fieldErrors.size() > 0) {
             for (FieldError fieldError : bindingResult.getFieldErrors()) {
+                log.error("[signup] 회원가입 유효성 검사 실패: " + fieldError.getDefaultMessage());
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldError.getDefaultMessage());
             }
         }
@@ -52,7 +53,7 @@ public class UserService {
         String encryptedPassword = passwordEncoder.encode(requestDto.getPassword());
         User user = new User(requestDto.getEmail(), encryptedPassword, requestDto.getNickname(), requestDto.getPhoneNumber());
         userRepository.save(user);
-        log.info("[signup]: 회원가입 완료");
+        log.info("[signup] 회원가입 완료");
         return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다.");
     }
 }

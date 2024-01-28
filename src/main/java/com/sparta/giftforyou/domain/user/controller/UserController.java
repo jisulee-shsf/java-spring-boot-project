@@ -51,7 +51,7 @@ public class UserController {
     @GetMapping("/users")
     public void getUserInfoAfterLogin(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        log.info("[userDetails] getUsername(): " + userDetails.getUsername());
+        log.info("[userDetails] getNickname(): " + userDetails.getUsername());
         log.info("[userDetails] getPassword(): " + userDetails.getPassword());
         log.info("[userDetails] getUser().getId(): " + userDetails.getUser().getId());
         log.info("[userDetails] getUser().getEmail(): " + userDetails.getUser().getEmail());
