@@ -19,15 +19,30 @@ public class User {
     private String password;
 
     @Column
-    private String nickname;
+    private String username;
 
-    @Column
+    @Column(unique = true)
     private String phoneNumber;
 
-    public User(String email, String password, String nickname, String phoneNumber) {
+    @Column
+    private Long kakaoId;
+
+    public User(String email, String password, String username, String phoneNumber) {
         this.email = email;
         this.password = password;
-        this.nickname = nickname;
+        this.username = username;
         this.phoneNumber = phoneNumber;
+    }
+
+    public User(String email, String password, String username, Long kakaoId) {
+        this.email = email;
+        this.password = password;
+        this.username = username;
+        this.kakaoId = kakaoId;
+    }
+
+    public User kakaoIdUpdate(Long kakaoId) {
+        this.kakaoId = kakaoId;
+        return this;
     }
 }
