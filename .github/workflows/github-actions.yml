@@ -104,7 +104,7 @@ jobs:
       - name : 배포 스크립트 실행
         run: |
           sh /deploy.sh
-#          sudo docker image prune -f
+          sudo docker image prune -f
 
 #      ## deploy to develop
 #      - name: Deploy to dev
