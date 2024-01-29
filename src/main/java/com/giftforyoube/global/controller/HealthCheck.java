@@ -13,8 +13,8 @@ public class HealthCheck {
     }
 
     @GetMapping("/health-nginx")
-    public ResponseEntity<String> healthcheckForDeploy() {
-        return ResponseEntity.ok("UP");
+    public String healthcheckForDeploy() {
+        return "up";
     }
 
 }
