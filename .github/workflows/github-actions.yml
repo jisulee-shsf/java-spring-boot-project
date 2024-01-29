@@ -45,24 +45,6 @@ jobs:
           echo "${{ secrets.YML }}" > ./application.yml
         shell: bash
 
-#      # 환경별 yml 파일 생성(2) - prod
-#      - name: make application-prod.yml
-#        if: contains(github.ref, 'main')
-#        run: |
-#          cd ./src/main/resources
-#          touch ./application-prod.yml
-#          echo "${{ secrets.YML_PROD }}" > ./application-prod.yml
-#        shell: bash
-#
-#      # 환경별 yml 파일 생성(3) - develop
-#      - name: make application-dev.yml
-#        if: contains(github.ref, 'develop')
-#        run: |
-#          cd ./src/main/resources
-#          touch ./application-dev.yml
-#          echo "${{ secrets.YML_DEV }}" > ./application-dev.yml
-#        shell: bash
-
       # gradle build
       - name: Build with Gradle
         run: ./gradlew build -x test
@@ -99,6 +81,13 @@ jobs:
     if: ${{ needs.CI-CD.result == 'success' }}
     needs: [ CI-CD ]
     steps:
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2c
+
       - name : 배포 스크립트 실행
         run: |
           sh /deploy.sh
