@@ -92,8 +92,8 @@ jobs:
           envs: GITHUB_SHA
           script: |
             sudo docker ps
-            docker stop $(docker ps -a -q)
-            docker rm $(docker ps -a -q)
+#            docker stop $(docker ps -a -q)
+#            docker rm $(docker ps -a -q)
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/giftipie_dev
 
   docker-pull-and-run:
