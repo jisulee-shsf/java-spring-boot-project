@@ -1,5 +1,6 @@
 package com.giftforyoube.global.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -12,8 +13,8 @@ public class HealthCheck {
     }
 
     @GetMapping("/health-nginx")
-    public String healthNginx() {
-        return "up";
+    public ResponseEntity<String> healthcheckForDeploy() {
+        return ResponseEntity.ok("UP");
     }
 
 }
