@@ -1,4 +1,4 @@
-package com.sparta.giftforyou.global.jwt;
+package com.giftforyoube.global.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

@@ -1,4 +1,4 @@
-package com.sparta.giftforyou.global.config;
+package com.giftforyoube.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

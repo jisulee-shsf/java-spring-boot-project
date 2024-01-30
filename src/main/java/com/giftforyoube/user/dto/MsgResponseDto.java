@@ -1,4 +1,4 @@
-package com.sparta.giftforyou.domain.user.dto;
+package com.giftforyoube.user.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

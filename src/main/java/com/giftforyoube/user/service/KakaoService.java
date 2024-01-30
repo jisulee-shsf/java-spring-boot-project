@@ -1,12 +1,12 @@
-package com.sparta.giftforyou.domain.user.service;
+package com.giftforyoube.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.giftforyou.domain.user.dto.KakaoUserInfoDto;
-import com.sparta.giftforyou.domain.user.entity.User;
-import com.sparta.giftforyou.domain.user.repository.UserRepository;
-import com.sparta.giftforyou.global.jwt.JwtUtil;
+import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.repository.UserRepository;
+import com.giftforyoube.user.dto.KakaoUserInfoDto;
+import com.giftforyoube.global.jwt.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;

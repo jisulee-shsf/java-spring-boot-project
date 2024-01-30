@@ -1,9 +1,9 @@
-package com.sparta.giftforyou.global.config;
+package com.giftforyoube.global.config;
 
-import com.sparta.giftforyou.global.jwt.JwtAuthenticationFilter;
-import com.sparta.giftforyou.global.jwt.JwtAuthorizationFilter;
-import com.sparta.giftforyou.global.jwt.JwtUtil;
-import com.sparta.giftforyou.global.security.UserDetailsServiceImpl;
+import com.giftforyoube.global.jwt.JwtAuthenticationFilter;
+import com.giftforyoube.global.jwt.JwtAuthorizationFilter;
+import com.giftforyoube.global.jwt.JwtUtil;
+import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
