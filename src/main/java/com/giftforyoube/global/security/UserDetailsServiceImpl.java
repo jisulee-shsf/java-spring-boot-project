@@ -1,8 +1,8 @@
-package com.sparta.giftforyou.global.security;
+package com.giftforyoube.global.security;
 
-import com.sparta.giftforyou.domain.user.dto.MsgResponseDto;
-import com.sparta.giftforyou.domain.user.entity.User;
-import com.sparta.giftforyou.domain.user.repository.UserRepository;
+import com.giftforyoube.user.dto.MsgResponseDto;
+import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;

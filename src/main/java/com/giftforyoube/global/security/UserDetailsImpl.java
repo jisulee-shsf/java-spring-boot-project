@@ -1,6 +1,6 @@
-package com.sparta.giftforyou.global.security;
+package com.giftforyoube.global.security;
 
-import com.sparta.giftforyou.domain.user.entity.User;
+import com.giftforyoube.user.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

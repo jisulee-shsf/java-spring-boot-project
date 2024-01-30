@@ -1,8 +1,8 @@
-package com.sparta.giftforyou.global.jwt;
+package com.giftforyoube.global.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.giftforyou.domain.user.dto.MsgResponseDto;
-import com.sparta.giftforyou.global.security.UserDetailsServiceImpl;
+import com.giftforyoube.user.dto.MsgResponseDto;
+import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
