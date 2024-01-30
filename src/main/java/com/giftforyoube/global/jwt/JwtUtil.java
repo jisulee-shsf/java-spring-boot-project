@@ -20,7 +20,7 @@ import java.util.Date;
 @Slf4j
 @Component
 public class JwtUtil {
-    @Value("${jwt.secret.key}")
+    @Value("${spring.jwt.secret.key}")
     private String secretKey; // Base64 encode 처리된 secret key
     private Key key; // secret key를 담을 객체
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256; // 암호화 알고리즘
