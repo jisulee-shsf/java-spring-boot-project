@@ -1,5 +1,7 @@
 package com.sparta.giftforyou.global.jwt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.giftforyou.domain.user.dto.MsgResponseDto;
 import com.sparta.giftforyou.global.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -7,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -19,7 +22,6 @@ import java.io.IOException;
 
 @Slf4j
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
-
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
 
@@ -31,13 +33,16 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
         String tokenValue = jwtUtil.getTokenFromRequest(req);
+        log.info("[getTokenFromRequest] tokenValue: " + tokenValue);
         if (StringUtils.hasText(tokenValue)) {
-            log.info("[getTokenFromRequest] tokenValue: " + tokenValue);
             if (!jwtUtil.validateToken(tokenValue)) {
-                log.error("Token Error");
+                MsgResponseDto msgResponseDto = new MsgResponseDto(HttpStatus.UNAUTHORIZED.value(), "유효하지 않은 JWT입니다");
+                res.setCharacterEncoding("UTF-8");
+                res.setContentType("application/json");
+                String jsonResponse = new ObjectMapper().writeValueAsString(msgResponseDto);
+                res.getWriter().write(jsonResponse);
                 return;
             }
-
             Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
 
             try {

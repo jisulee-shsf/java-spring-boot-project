@@ -50,6 +50,7 @@ public class KakaoService {
         return token;
     }
 
+    // access token 요청
     private String getToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kauth.kakao.com")
@@ -78,9 +79,12 @@ public class KakaoService {
         );
 
         JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
-        return jsonNode.get("access_token").asText();
+        String accessToken = jsonNode.get("access_token").asText();
+        log.info("[Kakao | getToken] accessToken: " + accessToken);
+        return accessToken;
     }
 
+    // Kakao 사용자 정보 요청
     private KakaoUserInfoDto getKakaoUserInfo(String accessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kapi.kakao.com")
@@ -110,13 +114,14 @@ public class KakaoService {
         return new KakaoUserInfoDto(kakaoId, nickname, email);
     }
 
+    // 조건에 따라 로그인 진행
     private User registerKakaoUserIfNeeded(KakaoUserInfoDto kakaoUserInfo) {
         Long kakaoId = kakaoUserInfo.getKakaoId();
         User kakaoUser = userRepository.findByKakaoId(kakaoId).orElse(null);
 
         if (kakaoUser == null) {
             String kakaoEmail = kakaoUserInfo.getEmail();
-            User sameEmailUser = userRepository.findByEmail(kakaoEmail).orElse(null);
+            User sameEmailUser = userRepository.findByEmail(kakaoUserInfo.getEmail()).orElse(null);
             if (sameEmailUser != null) {
                 kakaoUser = sameEmailUser;
                 kakaoUser = kakaoUser.kakaoIdUpdate(kakaoId);

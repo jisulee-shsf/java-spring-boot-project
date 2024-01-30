@@ -2,13 +2,16 @@ package com.sparta.giftforyou.global.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.giftforyou.domain.user.dto.LoginRequestDto;
-import com.sparta.giftforyou.domain.user.dto.LoginSuccessResponseDto;
+import com.sparta.giftforyou.domain.user.dto.MsgResponseDto;
 import com.sparta.giftforyou.global.security.UserDetailsImpl;
+import com.sparta.giftforyou.global.security.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -53,15 +56,39 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         String token = jwtUtil.createToken(email);
         String valueToken = jwtUtil.addJwtToCookie(token, response);
 
-        LoginSuccessResponseDto loginSuccessResponseDto = new LoginSuccessResponseDto(valueToken);
+        MsgResponseDto msgResponseDto = new MsgResponseDto(valueToken, HttpStatus.OK.value(), "로그인이 완료되었습니다."); // HttpStatus 200
+        response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
-        response.getWriter().write(new ObjectMapper().writeValueAsString(loginSuccessResponseDto));
-        response.setStatus(200);
+        response.getWriter().write(new ObjectMapper().writeValueAsString(msgResponseDto));
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        log.info("[login] 로그인 실패");
-        response.setStatus(401);
+        if (failed instanceof UserDetailsServiceImpl.CustomAuthenticationException) {
+            UserDetailsServiceImpl.CustomAuthenticationException customException = (UserDetailsServiceImpl.CustomAuthenticationException) failed;
+            MsgResponseDto msgResponseDto = customException.getMsgResponseDto();
+            respondWithJson(response, msgResponseDto);
+        } else if (failed instanceof BadCredentialsException) {
+            handleBadCredentials(response);
+        } else {
+            handleOtherFailures(response, failed);
+        }
+    }
+
+    private void handleBadCredentials(HttpServletResponse response) throws IOException {
+        MsgResponseDto msgResponseDto = new MsgResponseDto(HttpStatus.UNAUTHORIZED.value(), "비밀번호가 틀립니다. 다시 입력해 주세요.");
+        respondWithJson(response, msgResponseDto);
+    }
+
+    private void handleOtherFailures(HttpServletResponse response, AuthenticationException failed) throws IOException {
+        String errorMessage = failed.getMessage();
+        MsgResponseDto msgResponseDto = new MsgResponseDto(HttpStatus.UNAUTHORIZED.value(), errorMessage);
+        respondWithJson(response, msgResponseDto);
+    }
+
+    private void respondWithJson(HttpServletResponse response, MsgResponseDto msgResponseDto) throws IOException {
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json");
+        response.getWriter().write(new ObjectMapper().writeValueAsString(msgResponseDto));
     }
 }

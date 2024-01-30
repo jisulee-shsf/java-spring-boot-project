@@ -1,6 +1,7 @@
 package com.sparta.giftforyou.domain.user.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.sparta.giftforyou.domain.user.dto.MsgResponseDto;
 import com.sparta.giftforyou.domain.user.dto.SignupRequestDto;
 import com.sparta.giftforyou.domain.user.entity.User;
 import com.sparta.giftforyou.domain.user.service.KakaoService;
@@ -11,7 +12,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class UserController {
-
     private final UserService userService;
     private final KakaoService kakaoService;
 
@@ -30,13 +29,13 @@ public class UserController {
         this.kakaoService = kakaoService;
     }
 
-    // 회원 가입
+    // 회원가입
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody @Valid SignupRequestDto requestDto, BindingResult bindingResult) {
+    public MsgResponseDto signup(@RequestBody @Valid SignupRequestDto requestDto, BindingResult bindingResult) {
         return userService.signup(requestDto, bindingResult);
     }
 
-    // 카카오 로그인
+    // 로그인(Kakao)
     @GetMapping("/kakao/callback")
     public String kakaoLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException {
         String token = kakaoService.kakaoLogin(code);
@@ -44,17 +43,18 @@ public class UserController {
         Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, tokenValue);
         cookie.setPath("/");
         response.addCookie(cookie);
-        return "redirect:/";
+        return "redirect:http://localhost:8080"; // 연동 테스트 후 업데이트 예정(1/29~)
+
     }
 
     // 사용자 정보 조회 테스트
-    @GetMapping("/users")
+    @GetMapping("/user-info")
     public void getUserInfoAfterLogin(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
-        log.info("[userDetails] getNickname(): " + userDetails.getUsername());
-        log.info("[userDetails] getPassword(): " + userDetails.getPassword());
         log.info("[userDetails] getUser().getId(): " + userDetails.getUser().getId());
         log.info("[userDetails] getUser().getEmail(): " + userDetails.getUser().getEmail());
+        log.info("[userDetails] getPassword(): " + userDetails.getPassword());
+        log.info("[userDetails] getNickname(): " + userDetails.getUsername());
         log.info("[userDetails] getUser().getPhoneNumber(): " + userDetails.getUser().getPhoneNumber());
         log.info("[userDetails] getUser().getKakaoId(): " + userDetails.getUser().getKakaoId());
     }

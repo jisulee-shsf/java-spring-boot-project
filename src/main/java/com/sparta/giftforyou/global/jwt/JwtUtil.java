@@ -17,11 +17,9 @@ import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
 
-
 @Slf4j
 @Component
 public class JwtUtil {
-
     @Value("${jwt.secret.key}")
     private String secretKey; // Base64 encode 처리된 secret key
     private Key key; // secret key를 담을 객체
@@ -76,19 +74,18 @@ public class JwtUtil {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue);
             return true;
         } catch (SecurityException | MalformedJwtException | SignatureException e) {
-            log.error("Invalid JWT signature");
+            log.error("[validateToken] 유효하지 않는 JWT 서명입니다.");
         } catch (ExpiredJwtException e) {
-            log.error("Expired JWT token");
+            log.error("[validateToken] 만료된 JWT입니다.");
         } catch (UnsupportedJwtException e) {
-            log.error("Unsupported JWT token");
+            log.error("[validateToken] 지원되지 않는 JWT입니다.");
         } catch (IllegalArgumentException e) {
-            log.error("JWT claims is empty");
+            log.error("[validateToken] 잘못된 JWT 토큰입니다.");
         }
         return false;
     }
 
     public Claims getUserInfoFromToken(String tokenValue) {
-
         log.info("[getUserInfoFromToken] tokenValue: " + tokenValue);
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue).getBody();
     }
