@@ -40,7 +40,10 @@ public class FundingService {
         if (itemImage == null) {
             throw new IOException("Cannot fetch item image.");
         }
-        return new FundingItem(itemLink, itemImage);
+        return FundingItem.builder()
+                .itemLink(itemLink)
+                .itemImage(itemImage)
+                .build();
     }
 
     @Transactional
@@ -49,19 +52,10 @@ public class FundingService {
         if (fundingItem == null) {
             throw new IllegalStateException("No cached funding item found.");
         }
-        Funding funding = new Funding(
-                fundingItem.getItemLink(),
-                fundingItem.getItemImage(),
-                requestDto.getItemName(),
-                requestDto.getTitle(),
-                requestDto.getContent(),
-                requestDto.getGoalAmount(),
-                requestDto.isPublicFlag(),
-                requestDto.getEndDate()
-        );
+        Funding funding = requestDto.toEntity(fundingItem);
         fundingRepository.save(funding);
         clearCache();
-        return new FundingCreateResponseDto(funding);
+        return FundingCreateResponseDto.fromEntity(funding);
     }
 
     public void clearCache() {

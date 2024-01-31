@@ -1,6 +1,7 @@
 package com.giftforyoube.funding.entity;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,17 +23,20 @@ public class Funding {
     private String itemName;
     private String title;
     private String content;
-    private Integer goalAmount;
+    private Integer currentAmount;
+    private Integer targetAmount;
     private boolean publicFlag;
     private LocalDate endDate;
 
-    public Funding(String itemLink, String itemImage, String itemName, String title, String content, Integer goalAmount, boolean publicFlag, LocalDate endDate) {
+    @Builder
+    public Funding(String itemLink, String itemImage, String itemName, String title, String content, Integer currentAmount, Integer targetAmount, boolean publicFlag, LocalDate endDate) {
         this.itemLink = itemLink;
         this.itemImage = itemImage;
         this.itemName = itemName;
         this.title = title;
         this.content = content;
-        this.goalAmount = goalAmount;
+        this.currentAmount = currentAmount;
+        this.targetAmount = targetAmount;
         this.publicFlag = publicFlag;
         this.endDate = endDate;
     }

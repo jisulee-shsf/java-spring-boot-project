@@ -1,5 +1,6 @@
 package com.giftforyoube.funding.entity;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +17,7 @@ public class FundingItem implements Serializable {
         // 기본 생성자
     }
 
+    @Builder
     public FundingItem(String itemLink, String itemImage) {
         this.itemLink = itemLink;
         this.itemImage = itemImage;
