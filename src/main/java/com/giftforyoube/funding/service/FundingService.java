@@ -1,7 +1,7 @@
 package com.giftforyoube.funding.service;
 
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
-import com.giftforyoube.funding.dto.FundingCreateResponseDto;
+import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.repository.FundingRepository;
@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @Getter
@@ -47,7 +50,7 @@ public class FundingService {
     }
 
     @Transactional
-    public FundingCreateResponseDto saveToDatabase(FundingCreateRequestDto requestDto) {
+    public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto) {
         FundingItem fundingItem = getCachedFundingProduct();
         if (fundingItem == null) {
             throw new IllegalStateException("No cached funding item found.");
@@ -55,7 +58,7 @@ public class FundingService {
         Funding funding = requestDto.toEntity(fundingItem);
         fundingRepository.save(funding);
         clearCache();
-        return FundingCreateResponseDto.fromEntity(funding);
+        return FundingResponseDto.fromEntity(funding);
     }
 
     public void clearCache() {
@@ -65,5 +68,25 @@ public class FundingService {
     private static String getMetaTagContent(Document document, String property) {
         Element metaTag = document.select("meta[property=" + property + "]").first();
         return (metaTag != null) ? metaTag.attr("content") : null;
+    }
+
+    @Transactional(readOnly = true)
+    public FundingResponseDto findFunding(Long fundingId) {
+        Funding findFunding = fundingRepository.findById(fundingId).orElseThrow(
+                () -> new NullPointerException("해당 펀딩을 찾을 수 없습니다.")
+        );
+        return FundingResponseDto.fromEntity(findFunding);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Funding> getActiveFundings() {
+        LocalDate currentDate = LocalDate.now();
+        return fundingRepository.findByEndDateGreaterThanEqual(currentDate);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Funding> getFinishedFunding(){
+        LocalDate currentDate = LocalDate.now();
+        return fundingRepository.findByEndDateLessThan(currentDate);
     }
 }

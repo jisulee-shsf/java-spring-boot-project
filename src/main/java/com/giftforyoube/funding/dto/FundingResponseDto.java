@@ -5,9 +5,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 @Getter
-public class FundingCreateResponseDto {
+public class FundingResponseDto {
 
     private Long id;
     private String itemLink;
@@ -19,9 +20,10 @@ public class FundingCreateResponseDto {
     private Integer targetAmount;
     private boolean publicFlag;
     private LocalDate endDate;
+    private String dDay;
 
     @Builder
-    public FundingCreateResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, Integer currentAmount, Integer targetAmount, boolean publicFlag, LocalDate endDate) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, Integer currentAmount, Integer targetAmount, boolean publicFlag, LocalDate endDate,String dDay) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -32,10 +34,17 @@ public class FundingCreateResponseDto {
         this.targetAmount = targetAmount;
         this.publicFlag = publicFlag;
         this.endDate = endDate;
+        this.dDay = dDay;
     }
 
-    public static FundingCreateResponseDto fromEntity(Funding funding) {
-        return FundingCreateResponseDto.builder()
+    public static FundingResponseDto fromEntity(Funding funding) {
+        long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), funding.getEndDate());
+        String dDay = "D-Day";
+        if (daysRemaining != 0){
+            dDay = (daysRemaining > 0) ? "D-" + daysRemaining : "D+" + Math.abs(daysRemaining);
+        }
+
+        return FundingResponseDto.builder()
                 .id(funding.getId())
                 .itemLink(funding.getItemLink())
                 .itemImage(funding.getItemImage())
@@ -46,6 +55,7 @@ public class FundingCreateResponseDto {
                 .targetAmount(funding.getTargetAmount())
                 .publicFlag(funding.isPublicFlag())
                 .endDate(funding.getEndDate())
+                .dDay(dDay)
                 .build();
     }
 }
