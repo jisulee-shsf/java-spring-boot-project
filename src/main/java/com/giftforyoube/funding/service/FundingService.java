@@ -60,6 +60,7 @@ public class FundingService {
                 requestDto.getEndDate()
         );
         fundingRepository.save(funding);
+        clearCache();
         return new FundingCreateResponseDto(funding);
     }
 
