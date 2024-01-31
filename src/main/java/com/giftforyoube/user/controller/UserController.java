@@ -1,13 +1,13 @@
 package com.giftforyoube.user.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giftforyoube.user.dto.SignupRequestDto;
-import com.giftforyoube.user.entity.User;
-import com.giftforyoube.user.service.UserService;
-import com.giftforyoube.user.dto.MsgResponseDto;
-import com.giftforyoube.user.service.KakaoService;
 import com.giftforyoube.global.jwt.JwtUtil;
 import com.giftforyoube.global.security.UserDetailsImpl;
+import com.giftforyoube.user.dto.MsgResponseDto;
+import com.giftforyoube.user.dto.SignupRequestDto;
+import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.service.KakaoService;
+import com.giftforyoube.user.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
