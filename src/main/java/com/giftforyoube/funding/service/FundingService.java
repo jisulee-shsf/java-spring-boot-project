@@ -1,5 +1,8 @@
 package com.giftforyoube.funding.service;
 
+import com.giftforyoube.funding.dto.FundingCreateRequestDto;
+import com.giftforyoube.funding.dto.FundingCreateResponseDto;
+import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.repository.FundingRepository;
 import lombok.Getter;
@@ -9,6 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 
@@ -37,6 +41,26 @@ public class FundingService {
             throw new IOException("Cannot fetch item image.");
         }
         return new FundingItem(itemLink, itemImage);
+    }
+
+    @Transactional
+    public FundingCreateResponseDto saveToDatabase(FundingCreateRequestDto requestDto) {
+        FundingItem fundingItem = getCachedFundingProduct();
+        if (fundingItem == null) {
+            throw new IllegalStateException("No cached funding item found.");
+        }
+        Funding funding = new Funding(
+                fundingItem.getItemLink(),
+                fundingItem.getItemImage(),
+                requestDto.getItemName(),
+                requestDto.getTitle(),
+                requestDto.getContent(),
+                requestDto.getGoalAmount(),
+                requestDto.isPublicFlag(),
+                requestDto.getEndDate()
+        );
+        fundingRepository.save(funding);
+        return new FundingCreateResponseDto(funding);
     }
 
     public void clearCache() {
