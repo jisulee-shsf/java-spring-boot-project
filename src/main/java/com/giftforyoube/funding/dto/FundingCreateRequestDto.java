@@ -13,7 +13,7 @@ public class FundingCreateRequestDto {
     private String itemName;
     private String title;
     private String content;
-    private Integer targetAmount;
+    private int targetAmount;
     private boolean publicFlag;
     private LocalDate endDate;
 

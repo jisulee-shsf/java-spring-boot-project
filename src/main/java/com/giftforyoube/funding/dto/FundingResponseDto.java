@@ -16,14 +16,15 @@ public class FundingResponseDto {
     private String itemName;
     private String title;
     private String content;
-    private Integer currentAmount;
-    private Integer targetAmount;
+    private int currentAmount;
+    private int targetAmount;
     private boolean publicFlag;
     private LocalDate endDate;
     private String dDay;
+    private int achievementRate;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, Integer currentAmount, Integer targetAmount, boolean publicFlag, LocalDate endDate,String dDay) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -35,6 +36,15 @@ public class FundingResponseDto {
         this.publicFlag = publicFlag;
         this.endDate = endDate;
         this.dDay = dDay;
+        this.achievementRate = calculatorAchievementRate(currentAmount,targetAmount);
+    }
+
+    // 달성률 계산
+    private int calculatorAchievementRate(int currentAmount, int targetAmount) {
+        if(targetAmount == 0){
+            return 0;
+        }
+        return (int)Math.round((double) currentAmount / targetAmount * 100);
     }
 
     public static FundingResponseDto fromEntity(Funding funding) {

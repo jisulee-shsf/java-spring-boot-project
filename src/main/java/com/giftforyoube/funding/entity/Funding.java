@@ -23,13 +23,13 @@ public class Funding {
     private String itemName;
     private String title;
     private String content;
-    private Integer currentAmount;
-    private Integer targetAmount;
+    private int currentAmount;
+    private int targetAmount;
     private boolean publicFlag;
     private LocalDate endDate;
 
     @Builder
-    public Funding(String itemLink, String itemImage, String itemName, String title, String content, Integer currentAmount, Integer targetAmount, boolean publicFlag, LocalDate endDate) {
+    public Funding(String itemLink, String itemImage, String itemName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate) {
         this.itemLink = itemLink;
         this.itemImage = itemImage;
         this.itemName = itemName;
