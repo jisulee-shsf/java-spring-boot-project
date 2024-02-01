@@ -1,6 +1,7 @@
 package com.giftforyoube.funding.dto;
 
 import com.giftforyoube.funding.entity.Funding;
+import com.giftforyoube.funding.entity.FundingStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -21,10 +22,11 @@ public class FundingResponseDto {
     private boolean publicFlag;
     private LocalDate endDate;
     private String dDay;
+    private FundingStatus status;
     private int achievementRate;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -36,6 +38,7 @@ public class FundingResponseDto {
         this.publicFlag = publicFlag;
         this.endDate = endDate;
         this.dDay = dDay;
+        this.status = status;
         this.achievementRate = calculatorAchievementRate(currentAmount,targetAmount);
     }
 
@@ -66,6 +69,7 @@ public class FundingResponseDto {
                 .publicFlag(funding.isPublicFlag())
                 .endDate(funding.getEndDate())
                 .dDay(dDay)
+                .status(funding.getStatus())
                 .build();
     }
 }

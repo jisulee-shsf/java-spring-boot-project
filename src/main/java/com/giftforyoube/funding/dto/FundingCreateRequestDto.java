@@ -2,6 +2,7 @@ package com.giftforyoube.funding.dto;
 
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
+import com.giftforyoube.funding.entity.FundingStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +24,7 @@ public class FundingCreateRequestDto {
         // 기본 생성자
     }
 
-    public Funding toEntity(FundingItem fundingItem) {
+    public Funding toEntity(FundingItem fundingItem,FundingStatus status) {
         return Funding.builder()
                 .itemLink(fundingItem.getItemLink())
                 .itemImage(fundingItem.getItemImage())
@@ -34,6 +35,7 @@ public class FundingCreateRequestDto {
                 .targetAmount(this.targetAmount)
                 .publicFlag(this.publicFlag)
                 .endDate(this.getEndDate())
+                .status(status)
                 .build();
     }
 }
