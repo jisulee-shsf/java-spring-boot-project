@@ -39,7 +39,7 @@ public class UserController {
     }
 
     // 로그인(Kakao)
-    @GetMapping("/kakao/callback") // 연동 테스트 후, 업데이트 예정
+    @GetMapping("/kakao/callback")
     public String kakaoLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException {
         String kakaoToken = kakaoService.kakaoLogin(code);
         String kakaoTokenValue = JwtUtil.addJwtToCookie(kakaoToken, response);
@@ -50,7 +50,7 @@ public class UserController {
     }
 
     // 로그인(Google)
-    @GetMapping("/login/oauth2/code/google") // 연동 테스트 후, 업데이트 예정
+    @GetMapping("/login/login/oauth2/code/google")
     public String googleLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException {
         String googleToken = googleService.googleLogin(code);
         String googleTokenValue = JwtUtil.addJwtToCookie(googleToken, response);
@@ -60,7 +60,13 @@ public class UserController {
         return "redirect:/";
     }
 
-    // 사용자 정보 조회 테스트
+    // 회원 탈퇴
+    @DeleteMapping("/signout/{userId}")
+    public MsgResponseDto signout(@PathVariable Long userId) {
+        return userService.signout(userId);
+    }
+
+    // userDetails 조회용
     @GetMapping("/user-info")
     public void getUserInfoAfterLogin(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
