@@ -1,4 +1,4 @@
-package com.giftforyoube.global;
+package com.giftforyoube.global.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
@@ -19,7 +19,7 @@ public abstract class Auditable {
 
     @CreatedDate
     @Column(updatable = false, nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column
