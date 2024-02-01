@@ -47,15 +47,15 @@ public class KakaoService {
     private String redirectUrl;
 
     public String kakaoLogin(String code) throws JsonProcessingException {
-        String kakaoAccessToken = getAccessToken(code);
+        String kakaoAccessToken = getKakaoAccessToken(code);
         KakaoUserInfoDto kakaoUserInfoDto = getKakaoUserInfo(kakaoAccessToken);
         User kakaoUser = registerKakaoUserIfNeeded(kakaoUserInfoDto);
-        String token = jwtUtil.createToken(kakaoUserInfoDto.getEmail());
-        return token;
+        String kakaoToken = jwtUtil.createToken(kakaoUser.getEmail());
+        return kakaoToken;
     }
 
     // access token 요청
-    private String getAccessToken(String code) throws JsonProcessingException {
+    private String getKakaoAccessToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kauth.kakao.com")
                 .path("/oauth/token")
@@ -121,13 +121,13 @@ public class KakaoService {
     }
 
     // 조건에 따라 로그인 진행
-    private User registerKakaoUserIfNeeded(KakaoUserInfoDto kakaoUserInfo) {
-        Long kakaoId = kakaoUserInfo.getKakaoId();
+    private User registerKakaoUserIfNeeded(KakaoUserInfoDto kakaoUserInfoDto) {
+        Long kakaoId = kakaoUserInfoDto.getId();
+        log.info("[Kakao | registerKakaoUserIfNeeded] kakaoId: " + kakaoId);
         User kakaoUser = userRepository.findByKakaoId(kakaoId).orElse(null);
 
         if (kakaoUser == null) {
-            log.info("[Kakao | registerKakaoUserIfNeeded] kakaoId: " + kakaoId);
-            String kakaoEmail = kakaoUserInfo.getEmail();
+            String kakaoEmail = kakaoUserInfoDto.getEmail();
             User sameEmailUser = userRepository.findByEmail(kakaoEmail).orElse(null);
             if (sameEmailUser != null) {
                 kakaoUser = sameEmailUser;
@@ -135,7 +135,7 @@ public class KakaoService {
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                kakaoUser = new User(kakaoUserInfo.getEmail(), encodedPassword, kakaoUserInfo.getNickname(), kakaoId, kakaoAccessToken, null);
+                kakaoUser = new User(kakaoUserInfoDto.getEmail(), encodedPassword, kakaoUserInfoDto.getNickname(), kakaoId, kakaoAccessToken, null);
             }
         }
         kakaoUser = kakaoUser.kakaoAccessTokenUpdate(kakaoAccessToken);

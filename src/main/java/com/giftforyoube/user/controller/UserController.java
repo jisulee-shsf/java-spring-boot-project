@@ -6,6 +6,7 @@ import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.dto.MsgResponseDto;
 import com.giftforyoube.user.dto.SignupRequestDto;
 import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.service.GoogleService;
 import com.giftforyoube.user.service.KakaoService;
 import com.giftforyoube.user.service.UserService;
 import jakarta.servlet.http.Cookie;
@@ -23,10 +24,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
     private final KakaoService kakaoService;
+    private final GoogleService googleService;
 
-    public UserController(UserService userService, KakaoService kakaoService) {
+    public UserController(UserService userService, KakaoService kakaoService, GoogleService googleService) {
         this.userService = userService;
         this.kakaoService = kakaoService;
+        this.googleService = googleService;
     }
 
     // 회원가입
@@ -36,15 +39,25 @@ public class UserController {
     }
 
     // 로그인(Kakao)
-    @GetMapping("/kakao/callback")
+    @GetMapping("/kakao/callback") // 연동 테스트 후, 업데이트 예정
     public String kakaoLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException {
-        String token = kakaoService.kakaoLogin(code);
-        String tokenValue = JwtUtil.addJwtToCookie(token, response);
-        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, tokenValue);
+        String kakaoToken = kakaoService.kakaoLogin(code);
+        String kakaoTokenValue = JwtUtil.addJwtToCookie(kakaoToken, response);
+        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, kakaoTokenValue);
         cookie.setPath("/");
         response.addCookie(cookie);
-        return "redirect:http://localhost:8080"; // 연동 테스트 후 업데이트 예정(1/29~)
+        return "redirect:/";
+    }
 
+    // 로그인(Google)
+    @GetMapping("/login/oauth2/code/google") // 연동 테스트 후, 업데이트 예정
+    public String googleLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException {
+        String googleToken = googleService.googleLogin(code);
+        String googleTokenValue = JwtUtil.addJwtToCookie(googleToken, response);
+        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, googleTokenValue);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return "redirect:/";
     }
 
     // 사용자 정보 조회 테스트
@@ -57,5 +70,6 @@ public class UserController {
         log.info("[userDetails] getNickname(): " + userDetails.getUsername());
         log.info("[userDetails] getUser().getPhoneNumber(): " + userDetails.getUser().getPhoneNumber());
         log.info("[userDetails] getUser().getKakaoId(): " + userDetails.getUser().getKakaoId());
+        log.info("[userDetails] getUser().getGoogleId(): " + userDetails.getUser().getGoogleId());
     }
 }
