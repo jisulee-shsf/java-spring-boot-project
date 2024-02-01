@@ -50,6 +50,15 @@ public class FundingService {
                 .build();
     }
 
+    public void clearCache() {
+        redisTemplate.delete("cachedFundingItem");
+    }
+
+    private static String getMetaTagContent(Document document, String property) {
+        Element metaTag = document.select("meta[property=" + property + "]").first();
+        return (metaTag != null) ? metaTag.attr("content") : null;
+    }
+
     @Transactional
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto) {
         FundingItem fundingItem = getCachedFundingProduct();
@@ -62,15 +71,6 @@ public class FundingService {
         fundingRepository.save(funding);
         clearCache();
         return FundingResponseDto.fromEntity(funding);
-    }
-
-    public void clearCache() {
-        redisTemplate.delete("cachedFundingItem");
-    }
-
-    private static String getMetaTagContent(Document document, String property) {
-        Element metaTag = document.select("meta[property=" + property + "]").first();
-        return (metaTag != null) ? metaTag.attr("content") : null;
     }
 
     @Transactional(readOnly = true)
