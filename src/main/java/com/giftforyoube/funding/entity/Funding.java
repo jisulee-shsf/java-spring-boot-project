@@ -22,6 +22,7 @@ public class Funding {
     private String itemLink;
     private String itemImage;
     private String itemName;
+    private String showName;
     private String title;
     @Column(length = 1000)
     private String content;
@@ -33,10 +34,11 @@ public class Funding {
     private FundingStatus status;
 
     @Builder
-    public Funding(String itemLink, String itemImage, String itemName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,FundingStatus status) {
+    public Funding(String itemLink, String itemImage, String itemName,String showName,String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,FundingStatus status) {
         this.itemLink = itemLink;
         this.itemImage = itemImage;
         this.itemName = itemName;
+        this.showName = showName;
         this.title = title;
         this.content = content;
         this.currentAmount = currentAmount;

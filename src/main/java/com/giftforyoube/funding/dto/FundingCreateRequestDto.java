@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Setter
 public class FundingCreateRequestDto {
     private String itemName;
+    private String showName;
     private String title;
     private String content;
     private int targetAmount;
@@ -29,6 +30,7 @@ public class FundingCreateRequestDto {
                 .itemLink(fundingItem.getItemLink())
                 .itemImage(fundingItem.getItemImage())
                 .itemName(this.itemName)
+                .showName(this.showName)
                 .title(this.title)
                 .content(this.content)
                 .currentAmount(0)

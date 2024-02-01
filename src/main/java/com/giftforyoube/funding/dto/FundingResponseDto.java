@@ -15,6 +15,7 @@ public class FundingResponseDto {
     private String itemLink;
     private String itemImage;
     private String itemName;
+    private String showName;
     private String title;
     private String content;
     private int currentAmount;
@@ -26,11 +27,12 @@ public class FundingResponseDto {
     private int achievementRate;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
         this.itemName = itemName;
+        this.showName = showName;
         this.title = title;
         this.content = content;
         this.currentAmount = currentAmount;
@@ -62,6 +64,7 @@ public class FundingResponseDto {
                 .itemLink(funding.getItemLink())
                 .itemImage(funding.getItemImage())
                 .itemName(funding.getItemName())
+                .showName(funding.getShowName())
                 .title(funding.getTitle())
                 .content(funding.getContent())
                 .currentAmount(funding.getCurrentAmount())
