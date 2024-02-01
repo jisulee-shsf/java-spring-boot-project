@@ -4,6 +4,7 @@ import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
+import com.giftforyoube.funding.entity.FundingStatus;
 import com.giftforyoube.funding.repository.FundingRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -55,7 +56,9 @@ public class FundingService {
         if (fundingItem == null) {
             throw new IllegalStateException("No cached funding item found.");
         }
-        Funding funding = requestDto.toEntity(fundingItem);
+        LocalDate currentDate = LocalDate.now();
+        FundingStatus status = requestDto.getEndDate().isBefore(currentDate) ? FundingStatus.FINISHED : FundingStatus.ACTIVE;
+        Funding funding = requestDto.toEntity(fundingItem,status);
         fundingRepository.save(funding);
         clearCache();
         return FundingResponseDto.fromEntity(funding);
@@ -81,12 +84,28 @@ public class FundingService {
     @Transactional(readOnly = true)
     public List<Funding> getActiveFundings() {
         LocalDate currentDate = LocalDate.now();
-        return fundingRepository.findByEndDateGreaterThanEqual(currentDate);
+        return fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
     }
 
     @Transactional(readOnly = true)
-    public List<Funding> getFinishedFunding(){
+    public List<Funding> getFinishedFunding() {
         LocalDate currentDate = LocalDate.now();
-        return fundingRepository.findByEndDateLessThan(currentDate);
+        return fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.FINISHED);
+    }
+
+    @Transactional
+    public void finishFunding(Long fundingId) {
+        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                () -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다.")
+        );
+        funding.setStatus(FundingStatus.FINISHED);
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * ?") // 매일 자정에 실행
+    public void autoFinishFundings() {
+        LocalDate currentDate = LocalDate.now();
+        List<Funding> fundings = fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.ACTIVE);
+        fundings.forEach(funding -> funding.setStatus(FundingStatus.FINISHED));
     }
 }

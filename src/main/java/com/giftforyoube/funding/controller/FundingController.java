@@ -74,4 +74,14 @@ public class FundingController {
         return fundingService.findFunding(fundingId);
     }
 
+    @PatchMapping("/{fundingId}/finish")
+    public ResponseEntity<?> finishFunding(@PathVariable Long fundingId) {
+        try {
+            fundingService.finishFunding(fundingId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error finishing funding: " + e.getMessage());
+        }
+    }
+
 }
