@@ -25,10 +25,16 @@ public class User {
     private String phoneNumber;
 
     @Column
-    private Long kakaoId = 0L;
+    private Long kakaoId;
 
     @Column
     private String kakaoAccessToken;
+
+    @Column
+    private String googleId;
+
+    @Column
+    private String googleAccessToken;
 
     public User(String email, String password, String nickname, String phoneNumber) {
         this.email = email;
@@ -54,6 +60,26 @@ public class User {
 
     public User kakaoAccessTokenUpdate(String kakaoAccessToken) {
         this.kakaoAccessToken = kakaoAccessToken;
+        return this;
+    }
+
+    public User(String email, String password, String nickname, String googleId, String googleAccessToken, String phoneNumber) {
+        this.email = email;
+        this.password = password;
+        this.nickname = nickname;
+        this.googleId = googleId;
+        this.googleAccessToken = googleAccessToken;
+        this.phoneNumber = phoneNumber;
+    }
+
+    public User googleIdAndAccessTokenUpdate(String googleId, String googleAccessToken) {
+        this.googleId = googleId;
+        this.googleAccessToken = googleAccessToken;
+        return this;
+    }
+
+    public User googleAccessTokenUpdate(String googleAccessToken) {
+        this.googleAccessToken = googleAccessToken;
         return this;
     }
 }
