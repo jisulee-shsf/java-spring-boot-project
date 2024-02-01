@@ -44,7 +44,7 @@ public class NotificationService {
         emitter.onError((e) -> emitterRepository.deleteAllEmitterStartWithId(emitterId));
 
         String eventId = createTimeIncludeId(username);
-        //  수 많은 이벤트 들을 구분하기 위해 이벤트 ID에 시간을 통해 구분을 해줌
+        // 수 많은 이벤트 들을 구분하기 위해 이벤트 ID에 시간을 통해 구분을 해줌
         sendNotification(emitter, eventId, emitterId, new SubscribeDummyDto(username));
 
         // 클라이언트가 미수신한 Event 목록이 존재할 경우 전송하여 Event 유실을 예방
@@ -69,6 +69,12 @@ public class NotificationService {
 
         // 호출된 emitter들을 EventCache에 각각 저장 후 각 emitter를 통해 sendNotification으로 알림을 보냄
         // EventCache에 저장 -> 연결이 끊긴 후 다시 연결될 때 놓친 알림을 클라이언트에게 재 전송을 위함
+
+        // 왜 유저당 단일 emitter 객체가 아닌 여러 emitter가 존재하는가?
+        // -> 모바일, PC 웹 등 여러 환경에서 접속할 경우 여러 emitter가 생길 수 있다.
+
+        // emitter가 여러개면 하나의 event가 발생했을때 중복으로 알림이 발생하지않나?
+        //TODO -> alreadyNotified 메서드를 추가해 조건문을 걸어줘서 이미 동일한 알림이 발생했는지 확인이 필요할 것
         emitters.forEach(
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
