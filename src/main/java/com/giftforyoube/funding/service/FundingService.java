@@ -100,12 +100,4 @@ public class FundingService {
         );
         funding.setStatus(FundingStatus.FINISHED);
     }
-
-    @Transactional
-    @Scheduled(cron = "0 0 0 * * ?") // 매일 자정에 실행
-    public void autoFinishFundings() {
-        LocalDate currentDate = LocalDate.now();
-        List<Funding> fundings = fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.ACTIVE);
-        fundings.forEach(funding -> funding.setStatus(FundingStatus.FINISHED));
-    }
 }
