@@ -1,21 +1,25 @@
 package com.giftforyoube.user.service;
 
-import com.giftforyoube.user.entity.User;
-import com.giftforyoube.user.dto.MsgResponseDto;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponse;
+import com.giftforyoube.global.exception.BaseResponseStatus;
+import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.dto.SignupRequestDto;
+import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-
-import java.util.List;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @Slf4j
 @Service
 public class UserService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -24,34 +28,73 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public MsgResponseDto signup(SignupRequestDto requestDto, BindingResult bindingResult) {
-        log.info("[signup] 회원가입 시도");
+    // 회원가입
+    @Transactional
+    public ResponseEntity<BaseResponse<Void>> registerAccount(SignupRequestDto signupRequestDto, BindingResult bindingResult) throws MethodArgumentNotValidException {
+        log.info("[registerAccount] 회원가입 시도");
 
-        // 회원가입 정보 유효성 검사
-        List<FieldError> fieldErrors = bindingResult.getFieldErrors();
-        if (fieldErrors.size() > 0) {
-            for (FieldError fieldError : bindingResult.getFieldErrors()) {
-                log.error("[signup] 회원가입 유효성 검사 실패: " + fieldError.getDefaultMessage());
-                return new MsgResponseDto(HttpStatus.BAD_REQUEST.value(), fieldError.getDefaultMessage()); // HttpStatus 400
-            }
+        // 1. 유효성 검사
+        if (bindingResult.hasErrors()) {
+            log.info("[registerAccount] 회원가입 실패(bindingResult)");
+            throw new MethodArgumentNotValidException(null, bindingResult);
         }
 
-        // 이메일 중복 검사
-        if (userRepository.findByEmail(requestDto.getEmail()).isPresent()) {
-            return new MsgResponseDto(HttpStatus.BAD_REQUEST.value(), "이미 가입된 이메일입니다."); // HttpStatus 400
+        // 2. 중복 이메일 검사
+        if (userRepository.findByEmail(signupRequestDto.getEmail()).isPresent()) {
+            log.info("[registerAccount] 회원가입 실패(EMAIL_ALREADY_EXISTS)");
+            throw new BaseException(BaseResponseStatus.EMAIL_ALREADY_EXISTS);
         }
 
-        // 휴대폰 번호 중복 검사
-        if (userRepository.findByPhoneNumber(requestDto.getPhoneNumber()).isPresent()) {
-            return new MsgResponseDto(HttpStatus.BAD_REQUEST.value(), "이미 가입된 휴대폰 번호입니다."); // HttpStatus 400
+        // 3. 중복 휴대전화 번호 검사
+        if (userRepository.findByPhoneNumber(signupRequestDto.getPhoneNumber()).isPresent()) {
+            log.info("[registerAccount] 회원가입 실패(PHONENUMBER_ALREADY_EXISTS)");
+            throw new BaseException(BaseResponseStatus.PHONENUMBER_ALREADY_EXISTS);
         }
 
-        // 패스워드 암호화 및 회원가입 정보 등록
-        String encryptedPassword = passwordEncoder.encode(requestDto.getPassword());
-        User user = new User(requestDto.getEmail(), encryptedPassword, requestDto.getNickname(), requestDto.getPhoneNumber());
+        // 4. 회원가입 진행
+        String encryptedPassword = passwordEncoder.encode(signupRequestDto.getPassword());
+        User user = new User(signupRequestDto.getEmail(), encryptedPassword, signupRequestDto.getNickname(), signupRequestDto.getPhoneNumber());
         userRepository.save(user);
 
-        log.info("[signup] 회원가입 완료");
-        return new MsgResponseDto(HttpStatus.CREATED.value(), "회원가입이 완료되었습니다."); // HttpStatus 201
+        log.info("[signup] 회원가입 완료(REGISTER_ACCOUNT_SUCCESS)");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new BaseResponse<>(BaseResponseStatus.REGISTER_ACCOUNT_SUCCESS));
+    }
+
+    @Transactional
+    // 회원탈퇴
+    public BaseResponse<Void> deleteAccount(Long userId, String inputPassword) {
+        log.info("[deleteAccount] 회원탈퇴 시도");
+
+        // 1. 사용자 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+
+        // 2. 비밀번호 확인
+        if (!passwordEncoder.matches(inputPassword, user.getPassword())) {
+            System.out.println("encodedInputPassword = " + inputPassword);
+            System.out.println("user.getPassword() = " + user.getPassword());
+            throw new BaseException(BaseResponseStatus.PASSWORD_MISMATCH);
+        }
+
+        // 3. 회원탈퇴 진행
+        userRepository.delete(user);
+        log.info("[deleteAccount] 회원탈퇴 완료");
+        return new BaseResponse<>(BaseResponseStatus.DELETE_ACCOUNT_SUCCESS);
+    }
+
+    // 회원정보 조회(내부 확인용)
+    public void getUserInfo(UserDetailsImpl userDetails) {
+        log.info("[getUserInfo] 회원정보 조회 시도");
+        User user = userRepository.findById(userDetails.getUser().getId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+        log.info("[userDetails] getUser().getId(): " + userDetails.getUser().getId());
+        log.info("[userDetails] getUser().getEmail(): " + userDetails.getUser().getEmail());
+        log.info("[userDetails] getPassword(): " + userDetails.getPassword());
+        log.info("[userDetails] getNickname(): " + userDetails.getUsername());
+        log.info("[userDetails] getUser().getPhoneNumber(): " + userDetails.getUser().getPhoneNumber());
+        log.info("[userDetails] getUser().getKakaoId(): " + userDetails.getUser().getKakaoId());
+        log.info("[userDetails] getUser().getGoogleId(): " + userDetails.getUser().getGoogleId());
+        log.info("[getUserInfo] 회원정보 조회 완료");
     }
 }
