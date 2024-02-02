@@ -22,6 +22,7 @@ import java.util.List;
 public class NotificationController {
     private final NotificationService notificationService;
 
+
     // 알림메세지 테스트
     @PostMapping("/test")
     public ResponseEntity<String> NotificationTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
