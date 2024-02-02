@@ -42,4 +42,8 @@ public class Notification extends Auditable {
         this.url = new RelatedUrl(url);
         this.isRead = isRead;
     }
+
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
+    }
 }

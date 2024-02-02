@@ -23,4 +23,12 @@ public class NotificationResponseDto {
         this.notificationType = notificationType;
         this.isRead = isRead;
     }
+
+    public NotificationResponseDto(Notification notification) {
+        this.notificationId = notification.getId();
+        this.content = notification.getContent();
+        this.url = notification.getUrl().getUrl();
+        this.notificationType = notification.getNotificationType();
+        this.isRead = notification.getIsRead();
+    }
 }

@@ -14,8 +14,17 @@ import java.util.stream.Collectors;
 public class EmitterRepositoryImpl implements EmitterRepository{
     // SseEmitter를 관리하는 스레드들이 콜백할때 스레드가 다를수 있기에 ThreadSafe한 구조인 ConcurrentHashMap을 사용
     // 동시성을 고려하여 ConcurrentHashMap 사용 -> 가능한 많은 클라이언트의 요청을 처리할 수 있도록 함
+
+    // CocurrentHashMap 을 이용한 인메모리 방식을 우선 사용하였는데, mysql이나 redis같은 db를 왜 활용하지않나?
+    // 1. mysql이나 redis에 비해 훨씬 빠르다.
+    // SSE는 거의 실시간 통신을 처리하기 때문에 최소한의 지연시간으로 데이터를 저장하고 검색할 수 있는 방법이 좋다.
+    // 2. 자원제한 문제에서 벗어나고 확장성 및 관리 용이성
+    // -> 어플리케이션 재시작시 데이터가 손실되지않나? (서버 리부팅, 업데이트 배포 시에)
+    // -> 데이터의 지속성에는 Redis가 concurrenthashmap보다 낫다.
+    // 테스트단계에서는 괜찮지만 비용측면 고려하여 개발 후기단계에서 redis로 변경 고려
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final Map<String, Object> eventCache = new ConcurrentHashMap<>();
+
 
     @Override
     public SseEmitter save(String emitterId, SseEmitter sseEmitter) {

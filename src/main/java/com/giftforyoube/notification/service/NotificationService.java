@@ -1,5 +1,7 @@
 package com.giftforyoube.notification.service;
 
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.notification.dto.NotificationResponseDto;
 import com.giftforyoube.notification.dto.SubscribeDummyDto;
 import com.giftforyoube.notification.entity.Notification;
@@ -10,11 +12,13 @@ import com.giftforyoube.user.entity.User;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -28,6 +32,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
 
     // subscribe
+    @Transactional
     public SseEmitter subscribeAlarm(String username, String lastEventId, HttpServletResponse response) {
         String emitterId = createTimeIncludeId(username);
 
@@ -55,6 +60,7 @@ public class NotificationService {
     }
 
 
+    // 알람 send
     @Transactional
     public void send(User receiver, NotificationType notificationType, String content, String url) {
         // notification 객체 생성 후 db 저장
@@ -120,5 +126,27 @@ public class NotificationService {
 
     private String createTimeIncludeId(String username) {
         return username + "_" + System.currentTimeMillis();
+    }
+
+    // user로 해당 user의 전체 알림목록을 조회
+    @Transactional(readOnly = true)
+    public List<NotificationResponseDto> getNotifications(User user) {
+        List<Notification> notificationList = notificationRepository.findAllByReceiverOrderByCreatedAtDesc(user);
+        return notificationList.stream().map(NotificationResponseDto::new).toList();
+    }
+
+    // 알림 읽음처리
+    @Transactional
+    public NotificationResponseDto readNotification(User user, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId).orElseThrow(
+                () -> new BaseException(BaseResponseStatus.NOTIFICATION_NOT_FOUND));
+
+        if (!notification.getReceiver().getId().equals(user.getId())) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_READ_NOTIFICATION);
+        }
+
+        notification.setIsRead(true);
+        Notification saveNotification = notificationRepository.save(notification);
+        return new NotificationResponseDto(saveNotification);
     }
 }
