@@ -12,6 +12,7 @@ import java.time.temporal.ChronoUnit;
 
 @Getter
 public class FundingResponseDto implements Serializable {
+    private static final long serialVersionUID = 1L; // serialVersionUID 추가
 
     private Long id;
     private String itemLink;
@@ -30,7 +31,7 @@ public class FundingResponseDto implements Serializable {
     private LocalDateTime modifiedAt;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status,LocalDateTime modifiedAt) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status,LocalDateTime modifiedAt, int achievementRate) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -45,7 +46,18 @@ public class FundingResponseDto implements Serializable {
         this.dDay = dDay;
         this.status = status;
         this.modifiedAt = modifiedAt;
-        this.achievementRate = calculatorAchievementRate(currentAmount,targetAmount);
+        this.achievementRate = achievementRate;
+
+        // D-Day 계산
+        long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
+        this.dDay = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "D+" + Math.abs(daysRemaining)) : "D-Day";
+
+        // 목표금액 달성율 계산
+        if (targetAmount == 0) {
+            this.achievementRate = 0;
+        } else {
+            this.achievementRate = (int) Math.round((double) currentAmount / targetAmount * 100);
+        }
     }
 
     // 달성률 계산
@@ -57,11 +69,10 @@ public class FundingResponseDto implements Serializable {
     }
 
     public static FundingResponseDto fromEntity(Funding funding) {
+        // D-Day와 목표금액 달성율 계산
         long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), funding.getEndDate());
-        String dDay = "D-Day";
-        if (daysRemaining != 0){
-            dDay = (daysRemaining > 0) ? "D-" + daysRemaining : "D+" + Math.abs(daysRemaining);
-        }
+        String dDay = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "D+" + Math.abs(daysRemaining)) : "D-Day";
+        int achievementRate = (funding.getTargetAmount() == 0) ? 0 : (int) Math.round((double) funding.getCurrentAmount() / funding.getTargetAmount() * 100);
 
         return FundingResponseDto.builder()
                 .id(funding.getId())
@@ -76,6 +87,7 @@ public class FundingResponseDto implements Serializable {
                 .publicFlag(funding.isPublicFlag())
                 .endDate(funding.getEndDate())
                 .dDay(dDay)
+                .achievementRate(achievementRate)
                 .status(funding.getStatus())
                 .modifiedAt(funding.getModifiedAt())
                 .build();

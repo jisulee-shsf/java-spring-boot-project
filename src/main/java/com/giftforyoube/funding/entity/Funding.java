@@ -15,6 +15,7 @@ import java.time.LocalDate;
 @Entity
 @NoArgsConstructor
 public class Funding extends Auditable implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

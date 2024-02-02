@@ -57,15 +57,15 @@ public class FundingController {
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩
     @GetMapping("/active")
-    public ResponseEntity<List<Funding>> getActiveFundings(){
-        List<Funding> activeFundings = fundingService.getActiveFundings();
+    public ResponseEntity<List<FundingResponseDto>> getActiveFundings(){
+        List<FundingResponseDto> activeFundings = fundingService.getActiveFundings();
         return ResponseEntity.ok(activeFundings);
     }
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩
     @GetMapping("/finished")
-    public ResponseEntity<List<Funding>> getFinishedFundings(){
-        List<Funding> finishedFundings = fundingService.getFinishedFunding();
+    public ResponseEntity<List<FundingResponseDto>> getFinishedFundings(){
+        List<FundingResponseDto> finishedFundings = fundingService.getFinishedFunding();
         return ResponseEntity.ok(finishedFundings);
     }
 

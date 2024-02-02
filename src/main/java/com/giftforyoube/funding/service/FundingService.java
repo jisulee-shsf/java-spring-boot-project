@@ -1,7 +1,6 @@
 package com.giftforyoube.funding.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
@@ -15,9 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,6 +24,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @Getter
@@ -37,9 +34,6 @@ public class FundingService {
     private final RedisTemplate<String, String> redisTemplate;
     private final FundingRepository fundingRepository;
     private final ObjectMapper objectMapper;
-
-    @Autowired
-    private CacheManager cacheManager;
 
     private static final int TIMEOUT = 10000; // 10초
 
@@ -90,64 +84,39 @@ public class FundingService {
         return FundingResponseDto.fromEntity(funding);
     }
 
-    @Cacheable(value = "fundingInfoCache", key = "#fundingId")
-    public FundingResponseDto findFunding(Long fundingId){
-        // 캐시에서 펀딩 정보 조회 시도
-        FundingResponseDto fundingResponse = getCachedFundingInfo(fundingId);
-        if (fundingResponse != null) {
-            return fundingResponse;
-        }
-
-        // 캐시에 정보가 없는 경우 DB에서 조회 및 계산
+    @Cacheable(value = "fundingDetail", key = "#fundingId")
+    public FundingResponseDto findFunding(Long fundingId) throws JsonProcessingException {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
-        fundingResponse = FundingResponseDto.fromEntity(funding);
-
-        // 계산된 정보를 캐시에 저장
-        cacheFundingInfo(fundingId, fundingResponse);
-        return fundingResponse;
+        return FundingResponseDto.fromEntity(funding);
     }
 
-    // 해당 유저의 펀딩 정보 캐시에서 가져오기
-    private FundingResponseDto getCachedFundingInfo(Long fundingId) {
-        Cache cache = cacheManager.getCache("fundingInfoCache");
-        Cache.ValueWrapper wrapper = cache.get(fundingId);
-        if (wrapper != null) {
-            return (FundingResponseDto) wrapper.get();
-        }
-        return null;
-    }
-
-    // 캐시에 해당 유저의 펀딩 정보 저장
-    private void cacheFundingInfo(Long fundingId, FundingResponseDto fundingInfo) {
-        Cache cache = cacheManager.getCache("fundingInfoCache");
-        if (cache != null) {
-            cache.put(fundingId, fundingInfo);
-        }
-    }
-
-
-    @Cacheable("activeFundings")
+    @Cacheable(value = "activeFundings")
     @Transactional(readOnly = true)
-    public List<Funding> getActiveFundings() {
+    public List<FundingResponseDto> getActiveFundings() {
         LocalDate currentDate = LocalDate.now();
-        return fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
+        List<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
+        return fundings.stream()
+                .map(FundingResponseDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    @Cacheable("finishedFundings")
+    @Cacheable(value = "finishedFundings")
     @Transactional(readOnly = true)
-    public List<Funding> getFinishedFunding() {
-        LocalDate currentDate = LocalDate.now();
-        return fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.FINISHED);
+    public List<FundingResponseDto> getFinishedFunding() {
+        List<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED);
+        return fundings.stream()
+                .map(FundingResponseDto::fromEntity)
+                .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = {"activeFundings", "finishedFundings"}, allEntries = true, beforeInvocation = true)
     @Transactional
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public void finishFunding(Long fundingId) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다."));
         funding.setStatus(FundingStatus.FINISHED);
-        // fundingRepository.save(funding); // 저장은 필요하지 않음
-        cacheFundingInfo(fundingId, FundingResponseDto.fromEntity(funding));
+        fundingRepository.save(funding);
     }
+
 }
