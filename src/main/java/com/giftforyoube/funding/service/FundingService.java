@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Getter
@@ -72,31 +73,70 @@ public class FundingService {
         return FundingResponseDto.fromEntity(funding);
     }
 
-    @Transactional(readOnly = true)
     public FundingResponseDto findFunding(Long fundingId) {
-        Funding findFunding = fundingRepository.findById(fundingId).orElseThrow(
-                () -> new NullPointerException("해당 펀딩을 찾을 수 없습니다.")
-        );
-        return FundingResponseDto.fromEntity(findFunding);
+        // 캐시에서 펀딩 정보 조회 시도
+        FundingResponseDto fundingResponse = getCachedFundingInfo(fundingId);
+        if (fundingResponse != null) {
+            return fundingResponse;
+        }
+
+        // 캐시에 정보가 없는 경우 DB에서 조회 및 계산
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
+        fundingResponse = FundingResponseDto.fromEntity(funding);
+
+        // 계산된 정보를 캐시에 저장
+        cacheFundingInfo(fundingId, fundingResponse);
+        return fundingResponse;
+    }
+
+    // 해당 유저의 펀딩 정보 캐시에서 가져오기
+    private FundingResponseDto getCachedFundingInfo(Long fundingId) {
+        return (FundingResponseDto) redisTemplate.opsForValue().get("funding:" + fundingId + ":info");
+    }
+
+    // 캐시에 해당 유저의 펀딩 정보 저장
+    private void cacheFundingInfo(Long fundingId, FundingResponseDto fundingInfo) {
+        redisTemplate.opsForValue().set("funding:" + fundingId + ":info", fundingInfo, 1, TimeUnit.DAYS);
     }
 
     @Transactional(readOnly = true)
     public List<Funding> getActiveFundings() {
-        LocalDate currentDate = LocalDate.now();
-        return fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
+        // 캐시에서 진행 중인 펀딩 목록 조회 시도
+        List<Funding> activeFundings = (List<Funding>) redisTemplate.opsForValue().get("activeFundings");
+        if (activeFundings == null) {
+            // 캐시에 없으면 데이터베이스에서 조회
+            LocalDate currentDate = LocalDate.now();
+            activeFundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
+            // 조회 결과를 캐시에 저장
+            redisTemplate.opsForValue().set("activeFundings", activeFundings, 1, TimeUnit.HOURS);
+        }
+        return activeFundings;
     }
 
     @Transactional(readOnly = true)
     public List<Funding> getFinishedFunding() {
-        LocalDate currentDate = LocalDate.now();
-        return fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.FINISHED);
+        // 캐시에서 종료된 펀딩 목록 조회 시도
+        List<Funding> finishedFundings = (List<Funding>) redisTemplate.opsForValue().get("finishedFundings");
+        if (finishedFundings == null) {
+            // 캐시에 없으면 데이터베이스에서 조회
+            LocalDate currentDate = LocalDate.now();
+            finishedFundings = fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.FINISHED);
+            // 조회 결과를 캐시에 저장
+            redisTemplate.opsForValue().set("finishedFundings", finishedFundings, 1, TimeUnit.HOURS);
+        }
+        return finishedFundings;
     }
 
     @Transactional
     public void finishFunding(Long fundingId) {
-        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
-                () -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다.")
-        );
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다."));
         funding.setStatus(FundingStatus.FINISHED);
+        fundingRepository.save(funding);
+
+        // 관련 캐시 무효화
+        redisTemplate.delete("activeFundings");
+        redisTemplate.delete("finishedFundings");
     }
 }
