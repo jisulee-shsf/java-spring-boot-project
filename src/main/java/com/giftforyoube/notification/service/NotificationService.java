@@ -9,6 +9,7 @@ import com.giftforyoube.notification.entity.NotificationType;
 import com.giftforyoube.notification.repository.EmitterRepository;
 import com.giftforyoube.notification.repository.NotificationRepository;
 import com.giftforyoube.user.entity.User;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class NotificationService {
 
     private final EmitterRepository emitterRepository;
     private final NotificationRepository notificationRepository;
+    private final MailingService mailingService;
 
     // subscribe
     @Transactional
@@ -88,6 +90,13 @@ public class NotificationService {
                             saveNotification.getNotificationType(), saveNotification.getIsRead()));
                 }
         );
+
+        // 이메일 알림 발송
+        try {
+            mailingService.sendNotificationEmail(saveNotification);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Notification createNotification(User receiver, NotificationType notificationType, String content, String url) {
