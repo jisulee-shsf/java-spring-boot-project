@@ -1,17 +1,15 @@
 package com.giftforyoube.global.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.user.dto.LoginRequestDto;
-import com.giftforyoube.user.dto.MsgResponseDto;
+import com.giftforyoube.global.exception.BaseResponse;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
-import com.giftforyoube.global.security.UserDetailsServiceImpl;
+import com.giftforyoube.user.dto.LoginRequestDto;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -22,6 +20,7 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final JwtUtil jwtUtil;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
@@ -30,7 +29,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        log.info("[login]: 로그인 시도");
+        log.info("[login] 로그인 시도");
         try {
             LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
 
@@ -56,39 +55,18 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         String token = jwtUtil.createToken(email);
         String valueToken = jwtUtil.addJwtToCookie(token, response);
 
-        MsgResponseDto msgResponseDto = new MsgResponseDto(valueToken, HttpStatus.OK.value(), "로그인이 완료되었습니다."); // HttpStatus 200
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json");
-        response.getWriter().write(new ObjectMapper().writeValueAsString(msgResponseDto));
+        BaseResponse baseResponse = new BaseResponse(BaseResponseStatus.LOGIN_SUCCESS, "로그인이 완료되었습니다.", valueToken); // 2000
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(baseResponse));
+        response.setStatus(HttpServletResponse.SC_OK); // 200
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        if (failed instanceof UserDetailsServiceImpl.CustomAuthenticationException) {
-            UserDetailsServiceImpl.CustomAuthenticationException customException = (UserDetailsServiceImpl.CustomAuthenticationException) failed;
-            MsgResponseDto msgResponseDto = customException.getMsgResponseDto();
-            respondWithJson(response, msgResponseDto);
-        } else if (failed instanceof BadCredentialsException) {
-            handleBadCredentials(response);
-        } else {
-            handleOtherFailures(response, failed);
-        }
-    }
-
-    private void handleBadCredentials(HttpServletResponse response) throws IOException {
-        MsgResponseDto msgResponseDto = new MsgResponseDto(HttpStatus.UNAUTHORIZED.value(), "비밀번호가 틀립니다. 다시 입력해 주세요.");
-        respondWithJson(response, msgResponseDto);
-    }
-
-    private void handleOtherFailures(HttpServletResponse response, AuthenticationException failed) throws IOException {
-        String errorMessage = failed.getMessage();
-        MsgResponseDto msgResponseDto = new MsgResponseDto(HttpStatus.UNAUTHORIZED.value(), errorMessage);
-        respondWithJson(response, msgResponseDto);
-    }
-
-    private void respondWithJson(HttpServletResponse response, MsgResponseDto msgResponseDto) throws IOException {
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json");
-        response.getWriter().write(new ObjectMapper().writeValueAsString(msgResponseDto));
+        log.info("[login] 로그인 실패");
+        BaseResponse baseResponse = new BaseResponse<>(BaseResponseStatus.LOGIN_FAILURE); // 4000
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(baseResponse));
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 }
