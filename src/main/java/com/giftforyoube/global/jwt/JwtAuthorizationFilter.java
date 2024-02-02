@@ -1,7 +1,8 @@
 package com.giftforyoube.global.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.user.dto.MsgResponseDto;
+import com.giftforyoube.global.exception.BaseResponse;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -9,7 +10,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -32,17 +32,22 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-        String tokenValue = jwtUtil.getTokenFromRequest(req);
-        log.info("[getTokenFromRequest] tokenValue: " + tokenValue);
-        if (StringUtils.hasText(tokenValue)) {
+        String token = jwtUtil.getTokenFromRequest(req);
+        log.info("[getTokenFromRequest] token: " + token);
+
+        if (StringUtils.hasText(token)) {
+            String tokenValue = jwtUtil.substringToken(token);
+            log.info("[substringToken] tokenValue: " + tokenValue);
+
             if (!jwtUtil.validateToken(tokenValue)) {
-                MsgResponseDto msgResponseDto = new MsgResponseDto(HttpStatus.UNAUTHORIZED.value(), "유효하지 않은 JWT입니다");
-                res.setCharacterEncoding("UTF-8");
-                res.setContentType("application/json");
-                String jsonResponse = new ObjectMapper().writeValueAsString(msgResponseDto);
-                res.getWriter().write(jsonResponse);
+                BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.AUTHENTICATION_FAILED); // 4000
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                res.setContentType("application/json;charset=UTF-8");
+                res.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
                 return;
             }
+            log.info("[validateToken] tokenValue: " + tokenValue);
+
             Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
 
             try {
