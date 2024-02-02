@@ -5,12 +5,13 @@ import com.giftforyoube.funding.entity.FundingStatus;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Getter
-public class FundingResponseDto {
+public class FundingResponseDto implements Serializable {
 
     private Long id;
     private String itemLink;

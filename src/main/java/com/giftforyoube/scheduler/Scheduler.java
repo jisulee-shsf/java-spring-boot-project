@@ -5,6 +5,7 @@ import com.giftforyoube.funding.entity.FundingStatus;
 import com.giftforyoube.funding.repository.FundingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,10 +19,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Scheduler {
 
-   private final FundingRepository fundingRepository;
+    private final FundingRepository fundingRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final CacheManager cacheManager;
 
-    // 초, 분, 시, 일, 월, 주 순서
     @Transactional
     @Scheduled(cron = "0 0 0 * * ?") // 매일 자정에 요일 고려하지 않고 실행
     public void autoFinishFundings() {
@@ -30,11 +31,11 @@ public class Scheduler {
         List<Funding> fundings = fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.ACTIVE);
         for (Funding funding : fundings) {
             funding.setStatus(FundingStatus.FINISHED);
+            fundingRepository.save(funding); // 상태 변경을 저장해야 함
 
             Long fundingId = funding.getId();
-            redisTemplate.delete("funding:" + fundingId + ":info");
+            cacheManager.getCache("activeFundings").evict(fundingId);
+            cacheManager.getCache("finishedFundings").put(fundingId, true);
         }
-        redisTemplate.delete("activeFundings");
-        redisTemplate.delete("finishedFundings");
     }
 }

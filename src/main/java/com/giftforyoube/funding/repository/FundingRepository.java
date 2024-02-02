@@ -1,6 +1,5 @@
 package com.giftforyoube.funding.repository;
 
-import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
