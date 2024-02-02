@@ -48,6 +48,7 @@ public enum BaseResponseStatus {
     NOTIFICATION_NOT_READ(false, 4000, "알림을 읽지 못했습니다."),
     NOTIFICATION_NOT_DELETED(false, 4000, "알림을 삭제할 수 없습니다."),
     UNAUTHORIZED_READ_NOTIFICATION(false, 4000, "알림 조회 권한이 없습니다."),
+    UNAUTHORIZED_DELETE_NOTIFICATION(false, 4000, "알림 삭제 권한이 없습니다."),
 
     /**
      * 3. 서버 에러가 발생한 경우(5000)
@@ -59,6 +60,7 @@ public enum BaseResponseStatus {
     AUTHENTICATION_FAILED(false, 5000, "인증 관련 에러가 발생했습니다."),
     FAIL_TO_ENCODING(false, 5000, "요청 인코딩에 실패했습니다."),
     FAIL_TO_JSON(false, 5000, "JSON 파싱 에러가 발생했습니다.");
+
 
     private final boolean isSuccess;
     private final int code;

@@ -149,4 +149,24 @@ public class NotificationService {
         Notification saveNotification = notificationRepository.save(notification);
         return new NotificationResponseDto(saveNotification);
     }
+
+    // 해당 유저 읽은 알림 메세지 전체 삭제
+    @Transactional
+    public void deleteNotificationIsReadTrue(User user) {
+        List<Notification> notificationList = notificationRepository.findAllByReceiver(user);
+        notificationRepository.deleteAll(notificationList);
+    }
+
+    // 해당 유저 원하는 알림 메세지 삭제
+    @Transactional
+    public void deleteNotification(User user, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId).orElseThrow(
+                () -> new BaseException(BaseResponseStatus.NOTIFICATION_NOT_FOUND));
+
+        if (!notification.getReceiver().getId().equals(user.getId())) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_NOTIFICATION);
+        }
+
+        notificationRepository.delete(notification);
+    }
 }

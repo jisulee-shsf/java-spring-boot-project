@@ -37,10 +37,22 @@ public class NotificationController {
 
     // 해당 알림 조회 시 읽음 처리 API
     @PutMapping("/{notificationId}")
-    public NotificationResponseDto readNotification(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<NotificationResponseDto> readNotification(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                  @PathVariable Long notificationId) {
-        return notificationService.readNotification(userDetails.getUser(), notificationId);
+        return new ResponseEntity<>(notificationService.readNotification(userDetails.getUser(), notificationId), HttpStatus.OK);
     }
 
+    // 해당 유저 읽은 알림 메세지 전체 삭제
+    @DeleteMapping
+    public ResponseEntity<?> deleteNotificationIsReadTrue(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        notificationService.deleteNotificationIsReadTrue(userDetails.getUser());
+        return ResponseEntity.ok().body("읽은 모든 알림 메세지를 성공적으로 삭제하였습니다.");
+    }
 
+    // 해당 유저 원하는 알림 메세지 삭제
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<?> deleteNotification(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long notificationId) {
+        notificationService.deleteNotification(userDetails.getUser(), notificationId);
+        return ResponseEntity.ok().body("해당 알림 메세지를 성공적으로 삭제하였습니다.");
+    }
 }
