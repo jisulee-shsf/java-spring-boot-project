@@ -1,5 +1,6 @@
 package com.giftforyoube.funding.entity;
 
+import com.giftforyoube.global.Auditable;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @NoArgsConstructor
-public class Funding {
+public class Funding extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

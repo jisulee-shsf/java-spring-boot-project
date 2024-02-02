@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Getter
@@ -25,9 +26,10 @@ public class FundingResponseDto {
     private String dDay;
     private FundingStatus status;
     private int achievementRate;
+    private LocalDateTime modifiedAt;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status,LocalDateTime modifiedAt) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -41,6 +43,7 @@ public class FundingResponseDto {
         this.endDate = endDate;
         this.dDay = dDay;
         this.status = status;
+        this.modifiedAt = modifiedAt;
         this.achievementRate = calculatorAchievementRate(currentAmount,targetAmount);
     }
 
@@ -73,6 +76,7 @@ public class FundingResponseDto {
                 .endDate(funding.getEndDate())
                 .dDay(dDay)
                 .status(funding.getStatus())
+                .modifiedAt(funding.getModifiedAt())
                 .build();
     }
 }
