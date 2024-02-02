@@ -34,7 +34,7 @@ public class NotificationController {
         return new ResponseEntity<>(responseText, HttpStatus.OK);
     }
 
-    ////
+    /////
 
     // 사용자 SSE 연결 API
     @GetMapping(value = "/subscribe", produces = "text/event-stream")
