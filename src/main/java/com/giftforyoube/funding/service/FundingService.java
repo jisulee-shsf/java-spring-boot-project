@@ -1,5 +1,9 @@
 package com.giftforyoube.funding.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.entity.Funding;
@@ -25,17 +29,22 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class FundingService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
     private final FundingRepository fundingRepository;
+    private final ObjectMapper objectMapper;
 
     private static final int TIMEOUT = 10000; // 10초
 
-    public void saveToCache(FundingItem fundingItem) {
-        redisTemplate.opsForValue().set("cachedFundingItem", fundingItem);
+    // FundingItem 객체를 JSON으로 변환하여 캐시에 저장
+    public void saveToCache(FundingItem fundingItem) throws JsonProcessingException {
+        String fundingItemJson = objectMapper.writeValueAsString(fundingItem);
+        redisTemplate.opsForValue().set("cachedFundingItem", fundingItemJson,1, TimeUnit.DAYS);
     }
 
-    public FundingItem getCachedFundingProduct() {
-        return (FundingItem) redisTemplate.opsForValue().get("cachedFundingItem");
+    // 캐시에서 FundingItem 객체를 가져오기
+    public FundingItem getCachedFundingProduct() throws JsonMappingException, JsonProcessingException {
+        String fundingItemJson = redisTemplate.opsForValue().get("cachedFundingItem");
+        return fundingItemJson == null ? null : objectMapper.readValue(fundingItemJson, FundingItem.class);
     }
 
     public FundingItem previewItem(String itemLink) throws IOException {
@@ -60,7 +69,7 @@ public class FundingService {
     }
 
     @Transactional
-    public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto) {
+    public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto) throws JsonProcessingException {
         FundingItem fundingItem = getCachedFundingProduct();
         if (fundingItem == null) {
             throw new IllegalStateException("No cached funding item found.");
@@ -73,7 +82,7 @@ public class FundingService {
         return FundingResponseDto.fromEntity(funding);
     }
 
-    public FundingResponseDto findFunding(Long fundingId) {
+    public FundingResponseDto findFunding(Long fundingId) throws JsonProcessingException {
         // 캐시에서 펀딩 정보 조회 시도
         FundingResponseDto fundingResponse = getCachedFundingInfo(fundingId);
         if (fundingResponse != null) {
@@ -91,39 +100,66 @@ public class FundingService {
     }
 
     // 해당 유저의 펀딩 정보 캐시에서 가져오기
+    // 캐시에서 FundingResponseDto 객체 정보 가져오기
     private FundingResponseDto getCachedFundingInfo(Long fundingId) {
-        return (FundingResponseDto) redisTemplate.opsForValue().get("funding:" + fundingId + ":info");
+        try {
+            String fundingInfoJson = redisTemplate.opsForValue().get("funding:" + fundingId + ":info");
+            return fundingInfoJson == null ? null : objectMapper.readValue(fundingInfoJson, FundingResponseDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error during deserialization", e);
+        }
     }
 
     // 캐시에 해당 유저의 펀딩 정보 저장
-    private void cacheFundingInfo(Long fundingId, FundingResponseDto fundingInfo) {
-        redisTemplate.opsForValue().set("funding:" + fundingId + ":info", fundingInfo, 1, TimeUnit.DAYS);
+    // 캐시에 FundingResponseDto 객체 정보 저장
+    private void cacheFundingInfo(Long fundingId, FundingResponseDto fundingInfo) throws JsonProcessingException {
+        String fundingInfoJson = objectMapper.writeValueAsString(fundingInfo);
+        redisTemplate.opsForValue().set("funding:" + fundingId + ":info", fundingInfoJson, 1, TimeUnit.DAYS);
     }
+
 
     @Transactional(readOnly = true)
     public List<Funding> getActiveFundings() {
-        // 캐시에서 진행 중인 펀딩 목록 조회 시도
-        List<Funding> activeFundings = (List<Funding>) redisTemplate.opsForValue().get("activeFundings");
-        if (activeFundings == null) {
-            // 캐시에 없으면 데이터베이스에서 조회
+        String activeFundingsJson = redisTemplate.opsForValue().get("activeFundings");
+        List<Funding> activeFundings = null;
+        if (activeFundingsJson != null) {
+            try {
+                activeFundings = objectMapper.readValue(activeFundingsJson, new TypeReference<List<Funding>>() {});
+            } catch (JsonProcessingException e) {
+                e.printStackTrace(); // 예외 처리는 더 적절하게 관리
+            }
+        } else {
             LocalDate currentDate = LocalDate.now();
             activeFundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
-            // 조회 결과를 캐시에 저장
-            redisTemplate.opsForValue().set("activeFundings", activeFundings, 1, TimeUnit.HOURS);
+            try {
+                activeFundingsJson = objectMapper.writeValueAsString(activeFundings);
+                redisTemplate.opsForValue().set("activeFundings", activeFundingsJson, 1, TimeUnit.HOURS);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace(); // 예외 처리는 더 적절하게 관리
+            }
         }
         return activeFundings;
     }
 
     @Transactional(readOnly = true)
     public List<Funding> getFinishedFunding() {
-        // 캐시에서 종료된 펀딩 목록 조회 시도
-        List<Funding> finishedFundings = (List<Funding>) redisTemplate.opsForValue().get("finishedFundings");
-        if (finishedFundings == null) {
-            // 캐시에 없으면 데이터베이스에서 조회
+        String finishedFundingsJson = redisTemplate.opsForValue().get("finishedFundings");
+        List<Funding> finishedFundings = null;
+        if (finishedFundingsJson != null) {
+            try {
+                finishedFundings = objectMapper.readValue(finishedFundingsJson, new TypeReference<List<Funding>>() {});
+            } catch (JsonProcessingException e) {
+                e.printStackTrace(); // 예외 처리는 더 적절하게 관리
+            }
+        } else {
             LocalDate currentDate = LocalDate.now();
             finishedFundings = fundingRepository.findByEndDateLessThanAndStatus(currentDate, FundingStatus.FINISHED);
-            // 조회 결과를 캐시에 저장
-            redisTemplate.opsForValue().set("finishedFundings", finishedFundings, 1, TimeUnit.HOURS);
+            try {
+                finishedFundingsJson = objectMapper.writeValueAsString(finishedFundings);
+                redisTemplate.opsForValue().set("finishedFundings", finishedFundingsJson, 1, TimeUnit.HOURS);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace(); // 예외 처리는 더 적절하게 관리
+            }
         }
         return finishedFundings;
     }

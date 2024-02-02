@@ -1,5 +1,6 @@
 package com.giftforyoube.funding.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.giftforyoube.funding.dto.AddLinkRequestDto;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
@@ -70,7 +71,7 @@ public class FundingController {
 
     // D-Day를 포함한 펀딩 상세 페이지
     @GetMapping("/{fundingId}")
-    public FundingResponseDto findFunding(@PathVariable Long fundingId){
+    public FundingResponseDto findFunding(@PathVariable Long fundingId) throws JsonProcessingException {
         return fundingService.findFunding(fundingId);
     }
 
@@ -83,5 +84,4 @@ public class FundingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error finishing funding: " + e.getMessage());
         }
     }
-
 }
