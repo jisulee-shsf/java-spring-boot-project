@@ -172,6 +172,7 @@ public class FundingService {
         fundingRepository.save(funding);
 
         // 관련 캐시 무효화
+        redisTemplate.delete("funding:" + fundingId + ":info");
         redisTemplate.delete("activeFundings");
         redisTemplate.delete("finishedFundings");
     }
