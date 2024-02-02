@@ -20,12 +20,15 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.UUID;
 
 @Slf4j
 @Service
 public class KakaoService {
+
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
@@ -46,15 +49,17 @@ public class KakaoService {
     @Value("${kakao.redirect.uri}")
     private String redirectUrl;
 
-    public String kakaoLogin(String code) throws JsonProcessingException {
+    // 카카오 로그인
+    public String kakaoLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
         String kakaoAccessToken = getKakaoAccessToken(code);
         KakaoUserInfoDto kakaoUserInfoDto = getKakaoUserInfo(kakaoAccessToken);
         User kakaoUser = registerKakaoUserIfNeeded(kakaoUserInfoDto);
         String kakaoToken = jwtUtil.createToken(kakaoUser.getEmail());
+        kakaoToken = URLEncoder.encode(kakaoToken, "UTF-8").replaceAll("\\+", "%20");
         return kakaoToken;
     }
 
-    // access token 요청
+    // 1. access token 요청
     private String getKakaoAccessToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kauth.kakao.com")
@@ -89,7 +94,7 @@ public class KakaoService {
         return kakaoAccessToken;
     }
 
-    // Kakao 사용자 정보 요청
+    // 2. Kakao 사용자 정보 요청
     private KakaoUserInfoDto getKakaoUserInfo(String kakaoAccessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kapi.kakao.com")
@@ -120,7 +125,7 @@ public class KakaoService {
 
     }
 
-    // 조건에 따라 로그인 진행
+    // 3. 조건에 따라 Kakao 로그인 진행
     private User registerKakaoUserIfNeeded(KakaoUserInfoDto kakaoUserInfoDto) {
         Long kakaoId = kakaoUserInfoDto.getId();
         log.info("[Kakao | registerKakaoUserIfNeeded] kakaoId: " + kakaoId);

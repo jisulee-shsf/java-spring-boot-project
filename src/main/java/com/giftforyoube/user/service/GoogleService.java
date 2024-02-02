@@ -20,12 +20,15 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.UUID;
 
 @Slf4j
 @Service
 public class GoogleService {
+
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
@@ -48,16 +51,17 @@ public class GoogleService {
     @Value("${google.redirect.uri}")
     private String redirectUrl;
 
-    public String googleLogin(String code) throws JsonProcessingException {
+    // Google 로그인
+    public String googleLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
         String googleAccessToken = getGoogleAccessToken(code);
         GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
         User googleUser = registerGoogleUserIfNeeded(googleUserInfoDto);
         String googleToken = jwtUtil.createToken(googleUser.getEmail());
-        log.info("[Google | googleToken] " + googleToken);
+        googleToken = URLEncoder.encode(googleToken, "UTF-8").replaceAll("\\+", "%20");
         return googleToken;
     }
 
-    // access token 요청
+    // 1. access token 요청
     private String getGoogleAccessToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://oauth2.googleapis.com/token")
@@ -92,7 +96,7 @@ public class GoogleService {
         return googleAccessToken;
     }
 
-    // Google 사용자 정보 요청
+    // 2. Google 사용자 정보 요청
     private GoogleUserInfoDto getGoogleUserInfo(String googleAccessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://www.googleapis.com/oauth2/v2/userinfo")
@@ -108,13 +112,11 @@ public class GoogleService {
         return googleUserInfoDto;
     }
 
-    // 조건에 따라 로그인 진행
+    // 3. 조건에 따라 Google 로그인 진행
     private User registerGoogleUserIfNeeded(GoogleUserInfoDto googleUserInfoDto) {
-        log.info("[Google | registerGoogleUserIfNeeded.sth] " + googleUserInfoDto.getEmail());
         String googleId = googleUserInfoDto.getId();
         log.info("[Google | registerGoogleUserIfNeeded] googleId: " + googleId);
         User googleUser = userRepository.findByGoogleId(googleId).orElse(null);
-        log.info("[Google | registerGoogleUserIfNeeded] googleUser: " + googleUser);
 
         if (googleUser == null) {
             String googleEmail = googleUserInfoDto.getEmail();
