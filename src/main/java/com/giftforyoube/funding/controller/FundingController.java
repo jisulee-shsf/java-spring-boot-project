@@ -28,13 +28,12 @@ public class FundingController {
 
     // 링크 추가 및 캐시 저장 요청 처리
     @PostMapping("/addLink")
-    public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto,@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        if(userDetails == null){
+    public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
             throw new NullPointerException("링크 등록을 하려면 로그인을 해야합니다.");
         }
         try {
-            FundingItem fundingItem = fundingService.previewItem(requestDto.getItemLink());
-            fundingService.saveToCache(fundingItem, userDetails.getUser().getId().toString());
+            fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding link: " + e.getMessage());
