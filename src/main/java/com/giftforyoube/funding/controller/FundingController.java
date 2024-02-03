@@ -29,6 +29,9 @@ public class FundingController {
     // 링크 추가 및 캐시 저장 요청 처리
     @PostMapping("/addLink")
     public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto,@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if(userDetails == null){
+            throw new NullPointerException("링크 등록을 하려면 로그인을 해야합니다.");
+        }
         try {
             FundingItem fundingItem = fundingService.previewItem(requestDto.getItemLink());
             fundingService.saveToCache(fundingItem, userDetails.getUser().getId().toString());
@@ -41,10 +44,10 @@ public class FundingController {
     // 펀딩 상세 정보 입력 및 DB 저장 요청 처리
     @PostMapping("/create")
     public ResponseEntity<?> createFunding(@RequestBody FundingCreateRequestDto requestDto,@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        Long userId = userDetails.getUser().getId();
-        if (userDetails.getUser().getFunding() != null) {
-            throw new IllegalStateException("사용자는 이미 펀딩을 생성했습니다.");
+        if(userDetails == null){
+            throw new NullPointerException("펀딩 등록을 하려면 로그인을 해야합니다.");
         }
+        Long userId = userDetails.getUser().getId();
         try {
             FundingResponseDto responseDto = fundingService.saveToDatabase(requestDto,userId);
             return ResponseEntity.ok(responseDto);
@@ -80,6 +83,9 @@ public class FundingController {
 
     @PatchMapping("/{fundingId}/finish")
     public ResponseEntity<?> finishFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if(userDetails == null){
+            throw new NullPointerException("로그인을 해주십쇼");
+        }
         try {
             fundingService.finishFunding(fundingId, userDetails.getUser());
             return ResponseEntity.ok().build();

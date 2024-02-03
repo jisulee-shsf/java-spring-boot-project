@@ -80,8 +80,14 @@ public class FundingService {
     @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        // 진행 중인 펀딩이 있는지 확인
+        boolean hasActiveFunding = user.getFundings().stream()
+                .anyMatch(funding -> funding.getStatus() == FundingStatus.ACTIVE);
+        if (hasActiveFunding) {
+            throw new IllegalStateException("Already has an active funding.");
+        }
         // 캐시된 펀딩 아이템을 사용자 ID를 기반으로 가져옵니다.
         String userCacheKey = userId.toString();
         FundingItem fundingItem = getCachedFundingProduct(userCacheKey);
