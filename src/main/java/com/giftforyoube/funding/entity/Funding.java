@@ -1,6 +1,7 @@
 package com.giftforyoube.funding.entity;
 
 import com.giftforyoube.global.entity.Auditable;
+import com.giftforyoube.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,6 +36,10 @@ public class Funding extends Auditable implements Serializable {
     private LocalDate endDate;
     @Enumerated(EnumType.STRING)
     private FundingStatus status;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Builder
     public Funding(String itemLink, String itemImage, String itemName,String showName,String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,FundingStatus status) {

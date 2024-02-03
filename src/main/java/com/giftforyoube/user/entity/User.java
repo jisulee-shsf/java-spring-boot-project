@@ -1,5 +1,6 @@
 package com.giftforyoube.user.entity;
 
+import com.giftforyoube.funding.entity.Funding;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,10 @@ public class User {
 
     @Column(unique = true)
     private String phoneNumber;
+
+    // User 엔티티를 저장할 때 자동으로 연결된 Funding 엔티티도 저장되도록 cascade = CascadeType.ALL
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "user")
+    private Funding funding;
 
     @Column
     private Long kakaoId;
