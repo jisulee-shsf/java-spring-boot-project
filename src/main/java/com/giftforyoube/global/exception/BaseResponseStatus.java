@@ -41,6 +41,14 @@ public enum BaseResponseStatus {
     NOT_FOUND_TOKEN(false, 4000, "JWT 토큰을 찾을 수 없습니다."),
     EXPIRED_TOKEN(false, 4000, "JWT 토큰이 만료되었습니다."),
 
+    // 2-3. 알림
+    NOTIFICATION_NOT_FOUND(false, 4000, "알림을 찾을 수 없습니다."),
+    NOTIFICATION_NOT_READ(false, 4000, "알림을 읽지 못했습니다."),
+    NOTIFICATION_NOT_DELETED(false, 4000, "알림을 삭제할 수 없습니다."),
+    UNAUTHORIZED_READ_NOTIFICATION(false, 4000, "알림 조회 권한이 없습니다."),
+    UNAUTHORIZED_DELETE_NOTIFICATION(false, 4000, "알림 삭제 권한이 없습니다."),
+
+
     /**
      * 3. 서버 에러가 발생한 경우(5000)
      */
@@ -48,8 +56,9 @@ public enum BaseResponseStatus {
     // 0. 공통
     SERVER_ERROR(false, 5000, "서버와 연결에 실패하였습니다."),
     UNEXPECTED_ERROR(false, 5000, "예상치 못한 에러가 발생했습니다."),
+    AUTHENTICATION_FAILED(false, 5000, "인증 관련 에러가 발생했습니다."),
     FAIL_TO_ENCODING(false, 5000, "요청 인코딩에 실패했습니다."),
-    FAIL_TO_JSON_PARSING(false, 5000, "JSON 파싱 에러가 발생했습니다.");
+    FAIL_TO_JSON(false, 5000, "JSON 파싱 에러가 발생했습니다.");
 
     private final boolean isSuccess;
     private final int code;
