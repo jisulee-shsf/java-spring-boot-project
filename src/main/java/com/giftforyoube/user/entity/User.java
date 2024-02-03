@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -26,8 +29,8 @@ public class User {
     private String phoneNumber;
 
     // User 엔티티를 저장할 때 자동으로 연결된 Funding 엔티티도 저장되도록 cascade = CascadeType.ALL
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "user")
-    private Funding funding;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Funding> fundings = new ArrayList<>();
 
     @Column
     private Long kakaoId;
