@@ -72,7 +72,6 @@ public class JwtUtil {
     }
 
     public boolean validateToken(String tokenValue) {
-        log.info("[before validateToken] tokenValue: " + tokenValue);
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue);
             return true;
@@ -86,7 +85,6 @@ public class JwtUtil {
     }
 
     public Claims getUserInfoFromToken(String tokenValue) {
-        log.info("[getUserInfoFromToken] tokenValue: " + tokenValue);
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue).getBody();
     }
 

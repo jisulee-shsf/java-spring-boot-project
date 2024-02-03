@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        log.info("[login] 로그인 시도");
+        log.info("[attemptAuthentication] 로그인 시도");
         try {
             LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
 
@@ -48,10 +48,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        log.info("[login] 로그인 완료");
+        log.info("[successfulAuthentication] 로그인 완료");
         String email = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getEmail();
 
-        log.info("[login] JWT 생성");
+        log.info("[successfulAuthentication] JWT 생성");
         String token = jwtUtil.createToken(email);
         String valueToken = jwtUtil.addJwtToCookie(token, response);
 
@@ -63,7 +63,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        log.info("[login] 로그인 실패");
+        log.info("[unsuccessfulAuthentication] 로그인 실패");
         BaseResponse baseResponse = new BaseResponse<>(BaseResponseStatus.LOGIN_FAILURE); // 4000
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(baseResponse));

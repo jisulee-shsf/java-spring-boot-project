@@ -35,19 +35,16 @@ public class UserService {
 
         // 1. 유효성 검사
         if (bindingResult.hasErrors()) {
-            log.info("[registerAccount] 회원가입 실패(bindingResult)");
             throw new MethodArgumentNotValidException(null, bindingResult);
         }
 
         // 2. 중복 이메일 검사
         if (userRepository.findByEmail(signupRequestDto.getEmail()).isPresent()) {
-            log.info("[registerAccount] 회원가입 실패(EMAIL_ALREADY_EXISTS)");
             throw new BaseException(BaseResponseStatus.EMAIL_ALREADY_EXISTS);
         }
 
         // 3. 중복 휴대전화 번호 검사
         if (userRepository.findByPhoneNumber(signupRequestDto.getPhoneNumber()).isPresent()) {
-            log.info("[registerAccount] 회원가입 실패(PHONENUMBER_ALREADY_EXISTS)");
             throw new BaseException(BaseResponseStatus.PHONENUMBER_ALREADY_EXISTS);
         }
 
@@ -56,7 +53,7 @@ public class UserService {
         User user = new User(signupRequestDto.getEmail(), encryptedPassword, signupRequestDto.getNickname(), signupRequestDto.getPhoneNumber());
         userRepository.save(user);
 
-        log.info("[signup] 회원가입 완료(REGISTER_ACCOUNT_SUCCESS)");
+        log.info("[registerAccount] 회원가입 완료(REGISTER_ACCOUNT_SUCCESS)");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new BaseResponse<>(BaseResponseStatus.REGISTER_ACCOUNT_SUCCESS));
     }
@@ -72,8 +69,6 @@ public class UserService {
 
         // 2. 비밀번호 확인
         if (!passwordEncoder.matches(inputPassword, user.getPassword())) {
-            System.out.println("encodedInputPassword = " + inputPassword);
-            System.out.println("user.getPassword() = " + user.getPassword());
             throw new BaseException(BaseResponseStatus.PASSWORD_MISMATCH);
         }
 
