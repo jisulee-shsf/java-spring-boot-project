@@ -33,11 +33,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
         String token = jwtUtil.getTokenFromRequest(req);
-        log.info("[getTokenFromRequest] token: " + token);
 
         if (StringUtils.hasText(token)) {
             String tokenValue = jwtUtil.substringToken(token);
-            log.info("[substringToken] tokenValue: " + tokenValue);
 
             if (!jwtUtil.validateToken(tokenValue)) {
                 BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.AUTHENTICATION_FAILED); // 4000
@@ -46,7 +44,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 res.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
                 return;
             }
-            log.info("[validateToken] tokenValue: " + tokenValue);
 
             Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
 
