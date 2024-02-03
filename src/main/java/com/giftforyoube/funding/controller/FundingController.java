@@ -77,7 +77,12 @@ public class FundingController {
         if (userDetails != null) {
             user = userDetails.getUser();
         }
-        FundingResponseDto fundingResponseDto = fundingService.findFunding(fundingId, user);
+        // 캐시된 데이터를 사용하여 FundingResponseDto를 얻습니다.
+        FundingResponseDto fundingResponseDto = fundingService.findFunding(fundingId);
+        // 여기에서는 isOwner 값을 동적으로 설정합니다.
+        boolean isOwner = user != null && fundingResponseDto.getOwnerId().equals(user.getId());
+        fundingResponseDto.setIsOwner(isOwner);
+
         return ResponseEntity.ok(fundingResponseDto);
     }
 

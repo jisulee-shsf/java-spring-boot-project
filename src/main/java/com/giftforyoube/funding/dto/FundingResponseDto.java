@@ -28,11 +28,12 @@ public class FundingResponseDto implements Serializable {
     private String dDay;
     private FundingStatus status;
     private int achievementRate;
+    private Long ownerId;
     private boolean ownerFlag;
     private LocalDateTime modifiedAt;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status, int achievementRate,boolean ownerFlag,LocalDateTime modifiedAt) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status, int achievementRate,Long ownerId,boolean ownerFlag,LocalDateTime modifiedAt) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -47,6 +48,7 @@ public class FundingResponseDto implements Serializable {
         this.dDay = dDay;
         this.status = status;
         this.achievementRate = achievementRate;
+        this.ownerId = ownerId;
         this.ownerFlag = ownerFlag;
         this.modifiedAt = modifiedAt;
 
@@ -84,6 +86,7 @@ public class FundingResponseDto implements Serializable {
                 .dDay(dDay)
                 .status(funding.getStatus())
                 .achievementRate(achievementRate)
+                .ownerId(funding.getUser().getId())
                 .ownerFlag(false)
                 .modifiedAt(funding.getModifiedAt())
                 .build();

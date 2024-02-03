@@ -106,14 +106,10 @@ public class FundingService {
     }
 
     @Cacheable(value = "fundingDetail", key = "#fundingId")
-    public FundingResponseDto findFunding(Long fundingId, User currentUser) {
+    public FundingResponseDto findFunding(Long fundingId) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
-
-        boolean isOwner = currentUser != null && funding.getUser() != null && funding.getUser().getId().equals(currentUser.getId());
-
         FundingResponseDto responseDto = FundingResponseDto.fromEntity(funding);
-        responseDto.setIsOwner(isOwner);
         return responseDto;
     }
 
