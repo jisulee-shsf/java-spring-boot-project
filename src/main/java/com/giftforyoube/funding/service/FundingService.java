@@ -71,6 +71,7 @@ public class FundingService {
     }
 
     @Transactional
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto) throws JsonProcessingException {
         FundingItem fundingItem = getCachedFundingProduct();
         if (fundingItem == null) {
@@ -85,7 +86,7 @@ public class FundingService {
     }
 
     @Cacheable(value = "fundingDetail", key = "#fundingId")
-    public FundingResponseDto findFunding(Long fundingId) throws JsonProcessingException {
+    public FundingResponseDto findFunding(Long fundingId) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
         return FundingResponseDto.fromEntity(funding);
