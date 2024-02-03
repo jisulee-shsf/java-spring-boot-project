@@ -18,10 +18,24 @@ public class BaseResponse<T> {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private T result;
 
-    public BaseResponse(BaseResponseStatus status, String message, T result){
+    public BaseResponse(BaseResponseStatus status, String message, T result) {
         this.isSuccess = status.isSuccess();
         this.message = status.getMessage();
         this.code = status.getCode();
         this.result = result;
+    }
+
+    public BaseResponse(BaseResponseStatus status, T result){
+        this.isSuccess = status.isSuccess();
+        this.message = status.getMessage();
+        this.code = status.getCode();
+        this.result = result;
+    }
+
+    public BaseResponse(BaseResponseStatus status) {
+        this.isSuccess = status.isSuccess();
+        this.message = status.getMessage();
+        this.code = status.getCode();
+        this.result = null;
     }
 }

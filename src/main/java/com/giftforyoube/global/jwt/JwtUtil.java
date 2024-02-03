@@ -1,5 +1,7 @@
 package com.giftforyoube.global.jwt;
 
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -13,6 +15,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
@@ -47,14 +50,14 @@ public class JwtUtil {
         return token;
     }
 
-    public static String addJwtToCookie(String token, HttpServletResponse res) {
-//            token = URLEncoder.encode(token, "utf-8").replaceAll("\\+", "%20"); // BEARER_PREFIX 공백 대체
-        String valueToken = substringToken(token);
-        log.info("[addJwtToCookie] valueToken: " + valueToken);
-        Cookie cookie = new Cookie(AUTHORIZATION_HEADER, valueToken); // JWT 포함 cookie 생성
+    public static String addJwtToCookie(String token, HttpServletResponse res) throws UnsupportedEncodingException {
+        log.info("[addJwtToCookie] token: " + token);
+        String encodeToken = URLEncoder.encode(token, "utf-8").replaceAll("\\+", "%20"); // BEARER_PREFIX 공백 대체
+        log.info("[addJwtToCookie] encodeToken: " + encodeToken);
+        Cookie cookie = new Cookie(AUTHORIZATION_HEADER, encodeToken); // JWT 포함 cookie 생성
         cookie.setPath("/"); // cookie 경로 설정
         res.addCookie(cookie); // HttpServletResponse 객체 내 cookie 추가
-        return valueToken;
+        return encodeToken;
     }
 
     public static String substringToken(String token) {
@@ -74,15 +77,12 @@ public class JwtUtil {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue);
             return true;
         } catch (SecurityException | MalformedJwtException | SignatureException e) {
-            log.error("[validateToken] 유효하지 않는 JWT 서명입니다.");
+            throw new BaseException(BaseResponseStatus.INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
-            log.error("[validateToken] 만료된 JWT입니다.");
-        } catch (UnsupportedJwtException e) {
-            log.error("[validateToken] 지원되지 않는 JWT입니다.");
+            throw new BaseException(BaseResponseStatus.EXPIRED_TOKEN);
         } catch (IllegalArgumentException e) {
-            log.error("[validateToken] 잘못된 JWT 토큰입니다.");
+            throw new BaseException(BaseResponseStatus.NOT_FOUND_TOKEN);
         }
-        return false;
     }
 
     public Claims getUserInfoFromToken(String tokenValue) {
