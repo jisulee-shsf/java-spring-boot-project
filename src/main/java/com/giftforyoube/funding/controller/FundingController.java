@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.giftforyoube.funding.dto.AddLinkRequestDto;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
-import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.service.FundingService;
 import lombok.RequiredArgsConstructor;
