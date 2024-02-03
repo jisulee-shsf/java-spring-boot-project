@@ -1,6 +1,6 @@
 package com.giftforyoube.funding.entity;
 
-import com.giftforyoube.global.Auditable;
+import com.giftforyoube.global.entity.Auditable;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;

@@ -56,7 +56,6 @@ public enum BaseResponseStatus {
     // 0. 공통
     SERVER_ERROR(false, 5000, "서버와 연결에 실패하였습니다."),
     UNEXPECTED_ERROR(false, 5000, "예상치 못한 에러가 발생했습니다."),
-    AUTHENTICATION_FAILED(false, 5000, "인증 관련 에러가 발생했습니다."),
     FAIL_TO_ENCODING(false, 5000, "요청 인코딩에 실패했습니다."),
     FAIL_TO_JSON(false, 5000, "JSON 파싱 에러가 발생했습니다.");
 
