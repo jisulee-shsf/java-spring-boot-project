@@ -68,7 +68,7 @@ public class UserController {
 
         BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS, kakaoToken);
         return ResponseEntity.status(HttpStatus.FOUND) // 302
-                .location(new URL("https://www.giftipie.me/").toURI())
+                .location(new URL("https://www.giftipie.me/api").toURI())
                 .body(baseResponse); // 2000
     }
 
@@ -84,7 +84,7 @@ public class UserController {
 
         BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_SUCCESS, googleToken);
         return ResponseEntity.status(HttpStatus.FOUND) // 302
-                .location(new URL("https://www.giftipie.me/").toURI())
+                .location(new URL("https://www.giftipie.me/api").toURI())
                 .body(baseResponse); // 2000
     }
 
