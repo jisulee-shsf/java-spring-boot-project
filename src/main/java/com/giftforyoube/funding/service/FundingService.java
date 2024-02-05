@@ -124,7 +124,7 @@ public class FundingService {
         LocalDate currentDate = LocalDate.now();
         log.info("[getActiveFundings] currentDate" + currentDate);
 
-        Page<Funding> fundings = fundingRepository.findByOrderByIdAsc(currentDate, FundingStatus.ACTIVE, pageable);
+        Page<Funding> fundings = fundingRepository.findAllOrderedByModifiedAtDesc(currentDate, FundingStatus.ACTIVE, pageable);
         log.info("[getActiveFundings] fundings");
 
         return fundings.map(FundingResponseDto::fromEntity);
@@ -138,7 +138,7 @@ public class FundingService {
         LocalDate currentDate = LocalDate.now();
         log.info("[getActiveFundings] currentDate" + currentDate);
 
-        Slice<Funding> fundings = fundingRepository.findByOrderByIdDesc(currentDate, FundingStatus.ACTIVE, pageable);
+        Slice<Funding> fundings = fundingRepository.findAllSliceByOrderedByModifiedAtDesc(currentDate, FundingStatus.ACTIVE, pageable);
         log.info("[getActiveFundings] fundings");
 
         return fundings.map(FundingResponseDto::fromEntity);

@@ -6,14 +6,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface FundingRepository extends JpaRepository<Funding, Long> {
     List<Funding> findByEndDateGreaterThanEqualAndStatus(LocalDate currentDate, FundingStatus status);
-    Page<Funding> findByOrderByIdAsc(LocalDate currentDate, FundingStatus status, Pageable pageable);
-    Slice<Funding> findByOrderByIdDesc(LocalDate currentDate, FundingStatus status, Pageable pageable);
+    @Query("SELECT f FROM Funding f ORDER BY f.modifiedAt DESC")
+    Page<Funding> findAllOrderedByModifiedAtDesc(LocalDate currentDate, FundingStatus status, Pageable pageable);
+    @Query("SELECT f FROM Funding f ORDER BY f.modifiedAt DESC")
+    Slice<Funding> findAllSliceByOrderedByModifiedAtDesc(LocalDate currentDate, FundingStatus status, Pageable pageable);
 
     List<Funding> findByEndDateLessThanAndStatus(LocalDate currentDate, FundingStatus status);
     Page<Funding> findByEndDateLessThanAndStatus(LocalDate currentDate, FundingStatus status, Pageable pageable);
