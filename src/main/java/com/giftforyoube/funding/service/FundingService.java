@@ -194,8 +194,7 @@ public class FundingService {
     }
 
     // 캐시에서 FundingItem 객체를 가져오기
-    public FundingItem getCachedFundingProduct(String userCacheKey) throws JsonProcessingException {
-        String cacheKey = buildCacheKey(userCacheKey);
+    public FundingItem getCachedFundingProduct(String cacheKey) throws JsonProcessingException {
         String fundingItemJson = redisTemplate.opsForValue().get(cacheKey);
         return fundingItemJson == null ? null : objectMapper.readValue(fundingItemJson, FundingItem.class);
     }

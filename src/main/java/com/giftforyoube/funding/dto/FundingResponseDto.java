@@ -54,7 +54,7 @@ public class FundingResponseDto implements Serializable {
 
         // D-Day 계산
         long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
-        this.dDay = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "D+" + Math.abs(daysRemaining)) : "D-Day";
+        this.dDay = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "종료") : "D-Day";
 
         // 목표금액 달성율 계산
         if (targetAmount == 0) {
