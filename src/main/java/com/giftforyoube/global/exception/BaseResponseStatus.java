@@ -19,6 +19,9 @@ public enum BaseResponseStatus {
     GOOGLE_LOGIN_SUCCESS(true, 2000, "구글 로그인이 완료되었습니다."),
     DELETE_ACCOUNT_SUCCESS(true, 2000, "회원탈퇴가 완료되었습니다."),
 
+    // 1-2 펀딩 관련
+    FUNDING_ITEM_LINK_SUCCESS(true, 2000, "펀딩 아이템이 저장되었습니다."),
+
     /**
      * 2. 클라이언트 에러가 발생한 경우(4000)
      */
@@ -47,6 +50,16 @@ public enum BaseResponseStatus {
     NOTIFICATION_NOT_DELETED(false, 4000, "알림을 삭제할 수 없습니다."),
     UNAUTHORIZED_READ_NOTIFICATION(false, 4000, "알림 조회 권한이 없습니다."),
     UNAUTHORIZED_DELETE_NOTIFICATION(false, 4000, "알림 삭제 권한이 없습니다."),
+
+    // 2-4. 펀딩
+    UNAUTHORIZED_TO_ADD_LINK(false, 4000, "링크 추가 권한이 없습니다."),
+    FUNDING_ITEM_ALREADY_EXISTS(false, 4000, "이미 등록된 펀딩 아이템입니다."),
+    FUNDING_ITEM_PREVIEW_FAILED(false, 4000, "펀딩 아이템 미리보기에 실패했습니다."),
+    FUNDING_ITEM_SAVE_FAILED(false, 5000, "펀딩 아이템 저장에 실패했습니다."),
+    FUNDING_NOT_FOUND(false, 4000, "펀딩을 찾을 수 없습니다."),
+    FUNDING_NOT_DELETED(false, 4000, "펀딩을 삭제할 수 없습니다."),
+    UNAUTHORIZED_UPDATE_FUNDING(false, 4000, "펀딩 수정 권한이 없습니다."),
+    UNAUTHORIZED_DELETE_FUNDING(false, 4000, "펀딩 삭제 권한이 없습니다."),
 
 
     /**
