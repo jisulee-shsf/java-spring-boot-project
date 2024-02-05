@@ -49,6 +49,8 @@ public class FundingService {
 
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
     public void addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
+        log.info("[addLinkAndSaveToCache] 상품링크 캐쉬에 저장하기");
+
         String lockKey = "userLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
         try {
@@ -73,6 +75,8 @@ public class FundingService {
     @Transactional
     @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
+        log.info("[saveToDatabase] DB에 저장하기");
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -101,6 +105,8 @@ public class FundingService {
 
     @Cacheable(value = "fundingDetail", key = "#fundingId")
     public FundingResponseDto findFunding(Long fundingId) {
+        log.info("[findFunding] 펀딩 상세페이지 조회");
+
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
         FundingResponseDto responseDto = FundingResponseDto.fromEntity(funding);
@@ -168,6 +174,8 @@ public class FundingService {
     @Transactional
     @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public void finishFunding(Long fundingId, User currentUser) {
+        log.info("[finishFunding] 펀딩 종료하기");
+
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다."));
 
@@ -182,6 +190,8 @@ public class FundingService {
 
     // FundingItem 객체를 JSON으로 변환하여 캐시에 저장
     public void saveToCache(FundingItem fundingItem, String userCacheKey) throws JsonProcessingException {
+        log.info("[saveToCache] 캐쉬에 저장하기");
+
         String cacheKey = "cachedFundingItem:" + userCacheKey;
         String fundingItemJson = objectMapper.writeValueAsString(fundingItem);
         redisTemplate.opsForValue().set(cacheKey, fundingItemJson, 1, TimeUnit.DAYS);
@@ -189,12 +199,16 @@ public class FundingService {
 
     // 캐시에서 FundingItem 객체를 가져오기
     public FundingItem getCachedFundingProduct(String userCacheKey) throws JsonProcessingException {
+        log.info("[getCachedFundingProduct] 캐시에서 FundingItem 객체를 가져오기");
+
         String cacheKey = "cachedFundingItem:" + userCacheKey;
         String fundingItemJson = redisTemplate.opsForValue().get(cacheKey);
         return fundingItemJson == null ? null : objectMapper.readValue(fundingItemJson, FundingItem.class);
     }
 
     public FundingItem previewItem(String itemLink) throws IOException {
+        log.info("[previewItem] 상품 미리보기");
+
         Document document = Jsoup.connect(itemLink).timeout(TIMEOUT).get();
         String itemImage = getMetaTagContent(document, "og:image");
         if (itemImage == null) {
@@ -207,11 +221,15 @@ public class FundingService {
     }
 
     public void clearCache(String userCacheKey) {
+        log.info("[clearCache] 캐쉬 삭제하기");
+
         String cacheKey = "cachedFundingItem:" + userCacheKey;
         redisTemplate.delete(cacheKey);
     }
 
     private static String getMetaTagContent(Document document, String property) {
+        log.info("[getMetaTagContent] 메타 태크에서 상품이미지 가져오기");
+
         Element metaTag = document.select("meta[property=" + property + "]").first();
         return (metaTag != null) ? metaTag.attr("content") : null;
     }

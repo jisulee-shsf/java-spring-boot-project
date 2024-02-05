@@ -35,6 +35,8 @@ public class FundingController {
     // 링크 추가 및 캐시 저장 요청 처리
     @PostMapping("/addLink")
     public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        log.info("[addLinkAndSaveToCache] 상품링크: " + requestDto);
+
         if (userDetails == null) {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_TO_ADD_LINK);
         }
@@ -49,6 +51,8 @@ public class FundingController {
     // 펀딩 상세 정보 입력 및 DB 저장 요청 처리
     @PostMapping("/create")
     public ResponseEntity<?> createFunding(@RequestBody FundingCreateRequestDto requestDto,@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        log.info("[createFunding] 펀딩등록: " + requestDto);
+
         if(userDetails == null){
             throw new NullPointerException("펀딩 등록을 하려면 로그인을 해야합니다.");
         }
@@ -73,6 +77,8 @@ public class FundingController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "4") int size
     ){
+        log.info("[getActiveFunding] 메인페이지 진행중인 펀딩 조회");
+
         Pageable pageable = PageRequest.of(page, size);
         Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFunding(pageable);
         return ResponseEntity.ok(activeFundingsPage);
@@ -83,6 +89,8 @@ public class FundingController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
+        log.info("[getActiveFundings] 진행중인 펀딩 리스트 조회 무한스크롤");
+
         Pageable pageable = PageRequest.of(page, size);
         Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(pageable);
         return ResponseEntity.ok(activeFundingsPage);
@@ -101,6 +109,8 @@ public class FundingController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
+        log.info("[getFinishedFundings] 완료된 펀딩 리스트 조회 무한스크롤");
+
         Pageable pageable = PageRequest.of(page, size);
         Slice<FundingResponseDto> finishedFundingsPage = fundingService.getFinishedFundings(pageable);
         return ResponseEntity.ok(finishedFundingsPage);
@@ -109,12 +119,16 @@ public class FundingController {
     // D-Day를 포함한 펀딩 상세 페이지
     @GetMapping("/{fundingId}")
     public ResponseEntity<FundingResponseDto> findFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        log.info("[findFunding] 펀딩 상세 페이지" + fundingId);
+
         User user = null;
         if (userDetails != null) {
             user = userDetails.getUser();
         }
         // 캐시된 데이터를 사용하여 FundingResponseDto를 얻습니다.
         FundingResponseDto fundingResponseDto = fundingService.findFunding(fundingId);
+        log.info("[findFunding] 펀딩 상세 페이지" + fundingResponseDto);
+
         // 여기에서는 isOwner 값을 동적으로 설정합니다.
         boolean isOwner = user != null && fundingResponseDto.getOwnerId().equals(user.getId());
         fundingResponseDto.setIsOwner(isOwner);
@@ -124,6 +138,8 @@ public class FundingController {
 
     @PatchMapping("/{fundingId}/finish")
     public ResponseEntity<?> finishFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        log.info("[finishFunding] 펀딩 종료하기" + fundingId);
+
         if(userDetails == null){
             throw new NullPointerException("로그인을 해주십쇼");
         }
