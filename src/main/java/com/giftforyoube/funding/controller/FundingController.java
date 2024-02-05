@@ -85,6 +85,7 @@ public class FundingController {
         return ResponseEntity.ok(fundingResponseDto);
     }
 
+    // 펀딩 종료버튼 딸~깍
     @PatchMapping("/{fundingId}/finish")
     public ResponseEntity<?> finishFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         if(userDetails == null){
@@ -97,4 +98,11 @@ public class FundingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error finishing funding: " + e.getMessage());
         }
     }
+
+    // 펀딩 수정
+//    @PatchMapping("/{fundingId}/update")
+
+    // 펀딩 삭제
+
+
 }
