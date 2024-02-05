@@ -68,7 +68,7 @@ public class FundingResponseDto implements Serializable {
     public static FundingResponseDto fromEntity(Funding funding) {
         // D-Day와 목표금액 달성율 계산
         long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), funding.getEndDate());
-        String dDay = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "D+" + Math.abs(daysRemaining)) : "D-Day";
+        String dDay = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "종료") : "D-Day";
         int achievementRate = (funding.getTargetAmount() == 0) ? 0 : (int) Math.round((double) funding.getCurrentAmount() / funding.getTargetAmount() * 100);
 
         return FundingResponseDto.builder()
