@@ -11,14 +11,12 @@ import com.giftforyoube.funding.entity.FundingStatus;
 import com.giftforyoube.funding.repository.FundingRepository;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
-import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -147,6 +145,43 @@ public class FundingService {
         fundingRepository.save(funding);
     }
 
+    // 펀딩 수정
+    @Transactional
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
+    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
+        // 펀딩 id 유효성검사
+        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
+        );
+
+        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
+        if (!funding.getUser().getId().equals(user.getId())) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_UPDATE_FUNDING);
+        }
+
+        // 펀딩 내용수정
+        funding.update(requestDto);
+
+        return FundingResponseDto.fromEntity(funding);
+    }
+
+    // 펀딩 삭제
+    @Transactional
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
+    public void deleteFunding(Long fundingId, User user) {
+        // 펀딩 id 유효성 검사
+        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
+        );
+
+        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
+        if (!funding.getUser().getId().equals(user.getId())) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_FUNDING);
+        }
+
+        fundingRepository.delete(funding);
+    }
+
     private String buildCacheKey(String userId) {
         return FUNDING_ITEM_CACHE_PREFIX + userId;
     }
@@ -185,42 +220,5 @@ public class FundingService {
             return metaTags.first().attr("content");
         }
         return null;
-    }
-
-    // 펀딩 수정
-    @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
-    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
-        // 펀딩 id 유효성검사
-        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
-                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
-        );
-
-        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
-        if (!funding.getUser().getId().equals(user.getId())) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_UPDATE_FUNDING);
-        }
-
-        // 펀딩 내용수정
-        funding.update(requestDto);
-
-        return FundingResponseDto.fromEntity(funding);
-    }
-
-    // 펀딩 삭제
-    @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
-    public void deleteFunding(Long fundingId, User user) {
-        // 펀딩 id 유효성 검사
-        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
-                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
-        );
-
-        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
-        if (!funding.getUser().getId().equals(user.getId())) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_FUNDING);
-        }
-
-        fundingRepository.delete(funding);
     }
 }
