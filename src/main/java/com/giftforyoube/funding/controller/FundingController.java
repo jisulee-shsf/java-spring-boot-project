@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -67,22 +68,42 @@ public class FundingController {
 //        return ResponseEntity.ok(activeFundings);
 //    }
 
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩
+    @GetMapping("")
+    public ResponseEntity<Page<FundingResponseDto>> getActiveFunding(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size
+    ){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFunding(pageable);
+        return ResponseEntity.ok(activeFundingsPage);
+    }
+    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩 [페이지네이션]
     @GetMapping("/active")
-    public ResponseEntity<Page<FundingResponseDto>> getActiveFundings(
+    public ResponseEntity<Slice<FundingResponseDto>> getActiveFundings(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
         Pageable pageable = PageRequest.of(page, size);
-        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(pageable);
+        Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(pageable);
         return ResponseEntity.ok(activeFundingsPage);
     }
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩
+//    @GetMapping("/finished")
+//    public ResponseEntity<List<FundingResponseDto>> getFinishedFundings(){
+//        List<FundingResponseDto> finishedFundings = fundingService.getFinishedFunding();
+//        return ResponseEntity.ok(finishedFundings);
+//    }
+
+    // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩 [페이지네이션 적용]
     @GetMapping("/finished")
-    public ResponseEntity<List<FundingResponseDto>> getFinishedFundings(){
-        List<FundingResponseDto> finishedFundings = fundingService.getFinishedFunding();
-        return ResponseEntity.ok(finishedFundings);
+    public ResponseEntity<Slice<FundingResponseDto>> getFinishedFundings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Pageable pageable = PageRequest.of(page, size);
+        Slice<FundingResponseDto> finishedFundingsPage = fundingService.getFinishedFundings(pageable);
+        return ResponseEntity.ok(finishedFundingsPage);
     }
 
     // D-Day를 포함한 펀딩 상세 페이지

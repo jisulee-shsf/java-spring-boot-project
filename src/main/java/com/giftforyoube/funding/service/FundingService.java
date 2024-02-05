@@ -23,6 +23,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -30,9 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -92,7 +91,7 @@ public class FundingService {
 
         LocalDate currentDate = LocalDate.now();
         FundingStatus status = requestDto.getEndDate().isBefore(currentDate) ? FundingStatus.FINISHED : FundingStatus.ACTIVE;
-        Funding funding = requestDto.toEntity(fundingItem,status);
+        Funding funding = requestDto.toEntity(fundingItem, status);
         funding.setUser(user);
 
         fundingRepository.save(funding);
@@ -108,7 +107,7 @@ public class FundingService {
         return responseDto;
     }
 
-//    @Cacheable(value = "activeFundings")
+    //    @Cacheable(value = "activeFundings")
 //    @Transactional(readOnly = true)
 //    public List<FundingResponseDto> getActiveFundings() {
 //        LocalDate currentDate = LocalDate.now();
@@ -117,29 +116,53 @@ public class FundingService {
 //                .map(FundingResponseDto::fromEntity)
 //                .collect(Collectors.toList());
 //    }
-
-    // 진행중인 펀딩 조회 [페이지네이션 적용]
     @Cacheable(value = "activeFundings")
     @Transactional(readOnly = true)
-    public Page<FundingResponseDto> getActiveFundings(Pageable pageable) {
-        log.info("[getActiveFundings] 진행중인 펀딩 조회");
+    public Page<FundingResponseDto> getActiveFunding(Pageable pageable) {
+        log.info("[getActiveFundings] 메인페이지 진행중인 펀딩 조회");
 
         LocalDate currentDate = LocalDate.now();
         log.info("[getActiveFundings] currentDate" + currentDate);
 
-        Page<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE, pageable);
-        log.info("[getActiveFundings] fundings" + fundings.getTotalElements());
+        Page<Funding> fundings = fundingRepository.findByOrderByIdAsc(currentDate, FundingStatus.ACTIVE, pageable);
+        log.info("[getActiveFundings] fundings");
 
         return fundings.map(FundingResponseDto::fromEntity);
     }
 
+    @Cacheable(value = "activeFundings")
+    @Transactional(readOnly = true)
+    public Slice<FundingResponseDto> getActiveFundings(Pageable pageable) {
+        log.info("[getActiveFundings] 진행중인 펀딩 조회 리스트 무한스크롤");
+
+        LocalDate currentDate = LocalDate.now();
+        log.info("[getActiveFundings] currentDate" + currentDate);
+
+        Slice<Funding> fundings = fundingRepository.findByOrderByIdDesc(currentDate, FundingStatus.ACTIVE, pageable);
+        log.info("[getActiveFundings] fundings");
+
+        return fundings.map(FundingResponseDto::fromEntity);
+    }
+
+//    @Cacheable(value = "finishedFundings")
+//    @Transactional(readOnly = true)
+//    public List<FundingResponseDto> getFinishedFunding() {
+//        List<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED);
+//        return fundings.stream()
+//                .map(FundingResponseDto::fromEntity)
+//                .collect(Collectors.toList());
+//    }
+
+    // 완료된 펀딩 페이지네이션 적용
     @Cacheable(value = "finishedFundings")
     @Transactional(readOnly = true)
-    public List<FundingResponseDto> getFinishedFunding() {
-        List<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED);
-        return fundings.stream()
-                .map(FundingResponseDto::fromEntity)
-                .collect(Collectors.toList());
+    public Slice<FundingResponseDto> getFinishedFundings(Pageable pageable) {
+        log.info("[getFinishedFunding] 완료된 펀딩 조회");
+
+        Slice<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED, pageable);
+        log.info("[getFinishedFunding] fundings");
+
+        return fundings.map(FundingResponseDto::fromEntity);
     }
 
     @Transactional
@@ -158,10 +181,10 @@ public class FundingService {
     }
 
     // FundingItem 객체를 JSON으로 변환하여 캐시에 저장
-    public void saveToCache(FundingItem fundingItem,String userCacheKey) throws JsonProcessingException {
+    public void saveToCache(FundingItem fundingItem, String userCacheKey) throws JsonProcessingException {
         String cacheKey = "cachedFundingItem:" + userCacheKey;
         String fundingItemJson = objectMapper.writeValueAsString(fundingItem);
-        redisTemplate.opsForValue().set(cacheKey, fundingItemJson,1, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(cacheKey, fundingItemJson, 1, TimeUnit.DAYS);
     }
 
     // 캐시에서 FundingItem 객체를 가져오기
