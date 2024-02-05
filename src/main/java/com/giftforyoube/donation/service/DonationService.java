@@ -2,6 +2,7 @@ package com.giftforyoube.donation.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.giftforyoube.donation.dto.ApproveDonationResponseDto;
 import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
 import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
 import lombok.extern.slf4j.Slf4j;
@@ -90,5 +91,61 @@ public class DonationService {
         log.info("[readyDonationResponseDetails] Status Code: " + responseEntity.getStatusCode());
         log.info("[readyDonationResponseDetails] Headers: " + objectMapper.writeValueAsString(responseEntity.getHeaders()));
         log.info("[readyDonationResponseDetails] Body: " + objectMapper.writeValueAsString(responseEntity.getBody()));
+    }
+
+    public ApproveDonationResponseDto approveDonation(String pgToken, String tid) throws JsonProcessingException {
+        URI uri = UriComponentsBuilder
+                .fromUriString("https://open-api.kakaopay.com")
+                .path("/online/v1/payment/approve")
+                .encode()
+                .build()
+                .toUri();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "SECRET_KEY " + kakaopaySecretKey);
+        headers.add("Content-Type", "application/json");
+
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("cid", kakaopayCid);
+        body.put("tid", tid);
+        body.put("partner_order_id", "partner_order_id");
+        body.put("partner_user_id", "partner_user_id");
+        body.put("pg_token", pgToken);
+        approveDonationRequestDetails(uri, headers, body);
+
+        RequestEntity<Map<String, String>> requestEntity = RequestEntity
+                .post(uri)
+                .headers(headers)
+                .body(body);
+
+        ResponseEntity<ApproveDonationResponseDto> responseEntity = restTemplate.exchange(
+                requestEntity,
+                ApproveDonationResponseDto.class);
+        approveDonationResponseDetails(responseEntity);
+
+        ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
+        checkValues(approveDonationResponseDto);
+        return approveDonationResponseDto;
+    }
+
+    private void approveDonationRequestDetails(URI uri, HttpHeaders headers, Map<String, String> body) throws JsonProcessingException {
+        log.info("[approveDonationRequestDetails] URL: " + uri);
+        log.info("[approveDonationRequestDetails] Headers: " + objectMapper.writeValueAsString(headers));
+        log.info("[approveDonationRequestDetails] Body: " + objectMapper.writeValueAsString(body));
+    }
+
+    private void approveDonationResponseDetails(ResponseEntity<?> responseEntity) throws JsonProcessingException {
+        log.info("[approveDonationResponseDetails] Status Code: " + responseEntity.getStatusCode());
+        log.info("[approveDonationResponseDetails] Headers: " + objectMapper.writeValueAsString(responseEntity.getHeaders()));
+        log.info("[approveDonationResponseDetails] Body: " + objectMapper.writeValueAsString(responseEntity.getBody()));
+    }
+
+    private void checkValues(ApproveDonationResponseDto approveDonationResponseDto) {
+        int total = Integer.parseInt(approveDonationResponseDto.getAmount().getTotal());
+        int point = Integer.parseInt(approveDonationResponseDto.getAmount().getPoint());
+        int netTotal = total - point;
+        log.info("total = " + total);
+        log.info("point = " + point);
+        log.info("netTotal = " + netTotal);
     }
 }
