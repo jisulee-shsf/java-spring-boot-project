@@ -5,6 +5,8 @@ import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.service.FundingService;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.service.UserService;
@@ -30,7 +32,7 @@ public class FundingController {
     @PostMapping("/addLink")
     public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (userDetails == null) {
-            throw new NullPointerException("링크 등록을 하려면 로그인을 해야합니다.");
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_TO_ADD_LINK);
         }
         try {
             fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
