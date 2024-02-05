@@ -64,7 +64,7 @@ public class FundingService {
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
         } finally {
             if (lockAcquired) {
-                lock.unlock();
+                lock.unlock(); // 락 해제
             }
         }
     }
@@ -74,8 +74,10 @@ public class FundingService {
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         String lockKey = "userFundingLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
+        boolean lockAcquired = false; // 락 획득 상태
         try {
-            if (!lock.tryLock(10, 2, TimeUnit.MINUTES)) {
+            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
             User user = userRepository.findById(userId)
@@ -101,7 +103,7 @@ public class FundingService {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
         } finally {
-            lock.unlock();
+            lock.unlock(); // 락 해제
         }
     }
 
