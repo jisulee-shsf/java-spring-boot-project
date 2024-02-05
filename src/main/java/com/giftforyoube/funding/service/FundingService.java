@@ -13,6 +13,7 @@ import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,6 +21,8 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Getter
 @RequiredArgsConstructor
@@ -104,14 +108,29 @@ public class FundingService {
         return responseDto;
     }
 
+//    @Cacheable(value = "activeFundings")
+//    @Transactional(readOnly = true)
+//    public List<FundingResponseDto> getActiveFundings() {
+//        LocalDate currentDate = LocalDate.now();
+//        List<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
+//        return fundings.stream()
+//                .map(FundingResponseDto::fromEntity)
+//                .collect(Collectors.toList());
+//    }
+
+    // 진행중인 펀딩 조회 [페이지네이션 적용]
     @Cacheable(value = "activeFundings")
     @Transactional(readOnly = true)
-    public List<FundingResponseDto> getActiveFundings() {
+    public Page<FundingResponseDto> getActiveFundings(Pageable pageable) {
+        log.info("[getActiveFundings] 진행중인 펀딩 조회");
+
         LocalDate currentDate = LocalDate.now();
-        List<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
-        return fundings.stream()
-                .map(FundingResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        log.info("[getActiveFundings] currentDate" + currentDate);
+
+        Page<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE, pageable);
+        log.info("[getActiveFundings] fundings" + fundings.getTotalElements());
+
+        return fundings.map(FundingResponseDto::fromEntity);
     }
 
     @Cacheable(value = "finishedFundings")

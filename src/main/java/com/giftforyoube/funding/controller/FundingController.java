@@ -12,6 +12,9 @@ import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -58,10 +61,21 @@ public class FundingController {
     }
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩
+//    @GetMapping("/active")
+//    public ResponseEntity<List<FundingResponseDto>> getActiveFundings(){
+//        List<FundingResponseDto> activeFundings = fundingService.getActiveFundings();
+//        return ResponseEntity.ok(activeFundings);
+//    }
+
+    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩
     @GetMapping("/active")
-    public ResponseEntity<List<FundingResponseDto>> getActiveFundings(){
-        List<FundingResponseDto> activeFundings = fundingService.getActiveFundings();
-        return ResponseEntity.ok(activeFundings);
+    public ResponseEntity<Page<FundingResponseDto>> getActiveFundings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(pageable);
+        return ResponseEntity.ok(activeFundingsPage);
     }
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩
