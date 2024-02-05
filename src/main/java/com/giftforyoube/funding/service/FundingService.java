@@ -179,6 +179,7 @@ public class FundingService {
 
     // 펀딩 수정
     @Transactional
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
         // 펀딩 id 유효성검사
         Funding funding = fundingRepository.findById(fundingId).orElseThrow(
@@ -198,6 +199,7 @@ public class FundingService {
 
     // 펀딩 삭제
     @Transactional
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public void deleteFunding(Long fundingId, User user) {
         // 펀딩 id 유효성 검사
         Funding funding = fundingRepository.findById(fundingId).orElseThrow(
