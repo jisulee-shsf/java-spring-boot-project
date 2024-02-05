@@ -1,31 +1,39 @@
 package com.giftforyoube.funding.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.giftforyoube.funding.dto.AddLinkRequestDto;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.service.FundingService;
+import com.giftforyoube.global.security.UserDetailsImpl;
+import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/funding")
 public class FundingController {
 
     private final FundingService fundingService;
+    private final UserService userService;
 
     // 링크 추가 및 캐시 저장 요청 처리
     @PostMapping("/addLink")
-    public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto) {
+    public ResponseEntity<?> addLinkAndSaveToCache(@RequestBody AddLinkRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            throw new NullPointerException("링크 등록을 하려면 로그인을 해야합니다.");
+        }
         try {
-            FundingItem fundingItem = fundingService.previewItem(requestDto.getItemLink());
-            fundingService.saveToCache(fundingItem);
+            fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding link: " + e.getMessage());
@@ -34,23 +42,16 @@ public class FundingController {
 
     // 펀딩 상세 정보 입력 및 DB 저장 요청 처리
     @PostMapping("/create")
-    public ResponseEntity<?> createFunding(@RequestBody FundingCreateRequestDto requestDto) {
+    public ResponseEntity<?> createFunding(@RequestBody FundingCreateRequestDto requestDto,@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if(userDetails == null){
+            throw new NullPointerException("펀딩 등록을 하려면 로그인을 해야합니다.");
+        }
+        Long userId = userDetails.getUser().getId();
         try {
-            FundingResponseDto responseDto = fundingService.saveToDatabase(requestDto);
+            FundingResponseDto responseDto = fundingService.saveToDatabase(requestDto,userId);
             return ResponseEntity.ok(responseDto);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating funding: " + e.getMessage());
-        }
-    }
-
-    // 캐시에서 아이템 삭제 요청 처리
-    @DeleteMapping("/clearCache")
-    public ResponseEntity<?> clearCache() {
-        try {
-            fundingService.clearCache();
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error clearing cache: " + e.getMessage());
         }
     }
 
@@ -70,14 +71,27 @@ public class FundingController {
 
     // D-Day를 포함한 펀딩 상세 페이지
     @GetMapping("/{fundingId}")
-    public FundingResponseDto findFunding(@PathVariable Long fundingId) throws JsonProcessingException {
-        return fundingService.findFunding(fundingId);
+    public ResponseEntity<FundingResponseDto> findFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = null;
+        if (userDetails != null) {
+            user = userDetails.getUser();
+        }
+        // 캐시된 데이터를 사용하여 FundingResponseDto를 얻습니다.
+        FundingResponseDto fundingResponseDto = fundingService.findFunding(fundingId);
+        // 여기에서는 isOwner 값을 동적으로 설정합니다.
+        boolean isOwner = user != null && fundingResponseDto.getOwnerId().equals(user.getId());
+        fundingResponseDto.setIsOwner(isOwner);
+
+        return ResponseEntity.ok(fundingResponseDto);
     }
 
     @PatchMapping("/{fundingId}/finish")
-    public ResponseEntity<?> finishFunding(@PathVariable Long fundingId) {
+    public ResponseEntity<?> finishFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if(userDetails == null){
+            throw new NullPointerException("로그인을 해주십쇼");
+        }
         try {
-            fundingService.finishFunding(fundingId);
+            fundingService.finishFunding(fundingId, userDetails.getUser());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error finishing funding: " + e.getMessage());

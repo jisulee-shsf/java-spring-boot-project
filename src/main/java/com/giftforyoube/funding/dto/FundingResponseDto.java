@@ -28,10 +28,12 @@ public class FundingResponseDto implements Serializable {
     private String dDay;
     private FundingStatus status;
     private int achievementRate;
+    private Long ownerId;
+    private boolean ownerFlag;
     private LocalDateTime modifiedAt;
 
     @Builder
-    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status,LocalDateTime modifiedAt, int achievementRate) {
+    public FundingResponseDto(Long id, String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,String dDay,FundingStatus status, int achievementRate,Long ownerId,boolean ownerFlag,LocalDateTime modifiedAt) {
         this.id = id;
         this.itemLink = itemLink;
         this.itemImage = itemImage;
@@ -45,8 +47,10 @@ public class FundingResponseDto implements Serializable {
         this.endDate = endDate;
         this.dDay = dDay;
         this.status = status;
-        this.modifiedAt = modifiedAt;
         this.achievementRate = achievementRate;
+        this.ownerId = ownerId;
+        this.ownerFlag = ownerFlag;
+        this.modifiedAt = modifiedAt;
 
         // D-Day 계산
         long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
@@ -60,13 +64,6 @@ public class FundingResponseDto implements Serializable {
         }
     }
 
-    // 달성률 계산
-    private int calculatorAchievementRate(int currentAmount, int targetAmount) {
-        if(targetAmount == 0){
-            return 0;
-        }
-        return (int)Math.round((double) currentAmount / targetAmount * 100);
-    }
 
     public static FundingResponseDto fromEntity(Funding funding) {
         // D-Day와 목표금액 달성율 계산
@@ -87,9 +84,15 @@ public class FundingResponseDto implements Serializable {
                 .publicFlag(funding.isPublicFlag())
                 .endDate(funding.getEndDate())
                 .dDay(dDay)
-                .achievementRate(achievementRate)
                 .status(funding.getStatus())
+                .achievementRate(achievementRate)
+                .ownerId(funding.getUser().getId())
+                .ownerFlag(true)
                 .modifiedAt(funding.getModifiedAt())
                 .build();
+    }
+
+    public void setIsOwner(boolean isOwner) {
+        this.ownerFlag = isOwner;
     }
 }
