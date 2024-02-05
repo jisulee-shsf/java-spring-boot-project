@@ -9,6 +9,9 @@ import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.entity.FundingStatus;
 import com.giftforyoube.funding.repository.FundingRepository;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
+import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
 import lombok.Getter;
@@ -172,5 +175,40 @@ public class FundingService {
     private static String getMetaTagContent(Document document, String property) {
         Element metaTag = document.select("meta[property=" + property + "]").first();
         return (metaTag != null) ? metaTag.attr("content") : null;
+    }
+
+    // 펀딩 수정
+    @Transactional
+    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
+        // 펀딩 id 유효성검사
+        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
+        );
+
+        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
+        if (!funding.getUser().getId().equals(user.getId())) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_UPDATE_FUNDING);
+        }
+
+        // 펀딩 내용수정
+        funding.update(requestDto);
+
+        return FundingResponseDto.fromEntity(funding);
+    }
+
+    // 펀딩 삭제
+    @Transactional
+    public void deleteFunding(Long fundingId, User user) {
+        // 펀딩 id 유효성 검사
+        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
+        );
+
+        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
+        if (!funding.getUser().getId().equals(user.getId())) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_FUNDING);
+        }
+
+        fundingRepository.delete(funding);
     }
 }

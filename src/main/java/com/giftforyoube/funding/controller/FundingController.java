@@ -5,6 +5,8 @@ import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.service.FundingService;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.service.UserService;
@@ -100,9 +102,25 @@ public class FundingController {
     }
 
     // 펀딩 수정
-//    @PatchMapping("/{fundingId}/update")
+    @PatchMapping("/{fundingId}/update")
+    public ResponseEntity<FundingResponseDto> updateFunding(@PathVariable Long fundingId,
+                                                            @AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                            @RequestBody FundingCreateRequestDto requestDto) {
+        if(userDetails == null){
+            throw new BaseException(BaseResponseStatus.AUTHENTICATION_FAILED);
+        }
+        return new ResponseEntity<>(fundingService.updateFunding(fundingId, userDetails.getUser(), requestDto), HttpStatus.OK);
+    }
 
     // 펀딩 삭제
+    @DeleteMapping("/{fundingId}")
+    public ResponseEntity<?> deleteFunding(@PathVariable Long fundingId, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            throw new BaseException(BaseResponseStatus.AUTHENTICATION_FAILED);
+        }
+        fundingService.deleteFunding(fundingId, userDetails.getUser());
+        return ResponseEntity.ok().body("해당 펀딩을 성공적으로 삭제하였습니다.");
+    }
 
 
 }
