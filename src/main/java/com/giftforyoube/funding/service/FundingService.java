@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,88 +48,92 @@ public class FundingService {
     private final RedissonClient redissonClient;
 
     private static final int TIMEOUT = 10000; // 10초
+    private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
 
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
     public void addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
         String lockKey = "userLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
+        boolean lockAcquired = false; // 락 획득 상태
         try {
-            // 10초 내에 락을 획득 시도, 최대 2분간 락 유지
-            if (lock.tryLock(10, 2, TimeUnit.MINUTES)) {
-                try {
-                    // 비즈니스 로직 실행
-                    FundingItem fundingItem = previewItem(requestDto.getItemLink());
-                    saveToCache(fundingItem, userId.toString());
-                } finally {
-                    lock.unlock(); // 작업 완료 후 락 해제
-                }
-            } else {
-                throw new IllegalStateException("Could not acquire lock for user: " + userId);
+            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            if (!lockAcquired) {
+                throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
+            FundingItem fundingItem = previewItem(requestDto.getItemLink());
+            saveToCache(fundingItem, userId.toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while acquiring the lock", e);
+            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+        } finally {
+            if (lockAcquired) {
+                lock.unlock(); // 락 해제
+            }
         }
     }
 
     @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        // 진행 중인 펀딩이 있는지 확인
-        boolean hasActiveFunding = user.getFundings().stream()
-                .anyMatch(funding -> funding.getStatus() == FundingStatus.ACTIVE);
-        if (hasActiveFunding) {
-            throw new IllegalStateException("Already has an active funding.");
+        String lockKey = "userFundingLock:" + userId;
+        RLock lock = redissonClient.getLock(lockKey);
+        boolean lockAcquired = false; // 락 획득 상태
+        try {
+            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            if (!lockAcquired) {
+                throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
+            }
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UsernameNotFoundException("해당 회원을 찾을 수 없습니다."));
+            boolean hasActiveFunding = user.getFundings().stream()
+                    .anyMatch(funding -> funding.getStatus() == FundingStatus.ACTIVE);
+            if (hasActiveFunding) {
+                throw new IllegalStateException("이미 진행중인 펀딩이 있습니다.");
+            }
+            String userCacheKey = buildCacheKey(userId.toString());
+            FundingItem fundingItem = getCachedFundingProduct(userCacheKey);
+            if (fundingItem == null) {
+                throw new IllegalStateException("링크 상품을 찾을 수 없습니다.");
+            }
+            LocalDate currentDate = LocalDate.now();
+            FundingStatus status = requestDto.getEndDate().isBefore(currentDate) ? FundingStatus.FINISHED : FundingStatus.ACTIVE;
+            Funding funding = requestDto.toEntity(fundingItem, status);
+            funding.setUser(user);
+            fundingRepository.save(funding);
+            clearCache(userCacheKey);
+            return FundingResponseDto.fromEntity(funding);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+        } finally {
+            lock.unlock(); // 락 해제
         }
-        // 캐시된 펀딩 아이템을 사용자 ID를 기반으로 가져옵니다.
-        String userCacheKey = userId.toString();
-        FundingItem fundingItem = getCachedFundingProduct(userCacheKey);
-        if (fundingItem == null) {
-            throw new IllegalStateException("No cached funding item found.");
-        }
-
-        LocalDate currentDate = LocalDate.now();
-        FundingStatus status = requestDto.getEndDate().isBefore(currentDate) ? FundingStatus.FINISHED : FundingStatus.ACTIVE;
-        Funding funding = requestDto.toEntity(fundingItem,status);
-        funding.setUser(user);
-
-        fundingRepository.save(funding);
-        clearCache(userCacheKey);
-        return FundingResponseDto.fromEntity(funding);
     }
 
-    @Cacheable(value = "fundingDetail", key = "#fundingId")
+    @Cacheable(value = "fundingDetail", key = "#fundingId", cacheManager = "cacheManager")
     public FundingResponseDto findFunding(Long fundingId) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
-        FundingResponseDto responseDto = FundingResponseDto.fromEntity(funding);
-        return responseDto;
+        return FundingResponseDto.fromEntity(funding);
     }
 
-    @Cacheable(value = "activeFundings")
+    @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
     public List<FundingResponseDto> getActiveFundings() {
         LocalDate currentDate = LocalDate.now();
         List<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
-        return fundings.stream()
-                .map(FundingResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return fundings.stream().map(FundingResponseDto::fromEntity).collect(Collectors.toList());
     }
 
-    @Cacheable(value = "finishedFundings")
+    @Cacheable(value = "finishedFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
     public List<FundingResponseDto> getFinishedFunding() {
         List<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED);
-        return fundings.stream()
-                .map(FundingResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return fundings.stream().map(FundingResponseDto::fromEntity).collect(Collectors.toList());
     }
 
     @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
+    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public void finishFunding(Long fundingId, User currentUser) {
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다."));
@@ -141,16 +147,20 @@ public class FundingService {
         fundingRepository.save(funding);
     }
 
+    private String buildCacheKey(String userId) {
+        return FUNDING_ITEM_CACHE_PREFIX + userId;
+    }
+
     // FundingItem 객체를 JSON으로 변환하여 캐시에 저장
-    public void saveToCache(FundingItem fundingItem,String userCacheKey) throws JsonProcessingException {
-        String cacheKey = "cachedFundingItem:" + userCacheKey;
+    public void saveToCache(FundingItem fundingItem, String userId) throws JsonProcessingException {
+        String cacheKey = buildCacheKey(userId);
         String fundingItemJson = objectMapper.writeValueAsString(fundingItem);
-        redisTemplate.opsForValue().set(cacheKey, fundingItemJson,1, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(cacheKey, fundingItemJson, Duration.ofDays(1));
     }
 
     // 캐시에서 FundingItem 객체를 가져오기
     public FundingItem getCachedFundingProduct(String userCacheKey) throws JsonProcessingException {
-        String cacheKey = "cachedFundingItem:" + userCacheKey;
+        String cacheKey = buildCacheKey(userCacheKey);
         String fundingItemJson = redisTemplate.opsForValue().get(cacheKey);
         return fundingItemJson == null ? null : objectMapper.readValue(fundingItemJson, FundingItem.class);
     }
@@ -159,22 +169,22 @@ public class FundingService {
         Document document = Jsoup.connect(itemLink).timeout(TIMEOUT).get();
         String itemImage = getMetaTagContent(document, "og:image");
         if (itemImage == null) {
-            throw new IOException("Cannot fetch item image.");
+            throw new IOException("링크 상품 이미지를 가져올 수 없습니다.");
         }
-        return FundingItem.builder()
-                .itemLink(itemLink)
-                .itemImage(itemImage)
-                .build();
+        return new FundingItem(itemLink, itemImage);
     }
 
     public void clearCache(String userCacheKey) {
-        String cacheKey = "cachedFundingItem:" + userCacheKey;
+        String cacheKey = buildCacheKey(userCacheKey);
         redisTemplate.delete(cacheKey);
     }
 
     private static String getMetaTagContent(Document document, String property) {
-        Element metaTag = document.select("meta[property=" + property + "]").first();
-        return (metaTag != null) ? metaTag.attr("content") : null;
+        Elements metaTags = document.select("meta[property=" + property + "]");
+        if (!metaTags.isEmpty()) {
+            return metaTags.first().attr("content");
+        }
+        return null;
     }
 
     // 펀딩 수정

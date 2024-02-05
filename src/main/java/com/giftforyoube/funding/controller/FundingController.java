@@ -3,13 +3,11 @@ package com.giftforyoube.funding.controller;
 import com.giftforyoube.funding.dto.AddLinkRequestDto;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
-import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
-import com.giftforyoube.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,7 +24,6 @@ import java.util.List;
 public class FundingController {
 
     private final FundingService fundingService;
-    private final UserService userService;
 
     // 링크 추가 및 캐시 저장 요청 처리
     @PostMapping("/addLink")
