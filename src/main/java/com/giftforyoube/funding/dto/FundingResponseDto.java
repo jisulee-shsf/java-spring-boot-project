@@ -66,7 +66,6 @@ public class FundingResponseDto implements Serializable {
         }
     }
 
-
     public static FundingResponseDto fromEntity(Funding funding) {
         // D-Day와 목표금액 달성율 계산
         long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), funding.getEndDate());
