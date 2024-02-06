@@ -134,29 +134,23 @@ public class FundingService {
 //        return fundings.stream().map(FundingResponseDto::fromEntity).collect(Collectors.toList());
 //    }
 
-    @Cacheable(value = "activeFundings")
+    @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
-    public Page<FundingResponseDto> getActiveFunding(Pageable pageable) {
+    public Page<FundingResponseDto> getActiveMainFunding(Pageable pageable) {
         log.info("[getActiveFundings] 메인페이지 진행중인 펀딩 조회");
 
-        LocalDate currentDate = LocalDate.now();
-        log.info("[getActiveFundings] currentDate" + currentDate);
-
-        Page<Funding> fundings = fundingRepository.findAllOrderedByModifiedAtDesc(currentDate, FundingStatus.ACTIVE, pageable);
+        Page<Funding> mainFundings = fundingRepository.findAllPageByStatus(FundingStatus.ACTIVE, pageable);
         log.info("[getActiveFundings] fundings");
 
-        return fundings.map(FundingResponseDto::fromEntity);
+        return mainFundings.map(FundingResponseDto::fromEntity);
     }
 
-    @Cacheable(value = "activeFundings")
+    @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
     public Slice<FundingResponseDto> getActiveFundings(Pageable pageable) {
         log.info("[getActiveFundings] 진행중인 펀딩 조회 리스트 무한스크롤");
 
-        LocalDate currentDate = LocalDate.now();
-        log.info("[getActiveFundings] currentDate" + currentDate);
-
-        Slice<Funding> fundings = fundingRepository.findAllSliceByOrderedByModifiedAtDesc(currentDate, FundingStatus.ACTIVE, pageable);
+        Slice<Funding> fundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable);
         log.info("[getActiveFundings] fundings");
 
         return fundings.map(FundingResponseDto::fromEntity);
