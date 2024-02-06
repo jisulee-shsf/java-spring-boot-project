@@ -15,6 +15,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
@@ -70,3 +72,19 @@ public class WebSecurityConfig {
         return http.build();
     }
 }
+
+//@Configuration
+//public class WebConfig implements WebMvcConfigurer {
+//
+//    @Override
+//    public void addCorsMappings(CorsRegistry registry) {
+//        registry.addMapping("/**")
+//                .allowCredentials(true)
+//                .allowedOrigins("https://www.giftipie.me", "https://giftipie.me", "http://api.giftipie.me", "https://api.giftipie.me",
+//                        "http://localhost:3000", "http://localhost:3001",
+//                        "https://.vercel.app")
+//                .allowedMethods("*")
+//                .allowedHeaders("*")
+//                .exposedHeaders("*");
+//    }
+//}
