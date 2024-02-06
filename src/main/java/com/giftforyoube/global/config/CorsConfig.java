@@ -10,6 +10,7 @@ import java.util.List;
 
 @Configuration
 public class CorsConfig {
+
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -18,6 +19,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "https://www.giftipie.me", "https://giftipie.me", "http://api.giftipie.me", "https://api.giftipie.me",
                 "http://localhost:3000", "http://localhost:3001",
+                "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app",
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app/"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
