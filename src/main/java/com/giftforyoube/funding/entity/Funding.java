@@ -38,7 +38,7 @@ public class Funding extends Auditable implements Serializable {
     @Enumerated(EnumType.STRING)
     private FundingStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 

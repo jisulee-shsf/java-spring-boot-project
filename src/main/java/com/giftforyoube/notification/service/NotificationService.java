@@ -13,6 +13,7 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -62,8 +63,9 @@ public class NotificationService {
 
 
     // 알람 send
-    @Transactional
+    @Async
     public void send(User receiver, NotificationType notificationType, String content, String url) {
+        log.info("메세지 send 시작....");
         // notification 객체 생성 후 db 저장
         Notification notification = createNotification(receiver, notificationType, content, url);
         Notification saveNotification = notificationRepository.save(notification);
@@ -81,7 +83,7 @@ public class NotificationService {
         // -> 모바일, PC 웹 등 여러 환경에서 접속할 경우 여러 emitter가 생길 수 있다.
 
         // emitter가 여러개면 하나의 event가 발생했을때 중복으로 알림이 발생하지않나?
-        //TODO -> alreadyNotified 메서드를 추가해 조건문을 걸어줘서 이미 동일한 알림이 발생했는지 확인이 필요할 것
+        //alreadyNotified 메서드를 추가해 조건문을 걸어줘서 이미 동일한 알림이 발생했는지 확인이 필요할 것
         emitters.forEach(
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);

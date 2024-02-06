@@ -9,10 +9,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class MailingService {
 
@@ -21,7 +23,7 @@ public class MailingService {
 
     private static final String EMAIL_TITLE_PREFIX = "[Giftipie] ";
 
-    @Async
+    @Transactional
     public void sendNotificationEmail(Notification notification) throws MessagingException {
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper messageHelper = new MimeMessageHelper(message, true, "UTF-8");
@@ -36,8 +38,20 @@ public class MailingService {
         // 템플릿에 전달할 데이터 설정
         Context context = new Context();
 
+        String html = "";
         // 메일 내용
-        String html = templateEngine.process("EmailTemplate", context);
+        switch (notification.getNotificationType()) {
+            case DONATION :
+                html = templateEngine.process("EmailTemplate", context);
+                break;
+            case FUNDING_SUCCESS :
+                html = templateEngine.process("EmailTemplate", context);
+                break;
+            case FUNDING_TIME_OUT :
+                html = templateEngine.process("EmailTemplate", context);
+                break;
+        }
+
         messageHelper.setText(html, true);
 
         // 이메일에 포함된 이미지 설정
