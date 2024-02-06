@@ -21,10 +21,7 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.*;
 
 import java.time.Duration;
 
@@ -55,28 +52,50 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(jackson2JsonRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         return template;
-    }
-
-    @Bean
-    public Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer() {
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
-        serializer.setObjectMapper(mapper);
-        return serializer;
     }
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
         RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer()));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(customRedisSerializer()));
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(cacheConfiguration)
                 .build();
+    }
+
+    // ObjectMapper의 setObjectMapper가 스프링부트 3.0 이상부터 deprecated되어
+    // 날짜 정보를 직렬화,역직렬화 하기위해 커스텀한 serializer를 사용
+    @Bean
+    public RedisSerializer<Object> customRedisSerializer() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // JavaTimeModule 등록
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+
+        return new RedisSerializer<Object>() {
+            @Override
+            public byte[] serialize(Object t) throws SerializationException {
+                try {
+                    return objectMapper.writeValueAsBytes(t);
+                } catch (Exception e) {
+                    throw new SerializationException("Error serializing object to JSON", e);
+                }
+            }
+
+            @Override
+            public Object deserialize(byte[] bytes) throws SerializationException {
+                if (bytes == null || bytes.length == 0) {
+                    return null;
+                }
+                try {
+                    return objectMapper.readValue(bytes, Object.class);
+                } catch (Exception e) {
+                    throw new SerializationException("Error deserializing object from JSON", e);
+                }
+            }
+        };
     }
 }
