@@ -10,10 +10,7 @@ import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -72,24 +69,27 @@ public class FundingController {
     @GetMapping("")
     public ResponseEntity<Page<FundingResponseDto>> getActiveMainFunding(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "4") int size
+            @RequestParam(defaultValue = "4") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
     ){
         log.info("[getActiveFunding] 메인페이지 진행중인 펀딩 조회");
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveMainFunding(pageable);
+        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveMainFunding(page, size, sortBy, sortOrder);
         return ResponseEntity.ok(activeFundingsPage);
     }
+
     // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩 [페이지네이션]
     @GetMapping("/active")
     public ResponseEntity<Slice<FundingResponseDto>> getActiveFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
     ){
         log.info("[getActiveFundings] 진행중인 펀딩 리스트 조회 무한스크롤");
 
-        Pageable pageable = PageRequest.of(page, size);
-        Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(pageable);
+        Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
         return ResponseEntity.ok(activeFundingsPage);
     }
 
@@ -104,12 +104,12 @@ public class FundingController {
     @GetMapping("/finished")
     public ResponseEntity<Slice<FundingResponseDto>> getFinishedFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
     ){
         log.info("[getFinishedFundings] 완료된 펀딩 리스트 조회 무한스크롤");
-
-        Pageable pageable = PageRequest.of(page, size);
-        Slice<FundingResponseDto> finishedFundingsPage = fundingService.getFinishedFundings(pageable);
+        Slice<FundingResponseDto> finishedFundingsPage = fundingService.getFinishedFundings(page, size, sortBy, sortBy);
         return ResponseEntity.ok(finishedFundingsPage);
     }
 

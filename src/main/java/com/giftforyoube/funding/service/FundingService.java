@@ -23,9 +23,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -136,8 +134,12 @@ public class FundingService {
 
     @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
-    public Page<FundingResponseDto> getActiveMainFunding(Pageable pageable) {
+    public Page<FundingResponseDto> getActiveMainFunding(int page, int size, String sortBy, String sortOrder) {
         log.info("[getActiveFundings] 메인페이지 진행중인 펀딩 조회");
+
+        Sort sort = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<Funding> mainFundings = fundingRepository.findAllPageByStatus(FundingStatus.ACTIVE, pageable);
         log.info("[getActiveFundings] fundings");
@@ -147,8 +149,11 @@ public class FundingService {
 
     @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
-    public Slice<FundingResponseDto> getActiveFundings(Pageable pageable) {
+    public Slice<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
         log.info("[getActiveFundings] 진행중인 펀딩 조회 리스트 무한스크롤");
+        Sort sort = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         Slice<Funding> fundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable);
         log.info("[getActiveFundings] fundings");
@@ -167,8 +172,12 @@ public class FundingService {
     // 완료된 펀딩 페이지네이션 적용
     @Cacheable(value = "finishedFundings")
     @Transactional(readOnly = true)
-    public Slice<FundingResponseDto> getFinishedFundings(Pageable pageable) {
+    public Slice<FundingResponseDto> getFinishedFundings(int page, int size, String sortBy, String sortOrder) {
         log.info("[getFinishedFunding] 완료된 펀딩 조회");
+
+        Sort sort = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         Slice<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED, pageable);
         log.info("[getFinishedFunding] fundings");
