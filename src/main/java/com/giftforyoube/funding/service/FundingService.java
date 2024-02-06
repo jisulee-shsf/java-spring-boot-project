@@ -255,7 +255,7 @@ public class FundingService {
         clearFundingCaches();
     }
 
- // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 -------------------------------------------
+ // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
 
     private String buildCacheKey(String userId) {
         return FUNDING_ITEM_CACHE_PREFIX + userId;
