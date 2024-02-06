@@ -30,7 +30,6 @@ import java.net.URL;
 @Slf4j
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class UserController {
 
     private final UserService userService;
