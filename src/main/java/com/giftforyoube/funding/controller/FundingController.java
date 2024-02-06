@@ -161,4 +161,5 @@ public class FundingController {
         fundingService.deleteFunding(fundingId, userDetails.getUser());
         return ResponseEntity.ok().body("해당 펀딩을 성공적으로 삭제하였습니다.");
     }
+
 }

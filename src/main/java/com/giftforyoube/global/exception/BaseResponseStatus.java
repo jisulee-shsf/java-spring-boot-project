@@ -60,7 +60,7 @@ public enum BaseResponseStatus {
     FUNDING_NOT_DELETED(false, 4000, "펀딩을 삭제할 수 없습니다."),
     UNAUTHORIZED_UPDATE_FUNDING(false, 4000, "펀딩 수정 권한이 없습니다."),
     UNAUTHORIZED_DELETE_FUNDING(false, 4000, "펀딩 삭제 권한이 없습니다."),
-
+    UNAUTHORIZED_READ_FUNDING(false, 4000, "펀딩 조회 권한이 없습니다."),
 
     /**
      * 3. 서버 에러가 발생한 경우(5000)

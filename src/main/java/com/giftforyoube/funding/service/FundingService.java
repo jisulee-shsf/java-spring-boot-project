@@ -136,6 +136,35 @@ public class FundingService {
         return fundingResponseDto;
     }
 
+    // 메인페이지에 보여질 내 펀딩 정보
+    @Transactional(readOnly = true)
+    public FundingResponseDto getMyFundingInfo(User currentUser) {
+        log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
+
+        if (currentUser == null) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_READ_FUNDING);
+        }
+
+        String cacheKey = "fundingDetail:" + currentUser.getId();
+        // 캐시에서 조회 시도
+        FundingResponseDto cachedFunding = getFundingFromCache(cacheKey);
+        if (cachedFunding != null) {
+            return cachedFunding;
+        }
+
+        Funding funding = fundingRepository.findByUser(currentUser);
+        if (funding == null) {
+            return FundingResponseDto.emptyDto();
+        }
+
+        FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
+
+        // 결과를 캐시에 저장
+        saveFundingToCache(cacheKey, fundingResponseDto);
+
+        return fundingResponseDto;
+    }
+
     @Transactional(readOnly = true)
     public Page<FundingResponseDto> getActiveMainFunding(int page, int size, String sortBy, String sortOrder) {
         log.info("[getActiveMainFundings] 메인페이지 진행중인 펀딩 조회");
@@ -408,4 +437,6 @@ public class FundingService {
             redisTemplate.delete(keys);
         }
     }
+
+
 }
