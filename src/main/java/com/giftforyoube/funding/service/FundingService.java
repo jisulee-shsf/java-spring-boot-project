@@ -76,7 +76,7 @@ public class FundingService {
     }
 
     @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
+    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         log.info("[saveToDatabase] DB에 저장하기");
 
@@ -132,7 +132,7 @@ public class FundingService {
 //        return fundings.stream().map(FundingResponseDto::fromEntity).collect(Collectors.toList());
 //    }
 
-    @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
+    @Cacheable(value = "activeMainFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
     public Page<FundingResponseDto> getActiveMainFunding(int page, int size, String sortBy, String sortOrder) {
         log.info("[getActiveFundings] 메인페이지 진행중인 펀딩 조회");
@@ -186,7 +186,7 @@ public class FundingService {
     }
 
     @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
+    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public void finishFunding(Long fundingId, User currentUser) {
         log.info("[finishFunding] 펀딩 종료하기");
 
@@ -204,7 +204,7 @@ public class FundingService {
 
     // 펀딩 수정
     @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
+    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
@@ -226,7 +226,7 @@ public class FundingService {
 
     // 펀딩 삭제
     @Transactional
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
+    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public void deleteFunding(Long fundingId, User user) {
         log.info("[deleteFunding] 펀딩 수정하기");
 

@@ -21,7 +21,7 @@ public class Scheduler {
     // 매일 자정에 실행, 마감일이 지난 펀딩의 상태를 업데이트
     // 초, 분, 시, 일, 월, 주 순서
     @Scheduled(cron = "0 0 0 * * ?")
-    @CacheEvict(value = {"activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
+    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, allEntries = true)
     public void autoFinishFundings() {
         log.info("마감일 종료 상태 업데이트 실행");
         LocalDate currentDate = LocalDate.now();
