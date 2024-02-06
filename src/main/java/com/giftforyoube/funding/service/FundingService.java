@@ -23,8 +23,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -257,7 +255,7 @@ public class FundingService {
         clearFundingCaches();
     }
 
-
+ // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 -------------------------------------------
 
     private String buildCacheKey(String userId) {
         return FUNDING_ITEM_CACHE_PREFIX + userId;
@@ -337,7 +335,7 @@ public class FundingService {
         }
     }
 
-    // 캐시에 저장하는 로직
+    // 캐시에 펀딩 목록 저장하는 로직
     public void saveFundingListToCache(String cacheKey, Slice<FundingResponseDto> fundings) {
         FundingResponseDtoCache cache = new FundingResponseDtoCache(
                 new ArrayList<>(fundings.getContent()),
@@ -354,7 +352,7 @@ public class FundingService {
         }
     }
 
-    // 캐시에서 조회하는 로직
+    // 캐시에서 목록 조회하는 로직
     public Slice<FundingResponseDto> getFundingListFromCache(String cacheKey, Pageable pageable) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
@@ -368,6 +366,7 @@ public class FundingService {
         }
     }
 
+    // 펀딩 상세 정보 캐시에 저장
     private void saveFundingToCache(String cacheKey, FundingResponseDto fundingResponseDto) {
         try {
             String jsonContent = objectMapper.writeValueAsString(fundingResponseDto);
@@ -377,6 +376,7 @@ public class FundingService {
         }
     }
 
+    // 펀딩 상세 정보 캐시에서 조회
     private FundingResponseDto getFundingFromCache(String cacheKey) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
