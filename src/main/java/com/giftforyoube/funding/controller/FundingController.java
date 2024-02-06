@@ -59,13 +59,6 @@ public class FundingController {
         }
     }
 
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩
-//    @GetMapping("/active")
-//    public ResponseEntity<List<FundingResponseDto>> getActiveFundings(){
-//        List<FundingResponseDto> activeFundings = fundingService.getActiveFundings();
-//        return ResponseEntity.ok(activeFundings);
-//    }
-
     @GetMapping("")
     public ResponseEntity<Page<FundingResponseDto>> getActiveMainFunding(
             @RequestParam(defaultValue = "0") int page,

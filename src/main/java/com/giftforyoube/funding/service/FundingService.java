@@ -1,10 +1,12 @@
 package com.giftforyoube.funding.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.funding.dto.AddLinkRequestDto;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
+import com.giftforyoube.funding.dto.FundingResponseDtoCache;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.entity.FundingStatus;
@@ -32,9 +34,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -76,7 +80,6 @@ public class FundingService {
     }
 
     @Transactional
-    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         log.info("[saveToDatabase] DB에 저장하기");
 
@@ -106,6 +109,7 @@ public class FundingService {
             funding.setUser(user);
             fundingRepository.save(funding);
             clearCache(userCacheKey);
+            clearFundingCaches();
             return FundingResponseDto.fromEntity(funding);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -115,78 +119,87 @@ public class FundingService {
         }
     }
 
-    @Cacheable(value = "fundingDetail", key = "#fundingId", cacheManager = "cacheManager")
+    @Transactional(readOnly = true)
     public FundingResponseDto findFunding(Long fundingId) {
-        log.info("[findFunding] 펀딩 상세페이지 조회");
+        String cacheKey = "fundingDetail:" + fundingId;
+        // 캐시에서 조회 시도
+        FundingResponseDto cachedFunding = getFundingFromCache(cacheKey);
+        if (cachedFunding != null) {
+            return cachedFunding;
+        }
 
+        // DB에서 조회
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
-        return FundingResponseDto.fromEntity(funding);
+        FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
+
+        // 결과를 캐시에 저장
+        saveFundingToCache(cacheKey, fundingResponseDto);
+        return fundingResponseDto;
     }
 
-//    @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
-//    @Transactional(readOnly = true)
-//    public List<FundingResponseDto> getActiveFundings() {
-//        LocalDate currentDate = LocalDate.now();
-//        List<Funding> fundings = fundingRepository.findByEndDateGreaterThanEqualAndStatus(currentDate, FundingStatus.ACTIVE);
-//        return fundings.stream().map(FundingResponseDto::fromEntity).collect(Collectors.toList());
-//    }
-
-    @Cacheable(value = "activeMainFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
     public Page<FundingResponseDto> getActiveMainFunding(int page, int size, String sortBy, String sortOrder) {
-        log.info("[getActiveFundings] 메인페이지 진행중인 펀딩 조회");
+        log.info("[getActiveMainFundings] 메인페이지 진행중인 펀딩 조회");
 
-        Sort sort = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
+        String cacheKey = "activeMainFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // 캐시에서 조회 시도
+        Page<FundingResponseDto> cachedPage = getFundingsPageFromCache(cacheKey, pageable);
+        if (cachedPage != null) {
+            return cachedPage;
+        }
 
+        // DB에서 조회
         Page<Funding> mainFundings = fundingRepository.findAllPageByStatus(FundingStatus.ACTIVE, pageable);
-        log.info("[getActiveFundings] fundings");
+        Page<FundingResponseDto> fundingResponseDtoPage = mainFundings.map(FundingResponseDto::fromEntity);
 
-        return mainFundings.map(FundingResponseDto::fromEntity);
+        // 결과를 캐시에 저장
+        saveFundingsPageToCache(cacheKey, fundingResponseDtoPage);
+
+        return fundingResponseDtoPage;
     }
 
-    @Cacheable(value = "activeFundings", cacheManager = "cacheManager")
     @Transactional(readOnly = true)
     public Slice<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
-        log.info("[getActiveFundings] 진행중인 펀딩 조회 리스트 무한스크롤");
-        Sort sort = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
+        String cacheKey = "activeFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // 캐시에서 조회 시도
+        Slice<FundingResponseDto> cachedFundings = getFundingListFromCache(cacheKey, pageable);
+        if (!cachedFundings.getContent().isEmpty()) {
+            return cachedFundings;
+        }
 
-        Slice<Funding> fundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable);
-        log.info("[getActiveFundings] fundings");
+        // DB에서 조회 및 캐시 저장
+        Slice<FundingResponseDto> activeFundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable).map(FundingResponseDto::fromEntity);
+        saveFundingListToCache(cacheKey, activeFundings);
 
-        return fundings.map(FundingResponseDto::fromEntity);
+        return activeFundings;
     }
 
-
-//    @Cacheable(value = "finishedFundings", cacheManager = "cacheManager")
-//    @Transactional(readOnly = true)
-//    public List<FundingResponseDto> getFinishedFunding() {
-//        List<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED);
-//        return fundings.stream().map(FundingResponseDto::fromEntity).collect(Collectors.toList());
-//    }
-
     // 완료된 펀딩 페이지네이션 적용
-    @Cacheable(value = "finishedFundings")
+    // 완료된 펀딩 조회
     @Transactional(readOnly = true)
     public Slice<FundingResponseDto> getFinishedFundings(int page, int size, String sortBy, String sortOrder) {
-        log.info("[getFinishedFunding] 완료된 펀딩 조회");
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
+        String cacheKey = "finishedFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
-        Sort sort = sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        // 캐시에서 조회 시도
+        Slice<FundingResponseDto> cachedFundings = getFundingListFromCache(cacheKey, pageable);
+        if (!cachedFundings.getContent().isEmpty()) {
+            return cachedFundings;
+        }
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // DB에서 조회 및 캐시 저장
+        Slice<FundingResponseDto> finishedFundings = fundingRepository.findByStatus(FundingStatus.FINISHED, pageable).map(FundingResponseDto::fromEntity);
+        saveFundingListToCache(cacheKey, finishedFundings);
 
-        Slice<Funding> fundings = fundingRepository.findByStatus(FundingStatus.FINISHED, pageable);
-        log.info("[getFinishedFunding] fundings");
-
-        return fundings.map(FundingResponseDto::fromEntity);
+        return finishedFundings;
     }
 
     @Transactional
-    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public void finishFunding(Long fundingId, User currentUser) {
         log.info("[finishFunding] 펀딩 종료하기");
 
@@ -200,11 +213,11 @@ public class FundingService {
 
         funding.setStatus(FundingStatus.FINISHED);
         fundingRepository.save(funding);
+        clearFundingCaches();
     }
 
     // 펀딩 수정
     @Transactional
-    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
@@ -221,12 +234,12 @@ public class FundingService {
         // 펀딩 내용수정
         funding.update(requestDto);
 
+        clearFundingCaches();
         return FundingResponseDto.fromEntity(funding);
     }
 
     // 펀딩 삭제
     @Transactional
-    @CacheEvict(value = {"activeMainFundings", "activeFundings", "finishedFundings", "fundingDetail"}, cacheManager = "cacheManager", allEntries = true)
     public void deleteFunding(Long fundingId, User user) {
         log.info("[deleteFunding] 펀딩 수정하기");
 
@@ -241,7 +254,10 @@ public class FundingService {
         }
 
         fundingRepository.delete(funding);
+        clearFundingCaches();
     }
+
+
 
     private String buildCacheKey(String userId) {
         return FUNDING_ITEM_CACHE_PREFIX + userId;
@@ -290,5 +306,106 @@ public class FundingService {
             return metaTags.first().attr("content");
         }
         return null;
+    }
+
+
+    // 캐시에 Page 데이터 저장
+    private void saveFundingsPageToCache(String cacheKey, Page<FundingResponseDto> page) {
+        try {
+            // Page 구현체를 JSON으로 변환하는 과정에서는 구현체의 구체적인 클래스 정보가 필요할 수 있으므로,
+            // Page 내용만 캐시하고, 페이징 정보는 별도로 관리하는 것을 고려해야 할 수 있습니다.
+            String jsonContent = objectMapper.writeValueAsString(page.getContent());
+            redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing funding page data", e);
+        }
+    }
+
+    // 캐시에서 Page 데이터 조회
+    private Page<FundingResponseDto> getFundingsPageFromCache(String cacheKey, Pageable pageable) {
+        String jsonContent = redisTemplate.opsForValue().get(cacheKey);
+        if (jsonContent == null) {
+            return null;
+        }
+        try {
+            List<FundingResponseDto> content = objectMapper.readValue(jsonContent, new TypeReference<List<FundingResponseDto>>(){});
+            // 여기서는 캐시된 내용과 Pageable 정보를 기반으로 새 Page 객체를 생성해야 합니다.
+            // 실제 페이지 크기와 전체 페이지 수 등은 DB 조회 없이 알 수 없으므로, 이 부분은 적절히 조정이 필요합니다.
+            return new PageImpl<>(content, pageable, content.size());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error deserializing funding page data", e);
+        }
+    }
+
+    // 캐시에 저장하는 로직
+    public void saveFundingListToCache(String cacheKey, Slice<FundingResponseDto> fundings) {
+        FundingResponseDtoCache cache = new FundingResponseDtoCache(
+                new ArrayList<>(fundings.getContent()),
+                fundings.getNumber(),
+                fundings.getSize(),
+                fundings.isLast()
+        );
+
+        try {
+            String jsonContent = objectMapper.writeValueAsString(cache);
+            redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1)); // 캐시 만료 시간은 필요에 따라 조정
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing funding data", e);
+        }
+    }
+
+    // 캐시에서 조회하는 로직
+    public Slice<FundingResponseDto> getFundingListFromCache(String cacheKey, Pageable pageable) {
+        String jsonContent = redisTemplate.opsForValue().get(cacheKey);
+        if (jsonContent == null) {
+            return new SliceImpl<>(Collections.emptyList(), pageable, false);
+        }
+        try {
+            FundingResponseDtoCache cache = objectMapper.readValue(jsonContent, FundingResponseDtoCache.class);
+            return new SliceImpl<>(cache.getContent(), PageRequest.of(cache.getPage(), cache.getSize()), cache.isLast());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error deserializing funding data", e);
+        }
+    }
+
+    private void saveFundingToCache(String cacheKey, FundingResponseDto fundingResponseDto) {
+        try {
+            String jsonContent = objectMapper.writeValueAsString(fundingResponseDto);
+            redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing funding detail", e);
+        }
+    }
+
+    private FundingResponseDto getFundingFromCache(String cacheKey) {
+        String jsonContent = redisTemplate.opsForValue().get(cacheKey);
+        if (jsonContent == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(jsonContent, FundingResponseDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error deserializing funding detail", e);
+        }
+    }
+
+    // 펀딩 생성, 업데이트, 삭제 시 캐시 삭제
+    public void clearFundingCaches() {
+        // 메인 펀딩 관련 캐시 삭제
+        clearCacheByPattern("activeMainFundings:*");
+
+        // 기존의 펀딩 리스트 관련 캐시 삭제
+        clearCacheByPattern("activeFundings:*");
+        clearCacheByPattern("finishedFundings:*");
+
+        // 상세 페이지 캐시 삭제 추가
+        clearCacheByPattern("fundingDetail:*");
+    }
+
+    private void clearCacheByPattern(String pattern) {
+        Set<String> keys = redisTemplate.keys(pattern);
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
     }
 }
