@@ -96,6 +96,10 @@ public class FundingResponseDto implements Serializable {
                 .build();
     }
 
+    public static FundingResponseDto emptyDto() {
+        return new FundingResponseDto();
+    }
+
     public void setIsOwner(boolean isOwner) {
         this.ownerFlag = isOwner;
     }
