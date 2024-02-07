@@ -56,12 +56,12 @@ public class FundingService {
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
     public void addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
         log.info("[addLinkAndSaveToCache] 상품링크 캐쉬에 저장하기");
-
         String lockKey = "userLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
-        boolean lockAcquired = false; // 락 획득 상태
+        boolean lockAcquired = false;
         try {
-            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            // 락 획득 시도를 더 짧은 시간으로 조정하여 성능 개선
+            lockAcquired = lock.tryLock(5, 1, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
             if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
@@ -80,12 +80,12 @@ public class FundingService {
     @Transactional
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         log.info("[saveToDatabase] DB에 저장하기");
-
         String lockKey = "userFundingLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
-        boolean lockAcquired = false; // 락 획득 상태
+        boolean lockAcquired = false;
         try {
-            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            // 락 획득 시도를 최적화
+            lockAcquired = lock.tryLock(5, 1, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
             if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
@@ -113,7 +113,9 @@ public class FundingService {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
         } finally {
-            lock.unlock(); // 락 해제
+            if (lockAcquired) {
+                lock.unlock();
+            }
         }
     }
 
