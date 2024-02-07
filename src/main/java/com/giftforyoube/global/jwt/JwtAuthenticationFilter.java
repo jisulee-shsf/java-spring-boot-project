@@ -49,7 +49,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         log.info("[successfulAuthentication] 로그인 완료");
-        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getEmail();
+        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
 
         log.info("[successfulAuthentication] JWT 생성");
         String token = jwtUtil.createToken(email);
