@@ -6,5 +6,5 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class ReadyDonationRequestDto {
-    private String totalAmount;
+    private Long donation;
 }
