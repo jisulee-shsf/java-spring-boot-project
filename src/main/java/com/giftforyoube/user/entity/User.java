@@ -1,5 +1,6 @@
 package com.giftforyoube.user.entity;
 
+import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.funding.entity.Funding;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -31,6 +32,9 @@ public class User {
     // User 엔티티를 저장할 때 자동으로 연결된 Funding 엔티티도 저장되도록 cascade = CascadeType.ALL
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Funding> fundings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Donation> donations = new ArrayList<>();
 
     @Column
     private Long kakaoId;

@@ -42,6 +42,7 @@ public class DonationService {
     private String kakaopayFailRedirectUrl;
 
     public ReadyDonationResponseDto readyDonation(ReadyDonationRequestDto readyDonationRequestDto) throws JsonProcessingException {
+
         URI uri = UriComponentsBuilder
                 .fromUriString("https://open-api.kakaopay.com")
                 .path("/online/v1/payment/ready")
@@ -59,7 +60,7 @@ public class DonationService {
         body.put("partner_user_id", "partner_user_id");
         body.put("item_name", "🥧 Giftipie 🥧");
         body.put("quantity", "1");
-        body.put("total_amount", readyDonationRequestDto.getTotalAmount());
+        body.put("total_amount", String.valueOf(readyDonationRequestDto.getDonation()));
         body.put("vat_amount", "0");
         body.put("tax_free_amount", "0");
         body.put("approval_url", kakaopayApprovalRedirectUrl);
@@ -140,12 +141,13 @@ public class DonationService {
         log.info("[approveDonationResponseDetails] Body: " + objectMapper.writeValueAsString(responseEntity.getBody()));
     }
 
+
     private void checkValues(ApproveDonationResponseDto approveDonationResponseDto) {
-        int total = Integer.parseInt(approveDonationResponseDto.getAmount().getTotal());
+        int totalDonation = Integer.parseInt(approveDonationResponseDto.getAmount().getTotal());
         int point = Integer.parseInt(approveDonationResponseDto.getAmount().getPoint());
-        int netTotal = total - point;
-        log.info("total = " + total);
+        int netDonation = totalDonation - point;
+        log.info("totalDonation = " + totalDonation);
         log.info("point = " + point);
-        log.info("netTotal = " + netTotal);
+        log.info("netDonation = " + netDonation);
     }
 }
