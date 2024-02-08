@@ -3,10 +3,7 @@ package com.giftforyoube.funding.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.funding.dto.AddLinkRequestDto;
-import com.giftforyoube.funding.dto.FundingCreateRequestDto;
-import com.giftforyoube.funding.dto.FundingResponseDto;
-import com.giftforyoube.funding.dto.FundingResponseDtoCache;
+import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.entity.FundingStatus;
@@ -54,19 +51,20 @@ public class FundingService {
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
 
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
-    public void addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
+    public FundingItemResponseDto addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
         log.info("[addLinkAndSaveToCache] 상품링크 캐쉬에 저장하기");
+
         String lockKey = "userLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
-        boolean lockAcquired = false;
+        boolean lockAcquired = false; // 락 획득 상태
         try {
-            // 락 획득 시도를 더 짧은 시간으로 조정하여 성능 개선
-            lockAcquired = lock.tryLock(5, 1, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
+            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
             if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
             FundingItem fundingItem = previewItem(requestDto.getItemLink());
             saveToCache(fundingItem, userId.toString());
+            return FundingItemResponseDto.fromEntity(fundingItem);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
