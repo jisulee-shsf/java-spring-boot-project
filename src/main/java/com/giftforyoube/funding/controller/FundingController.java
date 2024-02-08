@@ -2,6 +2,7 @@ package com.giftforyoube.funding.controller;
 
 import com.giftforyoube.funding.dto.AddLinkRequestDto;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
+import com.giftforyoube.funding.dto.FundingItemResponseDto;
 import com.giftforyoube.funding.dto.FundingResponseDto;
 import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
@@ -34,8 +35,8 @@ public class FundingController {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_TO_ADD_LINK);
         }
         try {
-            fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
-            return ResponseEntity.ok().build();
+            FundingItemResponseDto fundingItemResponseDto = fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
+            return ResponseEntity.ok(fundingItemResponseDto);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding link: " + e.getMessage());
         }
