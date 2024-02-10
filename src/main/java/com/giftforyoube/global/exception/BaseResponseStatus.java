@@ -22,6 +22,9 @@ public enum BaseResponseStatus {
     // 1-2 펀딩 관련
     FUNDING_ITEM_LINK_SUCCESS(true, 2000, "펀딩 아이템이 저장되었습니다."),
 
+    // 1-3. 후원
+    DONATION_SUCCESS(true, 2000, "후원 결제가 완료되었습니다."),
+
     /**
      * 2. 클라이언트 에러가 발생한 경우(4000)
      */
@@ -29,7 +32,7 @@ public enum BaseResponseStatus {
     // 0. 공통
     BAD_REQUEST(false, 4000, "잘못된 요청입니다."),
 
-    // 2-1. 회원가입 / 로그인 / 회원탈퇴 관련
+    // 2-1. 회원가입 / 로그인 / 회원탈퇴
     USER_NOT_FOUND(false, 4000, "가입된 사용자 정보가 없습니다."),
     PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
@@ -38,7 +41,7 @@ public enum BaseResponseStatus {
     REGISTOR_ACCOUNT_FAILURE(false, 4000, "회원가입에 실패했습니다."),
     DELETE_ACCOUNT_FAILURE(false, 4000, "회원탈퇴에 실패했습니다."),
 
-    // 2-2. 인증 및 인가 관련
+    // 2-2. 인증 및 인가
     AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다"),
     INVALID_TOKEN(false, 4000, "JWT 토큰이 유효하지 않습니다."),
     NOT_FOUND_TOKEN(false, 4000, "JWT 토큰을 찾을 수 없습니다."),

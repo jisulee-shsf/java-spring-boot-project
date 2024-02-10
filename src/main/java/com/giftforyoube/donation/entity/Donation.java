@@ -19,10 +19,16 @@ public class Donation {
     private String sponsorNickname;
 
     @Column
-    private Long donation;
+    private String comment;
 
     @Column
-    private String comment;
+    private int donationAmount;
+
+    @Column
+    private String fundingItemName; // TEST
+
+    @Column
+    private String userNickname; // TEST
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "funding_id")
@@ -31,4 +37,17 @@ public class Donation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public Donation(String sponsorNickname, String comment, int donationAmount, Funding funding, User user) {
+        this.sponsorNickname = sponsorNickname;
+        this.comment = comment;
+        this.donationAmount = donationAmount;
+        this.funding = funding;
+        this.fundingItemName = funding.getItemName();
+        if (user != null) {
+            this.userNickname = user.getNickname();
+        } else {
+            this.userNickname = null;
+        }
+    }
 }
