@@ -1,9 +1,6 @@
 package com.giftforyoube.funding.controller;
 
-import com.giftforyoube.funding.dto.AddLinkRequestDto;
-import com.giftforyoube.funding.dto.FundingCreateRequestDto;
-import com.giftforyoube.funding.dto.FundingItemResponseDto;
-import com.giftforyoube.funding.dto.FundingResponseDto;
+import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
@@ -146,7 +143,7 @@ public class FundingController {
     @PatchMapping("/{fundingId}/update")
     public ResponseEntity<FundingResponseDto> updateFunding(@PathVariable Long fundingId,
                                                             @AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                            @RequestBody FundingCreateRequestDto requestDto) {
+                                                            @RequestBody FundingUpdateRequestDto requestDto) {
         if(userDetails == null){
             throw new BaseException(BaseResponseStatus.AUTHENTICATION_FAILED);
         }

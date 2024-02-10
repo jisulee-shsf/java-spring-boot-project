@@ -245,7 +245,7 @@ public class FundingService {
 
     // 펀딩 수정
     @Transactional
-    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
+    public FundingResponseDto updateFunding(Long fundingId, User user, FundingUpdateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
         // 펀딩 id 유효성검사
@@ -437,6 +437,4 @@ public class FundingService {
             redisTemplate.delete(keys);
         }
     }
-
-
 }
