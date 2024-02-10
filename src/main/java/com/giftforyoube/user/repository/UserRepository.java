@@ -1,5 +1,6 @@
 package com.giftforyoube.user.repository;
 
+import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

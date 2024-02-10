@@ -18,4 +18,6 @@ public interface FundingRepository extends JpaRepository<Funding, Long> {
     List<Funding> findByEndDateLessThanEqualAndStatus(LocalDate currentDate, FundingStatus fundingStatus);
 
     Funding findByUser(User currentUser);
+
+    Optional<Funding> findById(Long fundingId);
 }
