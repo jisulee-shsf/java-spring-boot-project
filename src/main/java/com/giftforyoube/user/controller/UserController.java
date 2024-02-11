@@ -92,10 +92,4 @@ public class UserController {
     public void getUserInfo(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         userService.getUserInfo(userDetails);
     }
-
-    // 6. 로그아웃
-    @GetMapping("/logout")
-    public void logoutAccount() {
-
-    }
 }
