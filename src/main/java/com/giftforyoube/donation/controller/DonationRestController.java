@@ -37,7 +37,7 @@ public class DonationRestController {
     public ResponseEntity<ReadyDonationResponseDto> readyDonation(@PathVariable Long fundingId,
                                                                   @RequestBody ReadyDonationRequestDto readyDonationRequestDto) throws JsonProcessingException {
         ReadyDonationResponseDto readyDonationResponseDto = donationService.readyDonation(readyDonationRequestDto);
-        session.setAttribute("fundingId", 1l); // TEST
+        session.setAttribute("fundingId", fundingId); // TEST
         session.setAttribute("sponsorNickname", readyDonationRequestDto.getSponsorNickname());
         session.setAttribute("comment", readyDonationRequestDto.getComment());
         session.setAttribute("tid", readyDonationResponseDto.getTid());
