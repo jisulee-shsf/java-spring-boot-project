@@ -141,10 +141,6 @@ public class FundingService {
     public FundingResponseDto getMyFundingInfo(User currentUser) {
         log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
 
-        if (currentUser == null) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_READ_FUNDING);
-        }
-
         String cacheKey = "fundingDetail:" + currentUser.getId();
         // 캐시에서 조회 시도
         FundingResponseDto cachedFunding = getFundingFromCache(cacheKey);
@@ -158,7 +154,6 @@ public class FundingService {
         }
 
         FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
-
         // 결과를 캐시에 저장
         saveFundingToCache(cacheKey, fundingResponseDto);
 
