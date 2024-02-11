@@ -56,6 +56,17 @@ public class FundingController {
         }
     }
 
+    // 내 펀딩 정보를 조회하는 API
+    @GetMapping("/myFunding")
+    public ResponseEntity<?> getMyFunding(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            // 로그인하지 않은 사용자가 API를 호출하면 적절한 HTTP 상태 코드와 메시지를 반환
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요한 기능입니다.");
+        }
+        FundingResponseDto fundingResponseDto = fundingService.getMyFundingInfo(userDetails.getUser());
+        return ResponseEntity.ok(fundingResponseDto);
+    }
+
     @GetMapping("")
     public ResponseEntity<Page<FundingResponseDto>> getActiveMainFunding(
             @RequestParam(defaultValue = "0") int page,
@@ -82,13 +93,6 @@ public class FundingController {
         Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
         return ResponseEntity.ok(activeFundingsPage);
     }
-
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩
-//    @GetMapping("/finished")
-//    public ResponseEntity<List<FundingResponseDto>> getFinishedFundings(){
-//        List<FundingResponseDto> finishedFundings = fundingService.getFinishedFunding();
-//        return ResponseEntity.ok(finishedFundings);
-//    }
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩 [페이지네이션 적용]
     @GetMapping("/finished")
@@ -159,5 +163,4 @@ public class FundingController {
         fundingService.deleteFunding(fundingId, userDetails.getUser());
         return ResponseEntity.ok().body("해당 펀딩을 성공적으로 삭제하였습니다.");
     }
-
 }
