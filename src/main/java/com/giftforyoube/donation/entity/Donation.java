@@ -45,6 +45,7 @@ public class Donation {
         this.funding = funding;
         this.fundingItemName = funding.getItemName();
         if (user != null) {
+            this.user = user;
             this.userNickname = user.getNickname();
         } else {
             this.userNickname = null;
