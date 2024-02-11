@@ -148,7 +148,7 @@ public class FundingService {
             return cachedFunding;
         }
 
-        Funding funding = fundingRepository.findByUser(currentUser);
+        Funding funding = fundingRepository.findByUserAndStatus(currentUser, FundingStatus.ACTIVE);
         if (funding == null) {
             return FundingResponseDto.emptyDto();
         }

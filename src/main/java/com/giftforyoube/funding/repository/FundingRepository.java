@@ -10,12 +10,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 public interface FundingRepository extends JpaRepository<Funding, Long> {
     Page<Funding> findAllPageByStatus(FundingStatus status, Pageable pageable);
     Slice<Funding> findByStatus(FundingStatus fundingStatus, Pageable pageable);
     List<Funding> findByEndDateLessThanEqualAndStatus(LocalDate currentDate, FundingStatus fundingStatus);
 
-    Funding findByUser(User currentUser);
+    Funding findByUserAndStatus(User currentUser, FundingStatus fundingStatus);
 }
