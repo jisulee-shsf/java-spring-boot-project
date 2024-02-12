@@ -22,6 +22,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -118,13 +119,15 @@ public class DonationService {
 
         ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
         Donation donation = saveDonationInfo(sponsorNickname, comment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
-        DonationInfoDto donationInfoDto = new DonationInfoDto(donation.getSponsorNickname(), donation.getComment(), donation.getDonationAmount());
+        DonationInfoDto donationInfoDto = new DonationInfoDto(donation.getSponsorNickname(), donation.getComment(), donation.getDonationAmount(), donation.getDonationRanking());
         return donationInfoDto;
     }
 
     private Donation saveDonationInfo(String sponsorNickname, String comment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
+        int donationRanking = calculateDonationRanking(fundingId);
+
         Funding funding = fundingRepository.findById(fundingId)
-                .orElseThrow(() -> new IllegalArgumentException("펀딩 정보를 찾을 수 없습니다.")); // TEST
+                .orElseThrow(() -> new IllegalArgumentException("펀딩 정보를 찾을 수 없습니다."));
 
         User user = null;
         if (userDetails != null) {
@@ -132,8 +135,18 @@ public class DonationService {
             user = userRepository.findById(userId).orElse(null);
         }
 
-        Donation donation = new Donation(sponsorNickname, comment, donationAmount, funding, user);
+        Donation donation = new Donation(sponsorNickname, comment, donationAmount, donationRanking, funding, user);
         donationRepository.save(donation);
         return donation;
+    }
+
+    private int calculateDonationRanking(Long fundingId) {
+        List<Donation> donations = donationRepository.findByFundingIdOrderByDonationRankingDesc(fundingId);
+        if (donations.isEmpty()) {
+            return 1;
+        } else {
+            int lastDonationRanking = donations.get(0).getDonationRanking();
+            return lastDonationRanking + 1;
+        }
     }
 }
