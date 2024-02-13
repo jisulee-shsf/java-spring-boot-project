@@ -7,28 +7,44 @@
 </head>
 <body>
 <!-- 후원용 결제 버튼 -->
-<input type="number" id="amountInput" placeholder="직접 입력">
+<input type="number" id="donationAmountInput" placeholder="후원 금액">
+<input type="text" id="sponsorNicknameInput" placeholder="남길 이름">
+<input type="text" id="commentInput" placeholder="남길 메시지">
 <button id="donationButton">카카오페이로 후원하기</button>
 
 <script>
     // 결제 버튼 클릭에 따른 동작 실행
     document.getElementById('donationButton').addEventListener('click', function() {
-        // 입력 금액 확인
-        const amount = document.getElementById('amountInput').value;
+        // 입력 정보 확인
+        const donation = document.getElementById('donationAmountInput').value;
+        const sponsorNickname = document.getElementById('sponsorNicknameInput').value;
+        const comment = document.getElementById('commentInput').value;
         // 결제 요청 함수 호출
-        sendDonationRequest(amount);
+        sendDonationRequest(donation, sponsorNickname, comment);
     });
 
+    // 현재 페이지 URL에서 fundingId를 추출하는 함수
+    function getFundingIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('fundingId');
+    }
+
     // 결제 요청 함수
-    function sendDonationRequest(donation) {
+    function sendDonationRequest(donationAmount, sponsorNickname, comment) {
+        const fundingId = 123;
+        const url = `/api/funding/${fundingId}/donation/ready`;
+
         // 결제준비 요청
-        const url = 'api/donation/ready';
         fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ donation: donation }) // donation으로 수정
+            body: JSON.stringify({
+                donation: donationAmount,
+                sponsorNickname: sponsorNickname,
+                comment: comment
+            })
         })
             .then(response => response.json())
             .then(data => {
@@ -36,9 +52,11 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const pgToken = urlParams.get('pg_token');
 
+
                 // 결제승인 요청
                 if (pgToken) {
-                    fetch(`api/donation/approve?pg_token=${pgToken}`)
+                    const approveUrl = `/api/donation/approve?pg_token=${pgToken}`;
+                    fetch(approveUrl)
                         .then(response => response.json())
                         .then(data => {
                             console.log('결제 처리 결과:', data);

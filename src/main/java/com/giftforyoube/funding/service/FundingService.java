@@ -3,10 +3,7 @@ package com.giftforyoube.funding.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.funding.dto.AddLinkRequestDto;
-import com.giftforyoube.funding.dto.FundingCreateRequestDto;
-import com.giftforyoube.funding.dto.FundingResponseDto;
-import com.giftforyoube.funding.dto.FundingResponseDtoCache;
+import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.entity.FundingStatus;
@@ -54,7 +51,7 @@ public class FundingService {
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
 
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
-    public void addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
+    public FundingItemResponseDto addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
         log.info("[addLinkAndSaveToCache] 상품링크 캐쉬에 저장하기");
 
         String lockKey = "userLock:" + userId;
@@ -67,6 +64,7 @@ public class FundingService {
             }
             FundingItem fundingItem = previewItem(requestDto.getItemLink());
             saveToCache(fundingItem, userId.toString());
+            return FundingItemResponseDto.fromEntity(fundingItem);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
@@ -80,12 +78,12 @@ public class FundingService {
     @Transactional
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         log.info("[saveToDatabase] DB에 저장하기");
-
         String lockKey = "userFundingLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
-        boolean lockAcquired = false; // 락 획득 상태
+        boolean lockAcquired = false;
         try {
-            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            // 락 획득 시도를 최적화
+            lockAcquired = lock.tryLock(5, 1, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
             if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
@@ -113,7 +111,9 @@ public class FundingService {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
         } finally {
-            lock.unlock(); // 락 해제
+            if (lockAcquired) {
+                lock.unlock();
+            }
         }
     }
 
@@ -141,10 +141,6 @@ public class FundingService {
     public FundingResponseDto getMyFundingInfo(User currentUser) {
         log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
 
-        if (currentUser == null) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_READ_FUNDING);
-        }
-
         String cacheKey = "fundingDetail:" + currentUser.getId();
         // 캐시에서 조회 시도
         FundingResponseDto cachedFunding = getFundingFromCache(cacheKey);
@@ -152,13 +148,12 @@ public class FundingService {
             return cachedFunding;
         }
 
-        Funding funding = fundingRepository.findByUser(currentUser);
+        Funding funding = fundingRepository.findByUserAndStatus(currentUser, FundingStatus.ACTIVE);
         if (funding == null) {
             return FundingResponseDto.emptyDto();
         }
 
         FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
-
         // 결과를 캐시에 저장
         saveFundingToCache(cacheKey, fundingResponseDto);
 
@@ -245,7 +240,7 @@ public class FundingService {
 
     // 펀딩 수정
     @Transactional
-    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
+    public FundingResponseDto updateFunding(Long fundingId, User user, FundingUpdateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
         // 펀딩 id 유효성검사
@@ -437,6 +432,4 @@ public class FundingService {
             redisTemplate.delete(keys);
         }
     }
-
-
 }
