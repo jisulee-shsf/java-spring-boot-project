@@ -49,7 +49,7 @@ public class GoogleService {
     @Value("${google.secret.password}")
     private String secretPassword;
     @Value("${google.redirect.uri}")
-    private String redirectUrl;
+    private String redirectUri;
 
     // Google 로그인
     public String googleLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
@@ -76,7 +76,7 @@ public class GoogleService {
         body.add("grant_type", "authorization_code");
         body.add("client_id", clientId);
         body.add("client_secret", secretPassword);
-        body.add("redirect_uri", redirectUrl);
+        body.add("redirect_uri", redirectUri);
         body.add("code", code);
 
         RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity

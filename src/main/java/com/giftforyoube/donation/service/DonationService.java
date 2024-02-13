@@ -1,10 +1,7 @@
 package com.giftforyoube.donation.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giftforyoube.donation.dto.ApproveDonationResponseDto;
-import com.giftforyoube.donation.dto.DonationInfoDto;
-import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
-import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
+import com.giftforyoube.donation.dto.*;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
@@ -51,6 +48,11 @@ public class DonationService {
     @Value("${kakaopay.fail.redirect.url}")
     private String kakaopayFailRedirectUrl;
 
+    public int getDonationRanking(Long fundingId) {
+        int donationRanking = calculateDonationRanking(fundingId);
+        return donationRanking;
+    }
+
     public ReadyDonationResponseDto readyDonation(ReadyDonationRequestDto readyDonationRequestDto) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://open-api.kakaopay.com")
@@ -89,7 +91,7 @@ public class DonationService {
         return readyDonationResponseDto;
     }
 
-    public DonationInfoDto approveDonation(String tid, String pgToken, String sponsorNickname, String comment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
+    public GetDonationInfoResponseDto approveDonation(String tid, String pgToken, String sponsorNickname, String sponsorComment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://open-api.kakaopay.com")
                 .path("/online/v1/payment/approve")
@@ -118,12 +120,13 @@ public class DonationService {
                 ApproveDonationResponseDto.class);
 
         ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
-        Donation donation = saveDonationInfo(sponsorNickname, comment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
-        DonationInfoDto donationInfoDto = new DonationInfoDto(donation.getSponsorNickname(), donation.getComment(), donation.getDonationAmount(), donation.getDonationRanking());
-        return donationInfoDto;
+        Donation donation = saveDonationInfo(sponsorNickname, sponsorComment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
+
+        GetDonationInfoResponseDto getDonationInfoResponseDto = new GetDonationInfoResponseDto(donation.getSponsorNickname(), donation.getSponsorComment(), donation.getDonationRanking());
+        return getDonationInfoResponseDto;
     }
 
-    private Donation saveDonationInfo(String sponsorNickname, String comment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
+    private Donation saveDonationInfo(String sponsorNickname, String sponsorComment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
         int donationRanking = calculateDonationRanking(fundingId);
 
         Funding funding = fundingRepository.findById(fundingId)
@@ -135,7 +138,7 @@ public class DonationService {
             user = userRepository.findById(userId).orElse(null);
         }
 
-        Donation donation = new Donation(sponsorNickname, comment, donationAmount, donationRanking, funding, user);
+        Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
         donationRepository.save(donation);
         return donation;
     }
