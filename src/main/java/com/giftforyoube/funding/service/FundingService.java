@@ -141,10 +141,6 @@ public class FundingService {
     public FundingResponseDto getMyFundingInfo(User currentUser) {
         log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
 
-        if (currentUser == null) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_READ_FUNDING);
-        }
-
         String cacheKey = "fundingDetail:" + currentUser.getId();
         // 캐시에서 조회 시도
         FundingResponseDto cachedFunding = getFundingFromCache(cacheKey);
@@ -152,13 +148,12 @@ public class FundingService {
             return cachedFunding;
         }
 
-        Funding funding = fundingRepository.findByUser(currentUser);
+        Funding funding = fundingRepository.findByUserAndStatus(currentUser, FundingStatus.ACTIVE);
         if (funding == null) {
             return FundingResponseDto.emptyDto();
         }
 
         FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
-
         // 결과를 캐시에 저장
         saveFundingToCache(cacheKey, fundingResponseDto);
 
@@ -245,7 +240,7 @@ public class FundingService {
 
     // 펀딩 수정
     @Transactional
-    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
+    public FundingResponseDto updateFunding(Long fundingId, User user, FundingUpdateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
         // 펀딩 id 유효성검사
@@ -437,6 +432,4 @@ public class FundingService {
             redisTemplate.delete(keys);
         }
     }
-
-
 }

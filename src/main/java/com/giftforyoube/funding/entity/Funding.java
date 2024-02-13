@@ -2,6 +2,7 @@ package com.giftforyoube.funding.entity;
 
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.funding.dto.FundingCreateRequestDto;
+import com.giftforyoube.funding.dto.FundingUpdateRequestDto;
 import com.giftforyoube.global.entity.Auditable;
 import com.giftforyoube.user.entity.User;
 import jakarta.persistence.*;
@@ -63,13 +64,10 @@ public class Funding extends Auditable implements Serializable {
         this.status = status;
     }
 
-    public void update(FundingCreateRequestDto requestDto) {
-        this.itemName = requestDto.getItemName();
+    public void update(FundingUpdateRequestDto requestDto) {
         this.showName = requestDto.getShowName();
         this.title = requestDto.getTitle();
         this.content = requestDto.getContent();
-        this.targetAmount = requestDto.getTargetAmount();
         this.publicFlag = requestDto.isPublicFlag();
-        this.endDate = requestDto.getEndDate();
     }
 }
