@@ -47,7 +47,7 @@ public class KakaoService {
     @Value("${kakao.rest.api.key}")
     private String restApiKey;
     @Value("${kakao.redirect.uri}")
-    private String redirectUrl;
+    private String redirectUri;
 
     // 카카오 로그인
     public String kakaoLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
@@ -74,7 +74,7 @@ public class KakaoService {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
         body.add("client_id", restApiKey);
-        body.add("redirect_uri", redirectUrl);
+        body.add("redirect_uri", redirectUri);
         body.add("code", code);
 
         RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity

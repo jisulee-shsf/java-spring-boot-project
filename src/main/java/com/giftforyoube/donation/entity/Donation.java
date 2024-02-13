@@ -19,7 +19,7 @@ public class Donation {
     private String sponsorNickname;
 
     @Column
-    private String comment;
+    private String sponsorComment;
 
     @Column
     private int donationAmount;
@@ -28,7 +28,7 @@ public class Donation {
     private int donationRanking;
 
     @Column
-    private String fundingItemName; // TEST
+    private String fundingShowName; // TEST
 
     @Column
     private String userNickname; // TEST
@@ -41,13 +41,13 @@ public class Donation {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Donation(String sponsorNickname, String comment, int donationAmount, int donationRanking, Funding funding, User user) {
+    public Donation(String sponsorNickname, String sponsorComment, int donationAmount, int donationRanking, Funding funding, User user) {
         this.sponsorNickname = sponsorNickname;
-        this.comment = comment;
+        this.sponsorComment = sponsorComment;
         this.donationAmount = donationAmount;
         this.donationRanking = donationRanking;
         this.funding = funding;
-        this.fundingItemName = funding.getItemName();
+        this.fundingShowName = funding.getShowName();
         if (user != null) {
             this.user = user;
             this.userNickname = user.getNickname();
