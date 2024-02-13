@@ -18,6 +18,7 @@ public enum BaseResponseStatus {
     KAKAO_LOGIN_SUCCESS(true, 2000, "카카오 로그인이 완료되었습니다."),
     GOOGLE_LOGIN_SUCCESS(true, 2000, "구글 로그인이 완료되었습니다."),
     DELETE_ACCOUNT_SUCCESS(true, 2000, "회원탈퇴가 완료되었습니다."),
+    LOGOUT_SUCCESS(true,2000,"로그아웃이 완료되었습니다."),
 
     // 1-2 펀딩 관련
     FUNDING_ITEM_LINK_SUCCESS(true, 2000, "펀딩 아이템이 저장되었습니다."),

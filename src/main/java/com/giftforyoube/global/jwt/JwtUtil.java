@@ -104,4 +104,19 @@ public class JwtUtil {
         }
         return null;
     }
+
+    public void logout(HttpServletRequest req, HttpServletResponse res) {
+        Cookie[] cookies = req.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(AUTHORIZATION_HEADER)) {
+                    cookie.setValue(""); // 쿠키 값 비우기
+                    cookie.setPath("/");
+                    cookie.setMaxAge(0); // 쿠키 만료
+                    res.addCookie(cookie); // 응답에 쿠키 추가
+                    break;
+                }
+            }
+        }
+    }
 }
