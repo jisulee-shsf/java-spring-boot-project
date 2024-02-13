@@ -55,7 +55,7 @@ public class JwtUtil {
         String encodeToken = URLEncoder.encode(token, "utf-8").replaceAll("\\+", "%20"); // BEARER_PREFIX 공백 대체
         log.info("[addJwtToCookie] encodeToken: " + encodeToken);
         Cookie cookie = new Cookie(AUTHORIZATION_HEADER, encodeToken); // JWT 포함 cookie 생성
-        cookie.setPath("/"); // cookie 경로 설정
+        cookie.setPath("/");
         res.addCookie(cookie); // HttpServletResponse 객체 내 cookie 추가
         return encodeToken;
     }
@@ -94,6 +94,7 @@ public class JwtUtil {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equals(AUTHORIZATION_HEADER)) {
                     try {
+                        log.info("test: " + cookie.getValue());
                         return URLDecoder.decode(cookie.getValue(), "UTF-8");
                     } catch (UnsupportedEncodingException e) {
                         return null;
