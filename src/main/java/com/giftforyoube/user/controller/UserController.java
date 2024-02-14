@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
@@ -67,7 +68,7 @@ public class UserController {
 
         BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS, kakaoToken);
         return ResponseEntity.status(HttpStatus.FOUND) // 302
-                .location(new URL("https://www.giftipie.me/").toURI())
+//                .location(new URI("https://www.giftipie.me/"))
                 .body(baseResponse); // 2000
     }
 
@@ -83,7 +84,7 @@ public class UserController {
 
         BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_SUCCESS, googleToken);
         return ResponseEntity.status(HttpStatus.FOUND) // 302
-                .location(new URL("https://www.giftipie.me/").toURI())
+//                .location(new URI("https://www.giftipie.me/"))
                 .body(baseResponse); // 2000
     }
 
