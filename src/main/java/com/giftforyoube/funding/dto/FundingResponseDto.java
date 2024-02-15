@@ -90,7 +90,7 @@ public class FundingResponseDto implements Serializable {
                 .status(funding.getStatus())
                 .achievementRate(achievementRate)
                 .ownerId(funding.getUser().getId())
-                .ownerFlag(true)
+                .ownerFlag(false)
                 .createdAt(funding.getCreatedAt())
                 .modifiedAt(funding.getModifiedAt())
                 .build();

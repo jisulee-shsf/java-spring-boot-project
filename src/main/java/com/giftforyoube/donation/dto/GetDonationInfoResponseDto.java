@@ -5,17 +5,15 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class DonationInfoDto {
+public class GetDonationInfoResponseDto {
 
     private String sponsorNickname;
-    private String comment;
-    private int donationAmount;
+    private String sponsorComment;
     private int donationRanking;
 
-    public DonationInfoDto(String sponsorNickname, String comment, int donationAmount, int donationRanking) {
+    public GetDonationInfoResponseDto(String sponsorNickname, String sponsorComment, int donationRanking) {
         this.sponsorNickname = sponsorNickname;
-        this.comment = comment;
-        this.donationAmount = donationAmount;
+        this.sponsorComment = sponsorComment;
         this.donationRanking = donationRanking;
     }
 }

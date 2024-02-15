@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 public class ReadyDonationRequestDto {
 
     private String sponsorNickname;
-    private String comment;
+    private String sponsorComment;
     private int donation;
 }

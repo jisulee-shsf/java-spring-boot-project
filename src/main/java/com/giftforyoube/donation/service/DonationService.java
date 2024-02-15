@@ -1,10 +1,7 @@
 package com.giftforyoube.donation.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giftforyoube.donation.dto.ApproveDonationResponseDto;
-import com.giftforyoube.donation.dto.DonationInfoDto;
-import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
-import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
+import com.giftforyoube.donation.dto.*;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
@@ -51,79 +48,87 @@ public class DonationService {
     @Value("${kakaopay.fail.redirect.url}")
     private String kakaopayFailRedirectUrl;
 
-    public ReadyDonationResponseDto readyDonation(ReadyDonationRequestDto readyDonationRequestDto) throws JsonProcessingException {
-        URI uri = UriComponentsBuilder
+    public int getDonationRanking(Long fundingId) {
+        int donationRanking = calculateDonationRanking(fundingId);
+        return donationRanking;
+    }
+
+    public ReadyDonationResponseDto readyDonation(ReadyDonationRequestDto readyDonationRequestDto) {
+        URI uri = buildKakaoPayUri("/online/v1/payment/ready");
+        HttpHeaders headers = buildKakaoPayHeaders();
+        Map<String, Object> body = buildKakaoPayReadyRequestBody(readyDonationRequestDto.getDonation());
+
+        RequestEntity<Map<String, Object>> requestEntity = RequestEntity
+                .post(uri)
+                .headers(headers)
+                .body(body);
+
+        ResponseEntity<ReadyDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ReadyDonationResponseDto.class);
+        ReadyDonationResponseDto readyDonationResponseDto = responseEntity.getBody();
+        return readyDonationResponseDto;
+    }
+
+    public GetDonationInfoResponseDto approveDonation(String tid, String pgToken, String sponsorNickname, String sponsorComment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
+        URI uri = buildKakaoPayUri("/online/v1/payment/approve");
+        HttpHeaders headers = buildKakaoPayHeaders();
+        Map<String, Object> body = buildKakaoPayApproveRequestBody(tid, pgToken);
+
+        RequestEntity<Map<String, Object>> requestEntity = RequestEntity
+                .post(uri)
+                .headers(headers)
+                .body(body);
+
+        ResponseEntity<ApproveDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ApproveDonationResponseDto.class);
+        ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
+
+        Donation donation = saveDonationInfo(sponsorNickname, sponsorComment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
+        GetDonationInfoResponseDto getDonationInfoResponseDto = new GetDonationInfoResponseDto(donation.getSponsorNickname(), donation.getSponsorComment(), donation.getDonationRanking());
+        return getDonationInfoResponseDto;
+    }
+
+    private URI buildKakaoPayUri(String path) {
+        return UriComponentsBuilder
                 .fromUriString("https://open-api.kakaopay.com")
-                .path("/online/v1/payment/ready")
+                .path(path)
                 .encode()
                 .build()
                 .toUri();
+    }
 
+    private HttpHeaders buildKakaoPayHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "SECRET_KEY " + kakaopaySecretKey);
         headers.add("Content-Type", "application/json");
+        return headers;
+    }
 
+    private Map<String, Object> buildKakaoPayReadyRequestBody(int donationAmount) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("cid", kakaopayCid);
         body.put("partner_order_id", "partner_order_id");
         body.put("partner_user_id", "partner_user_id");
         body.put("item_name", "🥧 Giftipie 🥧");
         body.put("quantity", "1");
-        body.put("total_amount", readyDonationRequestDto.getDonation());
+        body.put("total_amount", donationAmount);
         body.put("vat_amount", "0");
         body.put("tax_free_amount", "0");
         body.put("approval_url", kakaopayApproveRedirectUrl);
         body.put("cancel_url", kakaopayCancelRedirectUrl);
         body.put("fail_url", kakaopayFailRedirectUrl);
-
-        RequestEntity<Map<String, Object>> requestEntity = RequestEntity
-                .post(uri)
-                .headers(headers)
-                .body(body);
-
-        ResponseEntity<ReadyDonationResponseDto> responseEntity = restTemplate.exchange(
-                requestEntity,
-                ReadyDonationResponseDto.class);
-
-        ReadyDonationResponseDto readyDonationResponseDto = responseEntity.getBody();
-        return readyDonationResponseDto;
+        return body;
     }
 
-    public DonationInfoDto approveDonation(String tid, String pgToken, String sponsorNickname, String comment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
-        URI uri = UriComponentsBuilder
-                .fromUriString("https://open-api.kakaopay.com")
-                .path("/online/v1/payment/approve")
-                .encode()
-                .build()
-                .toUri();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "SECRET_KEY " + kakaopaySecretKey);
-        headers.add("Content-Type", "application/json");
-
+    private Map<String, Object> buildKakaoPayApproveRequestBody(String tid, String pgToken) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("cid", kakaopayCid);
         body.put("tid", tid);
         body.put("partner_order_id", "partner_order_id");
         body.put("partner_user_id", "partner_user_id");
         body.put("pg_token", pgToken);
-
-        RequestEntity<Map<String, Object>> requestEntity = RequestEntity
-                .post(uri)
-                .headers(headers)
-                .body(body);
-
-        ResponseEntity<ApproveDonationResponseDto> responseEntity = restTemplate.exchange(
-                requestEntity,
-                ApproveDonationResponseDto.class);
-
-        ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
-        Donation donation = saveDonationInfo(sponsorNickname, comment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
-        DonationInfoDto donationInfoDto = new DonationInfoDto(donation.getSponsorNickname(), donation.getComment(), donation.getDonationAmount(), donation.getDonationRanking());
-        return donationInfoDto;
+        return body;
     }
 
-    private Donation saveDonationInfo(String sponsorNickname, String comment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
+    private Donation saveDonationInfo(String sponsorNickname, String sponsorComment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
         int donationRanking = calculateDonationRanking(fundingId);
 
         Funding funding = fundingRepository.findById(fundingId)
@@ -135,7 +140,7 @@ public class DonationService {
             user = userRepository.findById(userId).orElse(null);
         }
 
-        Donation donation = new Donation(sponsorNickname, comment, donationAmount, donationRanking, funding, user);
+        Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
         donationRepository.save(donation);
         return donation;
     }

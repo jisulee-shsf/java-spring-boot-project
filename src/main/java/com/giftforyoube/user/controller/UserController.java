@@ -12,6 +12,7 @@ import com.giftforyoube.user.service.KakaoService;
 import com.giftforyoube.user.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,8 +25,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 @Slf4j
 @RestController
@@ -35,11 +36,13 @@ public class UserController {
     private final UserService userService;
     private final KakaoService kakaoService;
     private final GoogleService googleService;
+    private final HttpSession session;
 
-    public UserController(UserService userService, KakaoService kakaoService, GoogleService googleService) {
+    public UserController(UserService userService, KakaoService kakaoService, GoogleService googleService, HttpSession session) {
         this.userService = userService;
         this.kakaoService = kakaoService;
         this.googleService = googleService;
+        this.session = session;
     }
 
     // 1. 일반 회원가입
@@ -55,10 +58,11 @@ public class UserController {
         return userService.deleteAccount(userDetails.getUser().getId(), deleteRequestDto.getPassword());
     }
 
-    // 3. Kakao 로그인
+    // 3-1. Kakao 로그인
     @GetMapping("/kakao/callback")
     public ResponseEntity<BaseResponse<String>> kakaoLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException, URISyntaxException, UnsupportedEncodingException, MalformedURLException {
         String kakaoToken = kakaoService.kakaoLogin(code);
+        session.setAttribute("kakaoToken", kakaoToken);
         log.info("[kakaoLogin] kakaoToken: " + kakaoToken);
 
         Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, kakaoToken);
@@ -67,13 +71,22 @@ public class UserController {
 
         BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS, kakaoToken);
         return ResponseEntity.status(HttpStatus.FOUND) // 302
-                .location(new URL("https://www.giftipie.me/").toURI())
+                .location(new URI("https://www.giftipie.me/"))
                 .body(baseResponse); // 2000
+    }
+
+    // 3-2. Kakao 로그인 테스트용
+    @GetMapping("/kakao/response")
+    public ResponseEntity<BaseResponse<String>> getKakaoLoginInfo() {
+        String kakaoToken = (String) session.getAttribute("kakaoToken");
+        BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS, kakaoToken); // 2000
+        return ResponseEntity.status(HttpStatus.OK) // 200
+                .body(baseResponse);
     }
 
     // 4. Google 로그인
     @GetMapping("/login/oauth2/code/google")
-    public ResponseEntity<BaseResponse<String>> googleLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException, URISyntaxException, UnsupportedEncodingException, MalformedURLException {
+    public ResponseEntity<BaseResponse<String>> googleLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException, URISyntaxException, UnsupportedEncodingException {
         String googleToken = googleService.googleLogin(code);
         log.info("[googleLogin] googleToken: " + googleToken);
 
@@ -83,7 +96,7 @@ public class UserController {
 
         BaseResponse<String> baseResponse = new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_SUCCESS, googleToken);
         return ResponseEntity.status(HttpStatus.FOUND) // 302
-                .location(new URL("https://www.giftipie.me/").toURI())
+                .location(new URI("https://www.giftipie.me/"))
                 .body(baseResponse); // 2000
     }
 
