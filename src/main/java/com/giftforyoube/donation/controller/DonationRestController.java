@@ -66,9 +66,11 @@ public class DonationRestController {
         Long fundingId = (Long) session.getAttribute("fundingId");
         GetDonationInfoResponseDto getDonationInfoResponseDto = donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
 
-        String redirectUrl = giftipieRedirectUrl + "fundingdetail/" + fundingId;
+//        String redirectUrl = giftipieRedirectUrl + "fundingdetail/" + fundingId;
         BaseResponse<GetDonationInfoResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, getDonationInfoResponseDto); // 2000
-        return ResponseEntity.status(HttpStatus.FOUND).location(new URI(redirectUrl)).body(baseResponse); // 302
+        return ResponseEntity.status(HttpStatus.FOUND)
+//                .location(new URI(redirectUrl))
+                .body(baseResponse); // 302
     }
 
     // 3-2. 후원 결제실패
