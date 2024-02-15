@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,4 +18,7 @@ public interface FundingRepository extends JpaRepository<Funding, Long> {
     List<Funding> findByEndDateLessThanEqualAndStatus(LocalDate currentDate, FundingStatus fundingStatus);
   
     Funding findByUserAndStatus(User currentUser, FundingStatus fundingStatus);
+
+    @Query("SELECT COUNT(f) FROM Funding f WHERE f.currentAmount >= f.targetAmount")
+    Long countSuccessfulFundings();
 }

@@ -3,6 +3,7 @@ package com.giftforyoube.funding.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
@@ -46,9 +47,11 @@ public class FundingService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final RedissonClient redissonClient;
+    private final DonationRepository donationRepository;
 
     private static final int TIMEOUT = 10000; // 10초
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
+    private static final String FUNDING_SUMMARY_CACHE_KEY = "fundingSummary";
 
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
     public FundingItemResponseDto addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
@@ -279,6 +282,30 @@ public class FundingService {
         clearFundingCaches();
     }
 
+    @Transactional(readOnly = true)
+    public FundingSummaryResponseDto getFundingSummary() {
+        // 캐시에서 통계 데이터를 검색합니다.
+        FundingSummaryResponseDto cachedSummary = getSummaryFromCache(FUNDING_SUMMARY_CACHE_KEY);
+        if (cachedSummary != null) {
+            return cachedSummary;
+        }
+
+        // 캐시에 데이터가 없는 경우, 데이터베이스에서 정보를 계산합니다.
+        long totalDonationsCount = donationRepository.count();
+        long successfulFundingsCount = fundingRepository.countSuccessfulFundings();
+        long totalFundingAmount = donationRepository.sumDonationAmounts();
+
+        // 계산된 통계 정보를 캐시에 저장합니다.
+        FundingSummaryResponseDto summary = FundingSummaryResponseDto.builder()
+                .totalDonationsCount(totalDonationsCount)
+                .successfulFundingsCount(successfulFundingsCount)
+                .totalFundingAmount(totalFundingAmount)
+                .build();
+
+        saveSummaryToCache(FUNDING_SUMMARY_CACHE_KEY, summary);
+        return summary;
+    }
+
  // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
 
     private String buildCacheKey(String userId) {
@@ -413,6 +440,30 @@ public class FundingService {
         }
     }
 
+    // Giftipie에서 함께한 선물 캐시에서 가져오기
+    private FundingSummaryResponseDto getSummaryFromCache(String cacheKey) {
+        String jsonContent = redisTemplate.opsForValue().get(cacheKey);
+        if (jsonContent == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(jsonContent, FundingSummaryResponseDto.class);
+        } catch (JsonProcessingException e) {
+            log.error("Error deserializing funding summary from cache", e);
+            return null;
+        }
+    }
+
+    // Giftipie에서 함께한 선물 캐시에 저장
+    private void saveSummaryToCache(String cacheKey, FundingSummaryResponseDto summary) {
+        try {
+            String jsonContent = objectMapper.writeValueAsString(summary);
+            redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1)); // 캐시 유지 시간은 요구 사항에 따라 조정 가능
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing funding summary to cache", e);
+        }
+    }
+
     // 펀딩 생성, 업데이트, 삭제 시 캐시 삭제
     public void clearFundingCaches() {
         // 메인 펀딩 관련 캐시 삭제
@@ -424,6 +475,9 @@ public class FundingService {
 
         // 상세 페이지 캐시 삭제 추가
         clearCacheByPattern("fundingDetail:*");
+
+        // Giftipie에서 함께한 선물 캐시 삭제
+        clearCacheByPattern(FUNDING_SUMMARY_CACHE_KEY);
     }
 
     private void clearCacheByPattern(String pattern) {
