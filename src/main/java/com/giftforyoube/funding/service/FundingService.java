@@ -3,6 +3,8 @@ package com.giftforyoube.funding.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.giftforyoube.donation.entity.Donation;
+import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
@@ -46,6 +48,7 @@ public class FundingService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final RedissonClient redissonClient;
+    private final DonationRepository donationRepository;
 
     private static final int TIMEOUT = 10000; // 10초
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
@@ -277,6 +280,19 @@ public class FundingService {
 
         fundingRepository.delete(funding);
         clearFundingCaches();
+    }
+
+    @Transactional(readOnly = true)
+    public FundingSummaryResponseDto getFundingSummary() {
+        long totalDonationsCount = donationRepository.count();
+        long successfulFundingsCount = fundingRepository.countSuccessfulFundings();
+        long totalFundingAmount = donationRepository.sumDonationAmounts();
+
+        return FundingSummaryResponseDto.builder()
+                .totalDonationsCount(totalDonationsCount)
+                .successfulFundingsCount(successfulFundingsCount)
+                .totalFundingAmount(totalFundingAmount)
+                .build();
     }
 
  // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
