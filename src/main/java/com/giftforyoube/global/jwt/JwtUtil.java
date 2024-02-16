@@ -56,6 +56,8 @@ public class JwtUtil {
         log.info("[addJwtToCookie] encodeToken: " + encodeToken);
         Cookie cookie = new Cookie(AUTHORIZATION_HEADER, encodeToken); // JWT 포함 cookie 생성
         cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         res.addCookie(cookie); // HttpServletResponse 객체 내 cookie 추가
         return encodeToken;
     }
