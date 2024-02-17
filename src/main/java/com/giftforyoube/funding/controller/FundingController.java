@@ -70,7 +70,7 @@ public class FundingController {
     @GetMapping("")
     public ResponseEntity<Page<FundingResponseDto>> getActiveMainFunding(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "4") int size,
+            @RequestParam(defaultValue = "6") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
