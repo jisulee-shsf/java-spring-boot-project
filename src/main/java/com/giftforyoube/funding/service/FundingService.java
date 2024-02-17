@@ -177,7 +177,7 @@ public class FundingService {
         }
 
         // DB에서 조회
-        Page<Funding> mainFundings = fundingRepository.findAllPageByStatus(FundingStatus.ACTIVE, pageable);
+        Page<Funding> mainFundings = fundingRepository.findById(pageable);
         Page<FundingResponseDto> fundingResponseDtoPage = mainFundings.map(FundingResponseDto::fromEntity);
 
         // 결과를 캐시에 저장
@@ -198,7 +198,7 @@ public class FundingService {
         }
 
         // DB에서 조회 및 캐시 저장
-        Slice<FundingResponseDto> activeFundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable).map(FundingResponseDto::fromEntity);
+        Slice<FundingResponseDto> activeFundings = fundingRepository.findById(pageable).map(FundingResponseDto::fromEntity);
         saveFundingListToCache(cacheKey, activeFundings);
 
         return activeFundings;
