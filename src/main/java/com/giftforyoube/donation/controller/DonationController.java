@@ -16,17 +16,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 @RestController
 @RequestMapping("/api")
-public class DonationRestController {
+public class DonationController {
 
     private final DonationService donationService;
     private final HttpSession session;
 
-    public DonationRestController(DonationService donationService, HttpSession session) {
+    public DonationController(DonationService donationService, HttpSession session) {
         this.donationService = donationService;
         this.session = session;
     }
@@ -34,15 +31,15 @@ public class DonationRestController {
     @Value("${giftipie.redirect.url}")
     private String giftipieRedirectUrl;
 
-    // 1. 후원 랭킹조회
+    // 1. 후원 랭킹 조회
     @GetMapping("/funding/{Id}/donation")
     public ResponseEntity<BaseResponse<GetDonationRankingResponseDto>> getDonationRanking(@PathVariable("Id") Long id) {
         GetDonationRankingResponseDto getDonationRankingResponseDto = new GetDonationRankingResponseDto(donationService.getDonationRanking(id));
-        BaseResponse<GetDonationRankingResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.SUCCESS, getDonationRankingResponseDto); // 2000
+        BaseResponse<GetDonationRankingResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.SUCCESS, getDonationRankingResponseDto);
         return ResponseEntity.status(HttpStatus.OK).body(baseResponse); // 200
     }
 
-    // 2. 후원 결제준비
+    // 2. 후원 결제 준비
     @PostMapping("/funding/{id}/donation/ready")
     public ResponseEntity<BaseResponse<ReadyDonationResponseDto>> readyDonation(@PathVariable Long id,
                                                                                 @RequestBody ReadyDonationRequestDto readyDonationRequestDto) {
@@ -52,14 +49,14 @@ public class DonationRestController {
         session.setAttribute("sponsorComment", readyDonationRequestDto.getSponsorComment());
         session.setAttribute("tid", readyDonationResponseDto.getTid());
 
-        BaseResponse<ReadyDonationResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_READY_SUCCESS, readyDonationResponseDto); // 2000
-        return ResponseEntity.status(HttpStatus.OK).body(baseResponse); // 200
+        BaseResponse<ReadyDonationResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_READY_SUCCESS, readyDonationResponseDto);
+        return ResponseEntity.status(HttpStatus.OK).body(baseResponse);
     }
 
-    // 3-1. 후원 결제승인
+    // 3-1. 후원 결제 승인
     @GetMapping("/donation/approve")
     public ResponseEntity<BaseResponse<GetDonationInfoResponseDto>> approveDonation(@RequestParam("pg_token") String pgToken,
-                                                                                    @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException, URISyntaxException {
+                                                                                    @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException {
         String tid = (String) session.getAttribute("tid");
         String sponsorNickname = (String) session.getAttribute("sponsorNickname");
         String sponsorComment = (String) session.getAttribute("sponsorComment");
@@ -67,23 +64,23 @@ public class DonationRestController {
         GetDonationInfoResponseDto getDonationInfoResponseDto = donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
 
 //        String redirectUrl = giftipieRedirectUrl + "fundingdetail/" + fundingId;
-        BaseResponse<GetDonationInfoResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, getDonationInfoResponseDto); // 2000
-        return ResponseEntity.status(HttpStatus.FOUND)
+        BaseResponse<GetDonationInfoResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, getDonationInfoResponseDto);
+        return ResponseEntity.status(HttpStatus.OK)
 //                .location(new URI(redirectUrl))
-                .body(baseResponse); // 302
+                .body(baseResponse);
     }
 
-    // 3-2. 후원 결제실패
+    // 3-2. 후원 결제 실패
     @GetMapping("/donation/fail")
     public ResponseEntity<BaseResponse> failDonation() {
-        BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_FAIL); // 4000
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse); // 400
+        BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_FAIL);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
     }
 
-    // 3-3. 후원 결제취소
+    // 3-3. 후원 결제 취소
     @GetMapping("/donation/cancel")
     public ResponseEntity<BaseResponse> cancelDonation() {
-        BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_CANCEL); // 4000
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse); // 400
+        BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_CANCEL);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
     }
 }

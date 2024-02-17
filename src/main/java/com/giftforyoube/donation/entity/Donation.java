@@ -27,12 +27,6 @@ public class Donation {
     @Column
     private int donationRanking;
 
-    @Column
-    private String fundingShowName; // TEST
-
-    @Column
-    private String userNickname; // TEST
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "funding_id")
     private Funding funding;
@@ -47,12 +41,6 @@ public class Donation {
         this.donationAmount = donationAmount;
         this.donationRanking = donationRanking;
         this.funding = funding;
-        this.fundingShowName = funding.getShowName();
-        if (user != null) {
-            this.user = user;
-            this.userNickname = user.getNickname();
-        } else {
-            this.userNickname = null;
-        }
+        this.user = user;
     }
 }
