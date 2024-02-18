@@ -67,7 +67,7 @@ public class DonationController {
         donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(new URI("https://www.giftipie.me/"));
+        headers.setLocation(new URI("https://www.giftipie.me/fundingdetail/" + fundingId));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
