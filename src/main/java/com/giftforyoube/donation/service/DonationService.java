@@ -6,9 +6,13 @@ import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.repository.FundingRepository;
+import com.giftforyoube.funding.service.FundingService;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;
@@ -22,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class DonationService {
 
@@ -29,12 +34,14 @@ public class DonationService {
     private final DonationRepository donationRepository;
     private final UserRepository userRepository;
     private final FundingRepository fundingRepository;
+    private final FundingService fundingService;
 
-    public DonationService(RestTemplate restTemplate, DonationRepository donationRepository, UserRepository userRepository, FundingRepository fundingRepository) {
+    public DonationService(RestTemplate restTemplate, DonationRepository donationRepository, UserRepository userRepository, FundingRepository fundingRepository, FundingService fundingService) {
         this.restTemplate = restTemplate;
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
         this.fundingRepository = fundingRepository;
+        this.fundingService = fundingService;
     }
 
     @Value("${kakaopay.cid}")
@@ -65,10 +72,11 @@ public class DonationService {
 
         ResponseEntity<ReadyDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ReadyDonationResponseDto.class);
         ReadyDonationResponseDto readyDonationResponseDto = responseEntity.getBody();
+        log.info("[readyDonation] 후원 결제준비 완료");
         return readyDonationResponseDto;
     }
 
-    public GetDonationInfoResponseDto approveDonation(String tid, String pgToken, String sponsorNickname, String sponsorComment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
+    public void approveDonation(String tid, String pgToken, String sponsorNickname, String sponsorComment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
         URI uri = buildKakaoPayUri("/online/v1/payment/approve");
         HttpHeaders headers = buildKakaoPayHeaders();
         Map<String, Object> body = buildKakaoPayApproveRequestBody(tid, pgToken);
@@ -80,10 +88,8 @@ public class DonationService {
 
         ResponseEntity<ApproveDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ApproveDonationResponseDto.class);
         ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
-
-        Donation donation = saveDonationInfo(sponsorNickname, sponsorComment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
-        GetDonationInfoResponseDto getDonationInfoResponseDto = new GetDonationInfoResponseDto(donation.getSponsorNickname(), donation.getSponsorComment(), donation.getDonationRanking());
-        return getDonationInfoResponseDto;
+        saveDonationInfo(sponsorNickname, sponsorComment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
+        log.info("[approveDonation] 후원 결제승인 완료: " + fundingId + " 번 펀딩에 " + sponsorNickname + "님이 "+ approveDonationResponseDto.getAmount().getTotal() + "원을 후원하셨습니다.");
     }
 
     private URI buildKakaoPayUri(String path) {
@@ -128,21 +134,24 @@ public class DonationService {
         return body;
     }
 
-    private Donation saveDonationInfo(String sponsorNickname, String sponsorComment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
-        int donationRanking = calculateDonationRanking(fundingId);
+    private void saveDonationInfo(String sponsorNickname, String sponsorComment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) {
+        try {
+            Funding funding = fundingRepository.findById(fundingId)
+                    .orElseThrow(IllegalArgumentException::new);
 
-        Funding funding = fundingRepository.findById(fundingId)
-                .orElseThrow(() -> new IllegalArgumentException("펀딩 정보를 찾을 수 없습니다."));
+            int donationRanking = calculateDonationRanking(fundingId);
 
-        User user = null;
-        if (userDetails != null) {
-            Long userId = userDetails.getUser().getId();
-            user = userRepository.findById(userId).orElse(null);
+            User user = null;
+            if (userDetails != null) {
+                Long userId = userDetails.getUser().getId();
+                user = userRepository.findById(userId).orElse(null);
+            }
+            Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
+            donationRepository.save(donation);
+            fundingService.clearFundingCaches();
+        } catch (IllegalArgumentException e) {
+            throw new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND);
         }
-
-        Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
-        donationRepository.save(donation);
-        return donation;
     }
 
     private int calculateDonationRanking(Long fundingId) {

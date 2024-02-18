@@ -1,7 +1,6 @@
 package com.giftforyoube.donation.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giftforyoube.donation.dto.GetDonationInfoResponseDto;
 import com.giftforyoube.donation.dto.GetDonationRankingResponseDto;
 import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
 import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
@@ -16,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 @RestController
 @RequestMapping("/api")
 public class DonationController {
@@ -28,12 +30,15 @@ public class DonationController {
         this.session = session;
     }
 
+    @Value("${giftipie.redirect.url}")
+    private String giftipieRedirectUrl;
+
     // 1. 후원 랭킹 조회
     @GetMapping("/funding/{Id}/donation")
     public ResponseEntity<BaseResponse<GetDonationRankingResponseDto>> getDonationRanking(@PathVariable("Id") Long id) {
         GetDonationRankingResponseDto getDonationRankingResponseDto = new GetDonationRankingResponseDto(donationService.getDonationRanking(id));
         BaseResponse<GetDonationRankingResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.SUCCESS, getDonationRankingResponseDto);
-        return ResponseEntity.status(HttpStatus.OK).body(baseResponse); // 200
+        return ResponseEntity.status(HttpStatus.OK).body(baseResponse);
     }
 
     // 2. 후원 결제 준비
@@ -52,16 +57,14 @@ public class DonationController {
 
     // 3-1. 후원 결제 승인
     @GetMapping("/donation/approve")
-    public ResponseEntity<BaseResponse<GetDonationInfoResponseDto>> approveDonation(@RequestParam("pg_token") String pgToken,
-                                                                                    @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException {
+    public URI approveDonation(@RequestParam("pg_token") String pgToken,
+                               @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException, URISyntaxException {
         String tid = (String) session.getAttribute("tid");
         String sponsorNickname = (String) session.getAttribute("sponsorNickname");
         String sponsorComment = (String) session.getAttribute("sponsorComment");
         Long fundingId = (Long) session.getAttribute("fundingId");
-        GetDonationInfoResponseDto getDonationInfoResponseDto = donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
-
-        BaseResponse<GetDonationInfoResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, getDonationInfoResponseDto);
-        return ResponseEntity.status(HttpStatus.OK).body(baseResponse);
+        donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
+        return new URI(giftipieRedirectUrl);
     }
 
     // 3-2. 후원 결제 실패
