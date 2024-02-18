@@ -6,6 +6,7 @@ import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.repository.FundingRepository;
+import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
@@ -18,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,5 +155,9 @@ public class DonationService {
             int lastDonationRanking = donations.get(0).getDonationRanking();
             return lastDonationRanking + 1;
         }
+    }
+
+    public List<Donation> getDonationsByFundingId(Long fundingId) {
+        return donationRepository.findByFundingId(fundingId);
     }
 }

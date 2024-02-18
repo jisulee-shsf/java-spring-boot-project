@@ -5,6 +5,7 @@ import com.giftforyoube.donation.dto.GetDonationInfoResponseDto;
 import com.giftforyoube.donation.dto.GetDonationRankingResponseDto;
 import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
 import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
+import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.service.DonationService;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
@@ -15,6 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -82,5 +86,23 @@ public class DonationController {
     public ResponseEntity<BaseResponse> cancelDonation() {
         BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_CANCEL);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
+    }
+
+    // 4-1. 후원 정보 리스트 조회
+    @GetMapping("/funding/{id}/donations")
+    public ResponseEntity<BaseResponse<List<GetDonationInfoResponseDto>>> getDonationsByFundingId(@PathVariable("id") Long fundingId) {
+        List<Donation> donations = donationService.getDonationsByFundingId(fundingId);
+        List<GetDonationInfoResponseDto> donationResponseDtos = mapDonationEntitiesToResponseDtos(donations);
+        BaseResponse<List<GetDonationInfoResponseDto>> baseResponse = new BaseResponse<>(BaseResponseStatus.SUCCESS, donationResponseDtos);
+        return ResponseEntity.status(HttpStatus.OK).body(baseResponse);
+    }
+
+    private List<GetDonationInfoResponseDto> mapDonationEntitiesToResponseDtos(List<Donation> donations) {
+        return donations.stream()
+                .map(donation -> new GetDonationInfoResponseDto(
+                        donation.getSponsorNickname(),
+                        donation.getSponsorComment(),
+                        donation.getDonationRanking()))
+                .collect(Collectors.toList());
     }
 }
