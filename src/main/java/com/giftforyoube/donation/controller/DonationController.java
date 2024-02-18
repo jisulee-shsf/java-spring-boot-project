@@ -28,9 +28,6 @@ public class DonationController {
         this.session = session;
     }
 
-    @Value("${giftipie.redirect.url}")
-    private String giftipieRedirectUrl;
-
     // 1. 후원 랭킹 조회
     @GetMapping("/funding/{Id}/donation")
     public ResponseEntity<BaseResponse<GetDonationRankingResponseDto>> getDonationRanking(@PathVariable("Id") Long id) {
@@ -63,11 +60,8 @@ public class DonationController {
         Long fundingId = (Long) session.getAttribute("fundingId");
         GetDonationInfoResponseDto getDonationInfoResponseDto = donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
 
-//        String redirectUrl = giftipieRedirectUrl + "fundingdetail/" + fundingId;
         BaseResponse<GetDonationInfoResponseDto> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, getDonationInfoResponseDto);
-        return ResponseEntity.status(HttpStatus.OK)
-//                .location(new URI(redirectUrl))
-                .body(baseResponse);
+        return ResponseEntity.status(HttpStatus.OK).body(baseResponse);
     }
 
     // 3-2. 후원 결제 실패

@@ -10,7 +10,7 @@ public class UserRedirectController {
 
     @GetMapping("/success")
     public String redirectToLoginSuccessUri() {
-        return "redirect:/";
+        return "redirect:/api";
     }
 
     @GetMapping("/fail")
