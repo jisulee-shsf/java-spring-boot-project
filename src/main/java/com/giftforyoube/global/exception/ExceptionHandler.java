@@ -12,6 +12,7 @@ public class ExceptionHandler {
     protected ResponseEntity<BaseResponse<?>> handleBaseException(BaseException e) {
         BaseResponseStatus status = e.getStatus();
         HttpStatus httpStatus = HttpStatus.resolve(status.getCode());
+
         if (httpStatus == null) {
             httpStatus = HttpStatus.BAD_REQUEST;
         }

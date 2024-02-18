@@ -49,20 +49,21 @@ public class KakaoService {
     @Value("${kakao.redirect.uri}")
     private String redirectUri;
 
-    // 카카오 로그인
     public String kakaoLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
+        log.info("[kakaoLogin] 카카오 로그인 시도");
+
         String kakaoAccessToken = getKakaoAccessToken(code);
         KakaoUserInfoDto kakaoUserInfoDto = getKakaoUserInfo(kakaoAccessToken);
         User kakaoUser = registerKakaoUserIfNeeded(kakaoUserInfoDto);
+
         String kakaoToken = jwtUtil.createToken(kakaoUser.getEmail());
         kakaoToken = URLEncoder.encode(kakaoToken, "UTF-8").replaceAll("\\+", "%20");
         return kakaoToken;
     }
 
-    // 1. access token 요청
+    // 1. 카카오 access token 요청
     private String getKakaoAccessToken(String code) throws JsonProcessingException {
-        URI uri = UriComponentsBuilder
-                .fromUriString("https://kauth.kakao.com")
+        URI uri = UriComponentsBuilder.fromUriString("https://kauth.kakao.com")
                 .path("/oauth/token")
                 .encode()
                 .build()
@@ -77,58 +78,37 @@ public class KakaoService {
         body.add("redirect_uri", redirectUri);
         body.add("code", code);
 
-        RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity
-                .post(uri)
-                .headers(headers)
-                .body(body);
+        RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity.post(uri).headers(headers).body(body);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                requestEntity,
-                String.class
-        );
-
-        JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
+        JsonNode jsonNode = new ObjectMapper().readTree(responseEntity.getBody());
         String kakaoAccessToken = jsonNode.get("access_token").asText();
-        log.info("[Kakao | getAccessToken] " + kakaoAccessToken);
         this.kakaoAccessToken = kakaoAccessToken;
         return kakaoAccessToken;
     }
 
-    // 2. Kakao 사용자 정보 요청
+    // 2. 카카오 사용자 정보 요청
     private KakaoUserInfoDto getKakaoUserInfo(String kakaoAccessToken) throws JsonProcessingException {
-        URI uri = UriComponentsBuilder
-                .fromUriString("https://kapi.kakao.com")
-                .path("/v2/user/me")
-                .encode()
-                .build()
-                .toUri();
+        URI uri = UriComponentsBuilder.fromUriString("https://kapi.kakao.com").path("/v2/user/me").encode().build().toUri();
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Bearer " + kakaoAccessToken);
         headers.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
 
-        RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity
-                .post(uri)
-                .headers(headers)
-                .body(new LinkedMultiValueMap<>());
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                requestEntity,
-                String.class
-        );
+        RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity.post(uri).headers(headers).body(new LinkedMultiValueMap<>());
+        ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
 
         JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
         Long kakaoId = jsonNode.get("id").asLong();
         String nickname = jsonNode.get("properties").get("nickname").asText();
         String email = jsonNode.get("kakao_account").get("email").asText();
-        return new KakaoUserInfoDto(kakaoId, nickname, email);
-
+        KakaoUserInfoDto kakaoUserInfoDto = new KakaoUserInfoDto(kakaoId, nickname, email);
+        return kakaoUserInfoDto;
     }
 
-    // 3. 조건에 따라 Kakao 로그인 진행
+    // 3. 카카오 사용자 등록
     private User registerKakaoUserIfNeeded(KakaoUserInfoDto kakaoUserInfoDto) {
         Long kakaoId = kakaoUserInfoDto.getId();
-        log.info("[Kakao | registerKakaoUserIfNeeded] kakaoId: " + kakaoId);
         User kakaoUser = userRepository.findByKakaoId(kakaoId).orElse(null);
 
         if (kakaoUser == null) {
@@ -143,8 +123,10 @@ public class KakaoService {
                 kakaoUser = new User(kakaoUserInfoDto.getEmail(), encodedPassword, kakaoUserInfoDto.getNickname(), kakaoId, kakaoAccessToken, null);
             }
         }
+
         kakaoUser = kakaoUser.kakaoAccessTokenUpdate(kakaoAccessToken);
         userRepository.save(kakaoUser);
+        log.info("[kakaoLogin] 카카오 로그인 완료");
         return kakaoUser;
     }
 }
