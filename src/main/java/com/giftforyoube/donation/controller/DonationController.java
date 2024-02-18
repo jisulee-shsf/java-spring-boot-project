@@ -10,6 +10,7 @@ import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -57,14 +58,17 @@ public class DonationController {
 
     // 3-1. 후원 결제 승인
     @GetMapping("/donation/approve")
-    public URI approveDonation(@RequestParam("pg_token") String pgToken,
+    public ResponseEntity<Void> approveDonation(@RequestParam("pg_token") String pgToken,
                                @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException, URISyntaxException {
         String tid = (String) session.getAttribute("tid");
         String sponsorNickname = (String) session.getAttribute("sponsorNickname");
         String sponsorComment = (String) session.getAttribute("sponsorComment");
         Long fundingId = (Long) session.getAttribute("fundingId");
         donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
-        return new URI(giftipieRedirectUrl);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(new URI("https://www.giftipie.me/"));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     // 3-2. 후원 결제 실패
