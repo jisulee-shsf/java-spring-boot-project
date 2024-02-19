@@ -163,4 +163,8 @@ public class DonationService {
             return lastDonationRanking + 1;
         }
     }
+
+    public List<Donation> getDonationsByFundingId(Long fundingId) {
+        return donationRepository.findByFundingId(fundingId);
+    }
 }
