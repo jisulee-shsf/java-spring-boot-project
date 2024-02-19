@@ -18,7 +18,7 @@ public enum BaseResponseStatus {
     KAKAO_LOGIN_SUCCESS(true, 2000, "카카오 로그인이 완료되었습니다."),
     GOOGLE_LOGIN_SUCCESS(true, 2000, "구글 로그인이 완료되었습니다."),
     DELETE_ACCOUNT_SUCCESS(true, 2000, "회원탈퇴가 완료되었습니다."),
-    LOGOUT_SUCCESS(true,2000,"로그아웃이 완료되었습니다."),
+    LOGOUT_SUCCESS(true, 2000, "로그아웃이 완료되었습니다."),
 
     // 1-2 펀딩 관련
     FUNDING_ITEM_LINK_SUCCESS(true, 2000, "펀딩 아이템이 저장되었습니다."),
@@ -35,7 +35,7 @@ public enum BaseResponseStatus {
     BAD_REQUEST(false, 4000, "잘못된 요청입니다."),
 
     // 2-1. 회원가입 / 로그인 / 회원탈퇴
-    USER_NOT_FOUND(false, 4000, "가입된 사용자 정보가 없습니다."),
+    NOT_FOUND_USER(false, 4000, "가입된 사용자 정보가 없습니다."),
     PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
     PHONENUMBER_ALREADY_EXISTS(false, 4000, "이미 가입된 휴대폰 번호입니다."),
