@@ -82,17 +82,17 @@ public class FundingController {
         return ResponseEntity.ok(activeFundingsPage);
     }
 
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩 [페이지네이션]
+    // Slice - Page 페이지네이션 수정 적용
     @GetMapping("/active")
-    public ResponseEntity<Slice<FundingResponseDto>> getActiveFundings(
+    public ResponseEntity<Page<FundingResponseDto>> getActiveFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
         log.info("[getActiveFundings] 진행중인 펀딩 리스트 조회 무한스크롤");
 
-        Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
+        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
         return ResponseEntity.ok(activeFundingsPage);
     }
 

@@ -186,20 +186,21 @@ public class FundingService {
         return fundingResponseDtoPage;
     }
 
+    // Slice - Page 페이지네이션 수정 적용
     @Transactional(readOnly = true)
-    public Slice<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
+    public Page<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
         String cacheKey = "activeFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
         // 캐시에서 조회 시도
-        Slice<FundingResponseDto> cachedFundings = getFundingListFromCache(cacheKey, pageable);
-        if (!cachedFundings.getContent().isEmpty()) {
+        Page<FundingResponseDto> cachedFundings = getFundingsPageFromCache(cacheKey, pageable);
+        if (cachedFundings != null && !cachedFundings.isEmpty()) {
             return cachedFundings;
         }
 
         // DB에서 조회 및 캐시 저장
-        Slice<FundingResponseDto> activeFundings = fundingRepository.findById(pageable).map(FundingResponseDto::fromEntity);
-        saveFundingListToCache(cacheKey, activeFundings);
+        Page<FundingResponseDto> activeFundings = fundingRepository.findById(pageable).map(FundingResponseDto::fromEntity);
+        saveFundingsPageToCache(cacheKey, activeFundings);
 
         return activeFundings;
     }
