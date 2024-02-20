@@ -10,13 +10,18 @@ import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
+import com.giftforyoube.notification.entity.NotificationType;
+import com.giftforyoube.notification.service.NotificationService;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
+import io.lettuce.core.dynamic.annotation.Param;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -35,13 +40,17 @@ public class DonationService {
     private final UserRepository userRepository;
     private final FundingRepository fundingRepository;
     private final FundingService fundingService;
+    private final NotificationService notificationService;
 
-    public DonationService(RestTemplate restTemplate, DonationRepository donationRepository, UserRepository userRepository, FundingRepository fundingRepository, FundingService fundingService) {
+    public DonationService(RestTemplate restTemplate, DonationRepository donationRepository,
+                           UserRepository userRepository, FundingRepository fundingRepository,
+                           FundingService fundingService, NotificationService notificationService) {
         this.restTemplate = restTemplate;
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
         this.fundingRepository = fundingRepository;
         this.fundingService = fundingService;
+        this.notificationService = notificationService;
     }
 
     @Value("${kakaopay.cid}")
@@ -166,5 +175,19 @@ public class DonationService {
 
     public List<Donation> getDonationsByFundingId(Long fundingId) {
         return donationRepository.findByFundingId(fundingId);
+    }
+
+    // 후원 결제 승인 시 알림메시지 발송
+    @Async
+    public void sendDonationNotification (String sponsorNickname, Long fundingId) {
+        // 후원 결제 승인 후 알림 발송
+        log.info("후원 결제 승인 후 알림 발송 시작");
+
+        User user = userRepository.findUserByFundingId(fundingId);
+//        String content = "님 펀딩에 " + sponsorNickname + "님이 후원하셨습니다!";
+        String content = String.format("회원님 펀딩에 %s 님이 후원하셨습니다!", sponsorNickname);
+        String url = "https://www.giftipie.me/fundingdetail/" + fundingId;
+        NotificationType notificationType = NotificationType.DONATION;
+        notificationService.send(user, notificationType, content, url);
     }
 }
