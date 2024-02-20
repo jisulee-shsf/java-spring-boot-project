@@ -9,6 +9,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
@@ -33,8 +34,7 @@ public class MailingService {
         messageHelper.setSubject(EMAIL_TITLE_PREFIX + notification.getContent());
 
         // 메일 받는 사람 설정
-//        messageHelper.setTo(notification.getReceiver().getEmail());
-        messageHelper.setTo("kingmandoo95@gmail.com"); // 개인 개정으로 테스트용
+        messageHelper.setTo(notification.getReceiver().getEmail());
 
         // 템플릿에 전달할 데이터 설정
         Context context = new Context();
