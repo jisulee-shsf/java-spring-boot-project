@@ -10,6 +10,7 @@ import com.giftforyoube.user.dto.SignupRequestDto;
 import com.giftforyoube.user.service.GoogleService;
 import com.giftforyoube.user.service.KakaoService;
 import com.giftforyoube.user.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -29,6 +30,7 @@ import java.net.URISyntaxException;
 @Slf4j
 @RestController
 @RequestMapping("/api")
+@Tag(name = "유저", description = "유저 관련 API")
 public class UserController {
 
     private final UserService userService;
