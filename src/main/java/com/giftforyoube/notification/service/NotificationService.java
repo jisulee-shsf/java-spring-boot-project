@@ -78,12 +78,6 @@ public class NotificationService {
 
         // 호출된 emitter들을 EventCache에 각각 저장 후 각 emitter를 통해 sendNotification으로 알림을 보냄
         // EventCache에 저장 -> 연결이 끊긴 후 다시 연결될 때 놓친 알림을 클라이언트에게 재 전송을 위함
-
-        // 왜 유저당 단일 emitter 객체가 아닌 여러 emitter가 존재하는가?
-        // -> 모바일, PC 웹 등 여러 환경에서 접속할 경우 여러 emitter가 생길 수 있다.
-
-        // emitter가 여러개면 하나의 event가 발생했을때 중복으로 알림이 발생하지않나?
-        //alreadyNotified 메서드를 추가해 조건문을 걸어줘서 이미 동일한 알림이 발생했는지 확인이 필요할 것
         emitters.forEach(
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
@@ -93,6 +87,7 @@ public class NotificationService {
                 }
         );
 
+        log.info("sse 메시지 발송 완료. 알림 이메일 발송 시작");
         // 이메일 알림 발송
         try {
             mailingService.sendNotificationEmail(saveNotification);
