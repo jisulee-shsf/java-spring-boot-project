@@ -186,21 +186,43 @@ public class FundingService {
         return fundingResponseDtoPage;
     }
 
-    // Slice - Page 페이지네이션 수정 적용
     @Transactional(readOnly = true)
-    public Page<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
+    public Page<FundingResponseDto> getAllFundings(int page, int size, String sortBy, String sortOrder) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
-        String cacheKey = "activeFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
+        String cacheKey = "allFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
+        // 캐시에서 조회 시도
         // 캐시에서 조회 시도
         Page<FundingResponseDto> cachedFundings = getFundingsPageFromCache(cacheKey, pageable);
         if (cachedFundings != null && !cachedFundings.isEmpty()) {
             return cachedFundings;
         }
 
+        // DB에서 조회
+        Page<Funding> allFunding = fundingRepository.findById(pageable);
+        Page<FundingResponseDto> allFundings = allFunding.map(FundingResponseDto::fromEntity);
+
+        // 결과를 캐시에 저장
+        saveFundingsPageToCache(cacheKey, allFundings);
+
+        return allFundings;
+    }
+
+    // Slice - Page 페이지네이션 수정 적용
+    @Transactional(readOnly = true)
+    public Slice<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
+        String cacheKey = "activeFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
+
+        // 캐시에서 조회 시도
+        Slice<FundingResponseDto> cachedFundings = getFundingListFromCache(cacheKey, pageable);
+        if (cachedFundings != null && !cachedFundings.isEmpty()) {
+            return cachedFundings;
+        }
+
         // DB에서 조회 및 캐시 저장
-        Page<FundingResponseDto> activeFundings = fundingRepository.findById(pageable).map(FundingResponseDto::fromEntity);
-        saveFundingsPageToCache(cacheKey, activeFundings);
+        Slice<FundingResponseDto> activeFundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable).map(FundingResponseDto::fromEntity);
+        saveFundingListToCache(cacheKey, activeFundings);
 
         return activeFundings;
     }
@@ -471,6 +493,7 @@ public class FundingService {
         clearCacheByPattern("activeMainFundings:*");
 
         // 기존의 펀딩 리스트 관련 캐시 삭제
+        clearCacheByPattern("allFundings:*");
         clearCacheByPattern("activeFundings:*");
         clearCacheByPattern("finishedFundings:*");
 
