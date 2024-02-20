@@ -22,6 +22,7 @@ import java.io.IOException;
 
 @Slf4j
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
 
@@ -31,17 +32,18 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-        String token = jwtUtil.getTokenFromRequest(req);
+    protected void doFilterInternal(HttpServletRequest httpServletRequest,
+                                    HttpServletResponse httpServletResponse,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String token = jwtUtil.getTokenFromRequest(httpServletRequest);
 
         if (StringUtils.hasText(token)) {
             String tokenValue = jwtUtil.substringToken(token);
-
             if (!jwtUtil.validateToken(tokenValue)) {
-                BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.AUTHENTICATION_FAILED); // 4000
-                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
-                res.setContentType("application/json;charset=UTF-8");
-                res.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
+                BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.AUTHENTICATION_FAILED);
+                httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                httpServletResponse.setContentType("application/json;charset=UTF-8");
+                httpServletResponse.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
                 return;
             }
 
@@ -54,7 +56,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 return;
             }
         }
-        filterChain.doFilter(req, res);
+        filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 
     public void setAuthentication(String email) {

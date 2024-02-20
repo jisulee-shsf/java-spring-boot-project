@@ -21,11 +21,11 @@ public class CorsConfig {
                 "http://localhost:3000", "http://localhost:3001",
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app",
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app/"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
         config.addExposedHeader("*");
         config.setMaxAge(3600L);
-        source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }

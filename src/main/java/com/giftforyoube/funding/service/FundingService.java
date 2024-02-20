@@ -3,10 +3,8 @@ package com.giftforyoube.funding.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.funding.dto.AddLinkRequestDto;
-import com.giftforyoube.funding.dto.FundingCreateRequestDto;
-import com.giftforyoube.funding.dto.FundingResponseDto;
-import com.giftforyoube.funding.dto.FundingResponseDtoCache;
+import com.giftforyoube.donation.repository.DonationRepository;
+import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.entity.FundingStatus;
@@ -49,12 +47,14 @@ public class FundingService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final RedissonClient redissonClient;
+    private final DonationRepository donationRepository;
 
     private static final int TIMEOUT = 10000; // 10초
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
+    private static final String FUNDING_SUMMARY_CACHE_KEY = "fundingSummary";
 
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
-    public void addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
+    public FundingItemResponseDto addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
         log.info("[addLinkAndSaveToCache] 상품링크 캐쉬에 저장하기");
 
         String lockKey = "userLock:" + userId;
@@ -67,6 +67,7 @@ public class FundingService {
             }
             FundingItem fundingItem = previewItem(requestDto.getItemLink());
             saveToCache(fundingItem, userId.toString());
+            return FundingItemResponseDto.fromEntity(fundingItem);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
@@ -80,12 +81,12 @@ public class FundingService {
     @Transactional
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         log.info("[saveToDatabase] DB에 저장하기");
-
         String lockKey = "userFundingLock:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
-        boolean lockAcquired = false; // 락 획득 상태
+        boolean lockAcquired = false;
         try {
-            lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
+            // 락 획득 시도를 최적화
+            lockAcquired = lock.tryLock(5, 1, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
             if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
@@ -113,7 +114,9 @@ public class FundingService {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
         } finally {
-            lock.unlock(); // 락 해제
+            if (lockAcquired) {
+                lock.unlock();
+            }
         }
     }
 
@@ -136,6 +139,30 @@ public class FundingService {
         return fundingResponseDto;
     }
 
+    // 메인페이지에 보여질 내 펀딩 정보
+    @Transactional(readOnly = true)
+    public FundingResponseDto getMyFundingInfo(User currentUser) {
+        log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
+
+        String cacheKey = "fundingDetail:" + currentUser.getId();
+        // 캐시에서 조회 시도
+        FundingResponseDto cachedFunding = getFundingFromCache(cacheKey);
+        if (cachedFunding != null) {
+            return cachedFunding;
+        }
+
+        Funding funding = fundingRepository.findByUserAndStatus(currentUser, FundingStatus.ACTIVE);
+        if (funding == null) {
+            return FundingResponseDto.emptyDto();
+        }
+
+        FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
+        // 결과를 캐시에 저장
+        saveFundingToCache(cacheKey, fundingResponseDto);
+
+        return fundingResponseDto;
+    }
+
     @Transactional(readOnly = true)
     public Page<FundingResponseDto> getActiveMainFunding(int page, int size, String sortBy, String sortOrder) {
         log.info("[getActiveMainFundings] 메인페이지 진행중인 펀딩 조회");
@@ -150,7 +177,7 @@ public class FundingService {
         }
 
         // DB에서 조회
-        Page<Funding> mainFundings = fundingRepository.findAllPageByStatus(FundingStatus.ACTIVE, pageable);
+        Page<Funding> mainFundings = fundingRepository.findById(pageable);
         Page<FundingResponseDto> fundingResponseDtoPage = mainFundings.map(FundingResponseDto::fromEntity);
 
         // 결과를 캐시에 저장
@@ -159,20 +186,21 @@ public class FundingService {
         return fundingResponseDtoPage;
     }
 
+    // Slice - Page 페이지네이션 수정 적용
     @Transactional(readOnly = true)
-    public Slice<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
+    public Page<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
         String cacheKey = "activeFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
         // 캐시에서 조회 시도
-        Slice<FundingResponseDto> cachedFundings = getFundingListFromCache(cacheKey, pageable);
-        if (!cachedFundings.getContent().isEmpty()) {
+        Page<FundingResponseDto> cachedFundings = getFundingsPageFromCache(cacheKey, pageable);
+        if (cachedFundings != null && !cachedFundings.isEmpty()) {
             return cachedFundings;
         }
 
         // DB에서 조회 및 캐시 저장
-        Slice<FundingResponseDto> activeFundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable).map(FundingResponseDto::fromEntity);
-        saveFundingListToCache(cacheKey, activeFundings);
+        Page<FundingResponseDto> activeFundings = fundingRepository.findById(pageable).map(FundingResponseDto::fromEntity);
+        saveFundingsPageToCache(cacheKey, activeFundings);
 
         return activeFundings;
     }
@@ -216,7 +244,7 @@ public class FundingService {
 
     // 펀딩 수정
     @Transactional
-    public FundingResponseDto updateFunding(Long fundingId, User user, FundingCreateRequestDto requestDto) {
+    public FundingResponseDto updateFunding(Long fundingId, User user, FundingUpdateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
         // 펀딩 id 유효성검사
@@ -253,6 +281,30 @@ public class FundingService {
 
         fundingRepository.delete(funding);
         clearFundingCaches();
+    }
+
+    @Transactional(readOnly = true)
+    public FundingSummaryResponseDto getFundingSummary() {
+        // 캐시에서 통계 데이터를 검색합니다.
+        FundingSummaryResponseDto cachedSummary = getSummaryFromCache(FUNDING_SUMMARY_CACHE_KEY);
+        if (cachedSummary != null) {
+            return cachedSummary;
+        }
+
+        // 캐시에 데이터가 없는 경우, 데이터베이스에서 정보를 계산합니다.
+        long totalDonationsCount = donationRepository.count();
+        long successfulFundingsCount = fundingRepository.countSuccessfulFundings();
+        long totalFundingAmount = donationRepository.sumDonationAmounts();
+
+        // 계산된 통계 정보를 캐시에 저장합니다.
+        FundingSummaryResponseDto summary = FundingSummaryResponseDto.builder()
+                .totalDonationsCount(totalDonationsCount)
+                .successfulFundingsCount(successfulFundingsCount)
+                .totalFundingAmount(totalFundingAmount)
+                .build();
+
+        saveSummaryToCache(FUNDING_SUMMARY_CACHE_KEY, summary);
+        return summary;
     }
 
  // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
@@ -389,6 +441,30 @@ public class FundingService {
         }
     }
 
+    // Giftipie에서 함께한 선물 캐시에서 가져오기
+    private FundingSummaryResponseDto getSummaryFromCache(String cacheKey) {
+        String jsonContent = redisTemplate.opsForValue().get(cacheKey);
+        if (jsonContent == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(jsonContent, FundingSummaryResponseDto.class);
+        } catch (JsonProcessingException e) {
+            log.error("Error deserializing funding summary from cache", e);
+            return null;
+        }
+    }
+
+    // Giftipie에서 함께한 선물 캐시에 저장
+    private void saveSummaryToCache(String cacheKey, FundingSummaryResponseDto summary) {
+        try {
+            String jsonContent = objectMapper.writeValueAsString(summary);
+            redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1)); // 캐시 유지 시간은 요구 사항에 따라 조정 가능
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing funding summary to cache", e);
+        }
+    }
+
     // 펀딩 생성, 업데이트, 삭제 시 캐시 삭제
     public void clearFundingCaches() {
         // 메인 펀딩 관련 캐시 삭제
@@ -400,6 +476,9 @@ public class FundingService {
 
         // 상세 페이지 캐시 삭제 추가
         clearCacheByPattern("fundingDetail:*");
+
+        // Giftipie에서 함께한 선물 캐시 삭제
+        clearCacheByPattern(FUNDING_SUMMARY_CACHE_KEY);
     }
 
     private void clearCacheByPattern(String pattern) {

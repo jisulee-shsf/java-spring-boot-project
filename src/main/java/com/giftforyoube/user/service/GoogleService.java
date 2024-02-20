@@ -49,19 +49,21 @@ public class GoogleService {
     @Value("${google.secret.password}")
     private String secretPassword;
     @Value("${google.redirect.uri}")
-    private String redirectUrl;
+    private String redirectUri;
 
-    // Google 로그인
     public String googleLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
+        log.info("[googleLogin] 구글 로그인 시도");
+
         String googleAccessToken = getGoogleAccessToken(code);
         GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
         User googleUser = registerGoogleUserIfNeeded(googleUserInfoDto);
+
         String googleToken = jwtUtil.createToken(googleUser.getEmail());
         googleToken = URLEncoder.encode(googleToken, "UTF-8").replaceAll("\\+", "%20");
         return googleToken;
     }
 
-    // 1. access token 요청
+    // 1. 구글 access token 요청
     private String getGoogleAccessToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://oauth2.googleapis.com/token")
@@ -76,27 +78,19 @@ public class GoogleService {
         body.add("grant_type", "authorization_code");
         body.add("client_id", clientId);
         body.add("client_secret", secretPassword);
-        body.add("redirect_uri", redirectUrl);
+        body.add("redirect_uri", redirectUri);
         body.add("code", code);
 
-        RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity
-                .post(uri)
-                .headers(headers)
-                .body(body);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                requestEntity,
-                String.class
-        );
+        RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity.post(uri).headers(headers).body(body);
+        ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
 
         JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
         String googleAccessToken = jsonNode.get("access_token").asText();
-        log.info("[Google | getAccessToken] " + googleAccessToken);
         this.googleAccessToken = googleAccessToken;
         return googleAccessToken;
     }
 
-    // 2. Google 사용자 정보 요청
+    // 2. 구글 사용자 정보 요청
     private GoogleUserInfoDto getGoogleUserInfo(String googleAccessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://www.googleapis.com/oauth2/v2/userinfo")
@@ -105,17 +99,14 @@ public class GoogleService {
                 .build()
                 .toUri();
 
-        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
-
-        GoogleUserInfoDto googleUserInfoDto = new ObjectMapper().readValue(response.getBody(), GoogleUserInfoDto.class);
-        log.info("test: " + googleUserInfoDto.getId());
+        ResponseEntity<String> ResponseEntity = restTemplate.getForEntity(uri, String.class);
+        GoogleUserInfoDto googleUserInfoDto = new ObjectMapper().readValue(ResponseEntity.getBody(), GoogleUserInfoDto.class);
         return googleUserInfoDto;
     }
 
-    // 3. 조건에 따라 Google 로그인 진행
+    // 3. 구글 사용자 등록
     private User registerGoogleUserIfNeeded(GoogleUserInfoDto googleUserInfoDto) {
         String googleId = googleUserInfoDto.getId();
-        log.info("[Google | registerGoogleUserIfNeeded] googleId: " + googleId);
         User googleUser = userRepository.findByGoogleId(googleId).orElse(null);
 
         if (googleUser == null) {
@@ -130,8 +121,10 @@ public class GoogleService {
                 googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), googleId, googleAccessToken, null);
             }
         }
+
         googleUser = googleUser.googleAccessTokenUpdate(googleAccessToken);
         userRepository.save(googleUser);
+        log.info("[googleLogin] 카카오 로그인 완료");
         return googleUser;
     }
 }

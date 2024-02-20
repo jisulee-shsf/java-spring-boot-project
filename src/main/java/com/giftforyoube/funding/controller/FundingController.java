@@ -1,13 +1,12 @@
 package com.giftforyoube.funding.controller;
 
-import com.giftforyoube.funding.dto.AddLinkRequestDto;
-import com.giftforyoube.funding.dto.FundingCreateRequestDto;
-import com.giftforyoube.funding.dto.FundingResponseDto;
+import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/funding")
+@Tag(name = "펀딩", description = "펀딩 관련 API")
 public class FundingController {
 
     private final FundingService fundingService;
@@ -34,8 +34,8 @@ public class FundingController {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_TO_ADD_LINK);
         }
         try {
-            fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
-            return ResponseEntity.ok().build();
+            FundingItemResponseDto fundingItemResponseDto = fundingService.addLinkAndSaveToCache(requestDto, userDetails.getUser().getId());
+            return ResponseEntity.ok(fundingItemResponseDto);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding link: " + e.getMessage());
         }
@@ -58,10 +58,21 @@ public class FundingController {
         }
     }
 
+    // 내 펀딩 정보를 조회하는 API
+    @GetMapping("/myFunding")
+    public ResponseEntity<?> getMyFunding(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            // 로그인하지 않은 사용자가 API를 호출하면 적절한 HTTP 상태 코드와 메시지를 반환
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요한 기능입니다.");
+        }
+        FundingResponseDto fundingResponseDto = fundingService.getMyFundingInfo(userDetails.getUser());
+        return ResponseEntity.ok(fundingResponseDto);
+    }
+
     @GetMapping("")
     public ResponseEntity<Page<FundingResponseDto>> getActiveMainFunding(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "4") int size,
+            @RequestParam(defaultValue = "6") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
@@ -71,26 +82,19 @@ public class FundingController {
         return ResponseEntity.ok(activeFundingsPage);
     }
 
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩 [페이지네이션]
+    // Slice - Page 페이지네이션 수정 적용
     @GetMapping("/active")
-    public ResponseEntity<Slice<FundingResponseDto>> getActiveFundings(
+    public ResponseEntity<Page<FundingResponseDto>> getActiveFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
         log.info("[getActiveFundings] 진행중인 펀딩 리스트 조회 무한스크롤");
 
-        Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
+        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
         return ResponseEntity.ok(activeFundingsPage);
     }
-
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩
-//    @GetMapping("/finished")
-//    public ResponseEntity<List<FundingResponseDto>> getFinishedFundings(){
-//        List<FundingResponseDto> finishedFundings = fundingService.getFinishedFunding();
-//        return ResponseEntity.ok(finishedFundings);
-//    }
 
     // 펀딩 등록시 저장된 마감일 기준으로 현재 종료된 펀딩 [페이지네이션 적용]
     @GetMapping("/finished")
@@ -145,7 +149,7 @@ public class FundingController {
     @PatchMapping("/{fundingId}/update")
     public ResponseEntity<FundingResponseDto> updateFunding(@PathVariable Long fundingId,
                                                             @AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                            @RequestBody FundingCreateRequestDto requestDto) {
+                                                            @RequestBody FundingUpdateRequestDto requestDto) {
         if(userDetails == null){
             throw new BaseException(BaseResponseStatus.AUTHENTICATION_FAILED);
         }
@@ -160,5 +164,11 @@ public class FundingController {
         }
         fundingService.deleteFunding(fundingId, userDetails.getUser());
         return ResponseEntity.ok().body("해당 펀딩을 성공적으로 삭제하였습니다.");
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<FundingSummaryResponseDto> getFundingSummary() {
+        FundingSummaryResponseDto summaryResponseDto = fundingService.getFundingSummary();
+        return ResponseEntity.ok(summaryResponseDto);
     }
 }
