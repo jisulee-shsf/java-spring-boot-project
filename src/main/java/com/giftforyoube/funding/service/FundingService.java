@@ -171,7 +171,7 @@ public class FundingService {
         String cacheKey = "activeMainFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
         // 캐시에서 조회 시도
-        Page<FundingResponseDto> cachedPage = getFundingsPageFromCache(cacheKey, pageable);
+        Page<FundingResponseDto> cachedPage = getFundingPageFromCache(cacheKey, pageable);
         if (cachedPage != null) {
             return cachedPage;
         }
@@ -181,7 +181,7 @@ public class FundingService {
         Page<FundingResponseDto> fundingResponseDtoPage = mainFundings.map(FundingResponseDto::fromEntity);
 
         // 결과를 캐시에 저장
-        saveFundingsPageToCache(cacheKey, fundingResponseDtoPage);
+        saveFundingPageToCache(cacheKey, fundingResponseDtoPage);
 
         return fundingResponseDtoPage;
     }
@@ -192,14 +192,13 @@ public class FundingService {
         String cacheKey = "allFundings:" + page + ":" + size + ":" + sortBy + ":" + sortOrder;
 
         // 캐시에서 조회 시도
-        // 캐시에서 조회 시도
         Page<FundingResponseDto> cachedFundings = getFundingsPageFromCache(cacheKey, pageable);
         if (cachedFundings != null && !cachedFundings.isEmpty()) {
             return cachedFundings;
         }
 
         // DB에서 조회
-        Page<Funding> allFunding = fundingRepository.findById(pageable);
+        Page<Funding> allFunding = fundingRepository.findAll(pageable);
         Page<FundingResponseDto> allFundings = allFunding.map(FundingResponseDto::fromEntity);
 
         // 결과를 캐시에 저장
@@ -329,7 +328,7 @@ public class FundingService {
         return summary;
     }
 
- // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
+    // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
 
     private String buildCacheKey(String userId) {
         return FUNDING_ITEM_CACHE_PREFIX + userId;
@@ -381,8 +380,8 @@ public class FundingService {
     }
 
 
-    // 캐시에 Page 데이터 저장
-    private void saveFundingsPageToCache(String cacheKey, Page<FundingResponseDto> page) {
+    //    // 캐시에 Page 데이터 저장
+    private void saveFundingPageToCache(String cacheKey, Page<FundingResponseDto> page) {
         try {
             // Page 구현체를 JSON으로 변환하는 과정에서는 구현체의 구체적인 클래스 정보가 필요할 수 있으므로,
             // Page 내용만 캐시하고, 페이징 정보는 별도로 관리하는 것을 고려해야 할 수 있습니다.
@@ -394,7 +393,7 @@ public class FundingService {
     }
 
     // 캐시에서 Page 데이터 조회
-    private Page<FundingResponseDto> getFundingsPageFromCache(String cacheKey, Pageable pageable) {
+    private Page<FundingResponseDto> getFundingPageFromCache(String cacheKey, Pageable pageable) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
             return null;
@@ -408,6 +407,34 @@ public class FundingService {
             throw new RuntimeException("Error deserializing funding page data", e);
         }
     }
+    // 캐시 관련 메서드 수정
+    public void saveFundingsPageToCache(String cacheKey, Page<FundingResponseDto> page) {
+        try {
+            FundingPageCached<FundingResponseDto> cachedPage = new FundingPageCached<>();
+            cachedPage.setContent(page.getContent());
+            cachedPage.setMetadata(new FundingPageMetadata(page.getTotalPages(), page.getTotalElements()));
+
+            String jsonContent = objectMapper.writeValueAsString(cachedPage);
+            redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing funding page data", e);
+        }
+    }
+
+    public Page<FundingResponseDto> getFundingsPageFromCache(String cacheKey, Pageable pageable) {
+        String jsonContent = redisTemplate.opsForValue().get(cacheKey);
+        if (jsonContent == null) {
+            return Page.empty(); // 캐시에서 데이터를 가져올 수 없으면 빈 페이지 반환
+        }
+        try {
+            FundingPageCached<FundingResponseDto> cachedPage = objectMapper.readValue(jsonContent, new TypeReference<FundingPageCached<FundingResponseDto>>() {
+            });
+            return new PageImpl<>(cachedPage.getContent(), pageable, cachedPage.getMetadata().getTotalElements());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error deserializing funding page data", e);
+        }
+    }
+
 
     // 캐시에 펀딩 목록 저장하는 로직
     public void saveFundingListToCache(String cacheKey, Slice<FundingResponseDto> fundings) {

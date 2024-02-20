@@ -113,7 +113,7 @@ public class FundingController {
     @GetMapping("/finished")
     public ResponseEntity<Slice<FundingResponseDto>> getFinishedFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
