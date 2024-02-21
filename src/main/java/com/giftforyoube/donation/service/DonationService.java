@@ -1,7 +1,9 @@
 package com.giftforyoube.donation.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giftforyoube.donation.dto.*;
+import com.giftforyoube.donation.dto.ApproveDonationResponseDto;
+import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
+import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
@@ -14,10 +16,8 @@ import com.giftforyoube.notification.entity.NotificationType;
 import com.giftforyoube.notification.service.NotificationService;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
-import io.lettuce.core.dynamic.annotation.Param;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -98,7 +98,7 @@ public class DonationService {
         ResponseEntity<ApproveDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ApproveDonationResponseDto.class);
         ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
         saveDonationInfo(sponsorNickname, sponsorComment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
-        log.info("[approveDonation] 후원 결제승인 완료: " + fundingId + " 번 펀딩에 " + sponsorNickname + "님이 "+ approveDonationResponseDto.getAmount().getTotal() + "원을 후원하셨습니다.");
+        log.info("[approveDonation] 후원 결제승인 완료: " + fundingId + " 번 펀딩에 " + sponsorNickname + "님이 " + approveDonationResponseDto.getAmount().getTotal() + "원을 후원하셨습니다.");
     }
 
     private URI buildKakaoPayUri(String path) {
@@ -157,7 +157,6 @@ public class DonationService {
             }
             Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
             donationRepository.save(donation);
-            fundingService.clearFundingCaches();
 
             int currentAmount = funding.getCurrentAmount() + donationAmount;
             funding.setCurrentAmount(currentAmount);
