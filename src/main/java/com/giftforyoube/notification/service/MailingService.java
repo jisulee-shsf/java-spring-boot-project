@@ -43,13 +43,13 @@ public class MailingService {
         // 메일 내용
         switch (notification.getNotificationType()) {
             case DONATION :
-                html = templateEngine.process("EmailTemplate", context);
+                html = templateEngine.process("EmailTemplateDonation", context);
                 break;
             case FUNDING_SUCCESS :
-                html = templateEngine.process("EmailTemplate", context);
+                html = templateEngine.process("EmailTemplateFundingSuccess", context);
                 break;
             case FUNDING_TIME_OUT :
-                html = templateEngine.process("EmailTemplate", context);
+                html = templateEngine.process("EmailTemplateTimeOut", context);
                 break;
         }
 
