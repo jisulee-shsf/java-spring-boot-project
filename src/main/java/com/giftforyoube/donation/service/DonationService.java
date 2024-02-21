@@ -194,7 +194,6 @@ public class DonationService {
     }
 
     // 후원 결제 승인 시 알림메시지 발송
-    @Async
     public void sendDonationNotification (String sponsorNickname, Long fundingId) {
         // 후원 결제 승인 후 알림 발송
         log.info("후원 결제 승인 후 알림 발송 시작");
