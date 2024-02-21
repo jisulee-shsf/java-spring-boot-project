@@ -10,8 +10,11 @@ import com.giftforyoube.donation.service.DonationService;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
+import com.giftforyoube.notification.entity.NotificationType;
+import com.giftforyoube.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -31,6 +34,7 @@ public class DonationController {
 
     private final DonationService donationService;
     private final HttpSession session;
+
 
     public DonationController(DonationService donationService, HttpSession session) {
         this.donationService = donationService;
@@ -74,6 +78,10 @@ public class DonationController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(new URI("https://www.giftipie.me/fundingdetail/" + fundingId));
+
+        // 후원 결제 승인 시 알람 발송
+        donationService.sendDonationNotification(sponsorNickname, fundingId);
+
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
