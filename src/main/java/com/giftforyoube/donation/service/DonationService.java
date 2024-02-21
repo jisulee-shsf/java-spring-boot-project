@@ -158,6 +158,11 @@ public class DonationService {
             Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
             donationRepository.save(donation);
             fundingService.clearFundingCaches();
+
+            int currentAmount = funding.getCurrentAmount() + donationAmount;
+            funding.setCurrentAmount(currentAmount);
+            fundingRepository.save(funding);
+            fundingService.clearFundingCaches();
         } catch (IllegalArgumentException e) {
             throw new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND);
         }
