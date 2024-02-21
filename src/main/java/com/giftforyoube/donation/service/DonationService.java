@@ -207,7 +207,6 @@ public class DonationService {
     }
 
     // 펀딩 성공 시 알림메시지 발송
-    @Async
     public void sendSuccessfulNotification (Long fundingId) {
         // 펀딩 성공 시 알림 발송
         log.info("펀딩 성공 시 알림 발송");
