@@ -335,6 +335,7 @@ public class FundingService {
     // 목표금액 달성되어서 종료된 펀딩 카운트 증가 메서드 추가 예정
 
 
+
     // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
 
     private String buildCacheKey(String userId) {

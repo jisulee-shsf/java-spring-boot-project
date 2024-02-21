@@ -7,7 +7,10 @@ import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
+import com.giftforyoube.funding.entity.FundingStatus;
+import com.giftforyoube.funding.entity.FundingSummary;
 import com.giftforyoube.funding.repository.FundingRepository;
+import com.giftforyoube.funding.repository.FundingSummaryRepository;
 import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
@@ -164,6 +167,9 @@ public class DonationService {
             int currentAmount = funding.getCurrentAmount() + donationAmount;
             funding.setCurrentAmount(currentAmount);
             fundingRepository.save(funding);
+            if(funding.getStatus().equals(FundingStatus.FINISHED)){
+                updateStatisticsForSuccessfulFunding();
+            }
             updateStatisticsForNewDonation(donationAmount);
             fundingService.clearFundingCaches();
         } catch (IllegalArgumentException e) {
@@ -204,6 +210,12 @@ public class DonationService {
         FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
         summary.setTotalDonationsCount(summary.getTotalDonationsCount() + 1);
         summary.setTotalFundingAmount(summary.getTotalFundingAmount() + donationAmount);
+        fundingSummaryRepository.save(summary);
+    }
+
+    private void updateStatisticsForSuccessfulFunding() {
+        FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
+        summary.setSuccessfulFundingsCount(summary.getSuccessfulFundingsCount() + 1);
         fundingSummaryRepository.save(summary);
     }
 }
