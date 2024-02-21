@@ -1,5 +1,6 @@
 package com.giftforyoube.funding.dto;
 
+import com.giftforyoube.funding.entity.Funding;
 import lombok.Getter;
 import lombok.Setter;
 

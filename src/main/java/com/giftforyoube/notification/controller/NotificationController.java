@@ -4,6 +4,7 @@ import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.notification.dto.NotificationResponseDto;
 import com.giftforyoube.notification.entity.NotificationType;
 import com.giftforyoube.notification.service.NotificationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequestMapping("/api/notification")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "알림", description = "알림 관련 API")
 public class NotificationController {
     private final NotificationService notificationService;
 

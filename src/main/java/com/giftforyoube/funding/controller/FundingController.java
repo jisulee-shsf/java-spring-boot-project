@@ -6,6 +6,7 @@ import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.entity.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/funding")
+@Tag(name = "펀딩", description = "펀딩 관련 API")
 public class FundingController {
 
     private final FundingService fundingService;
@@ -70,7 +72,7 @@ public class FundingController {
     @GetMapping("")
     public ResponseEntity<Page<FundingResponseDto>> getActiveMainFunding(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "4") int size,
+            @RequestParam(defaultValue = "6") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
@@ -80,11 +82,24 @@ public class FundingController {
         return ResponseEntity.ok(activeFundingsPage);
     }
 
-    // 펀딩 등록시 저장된 마감일 기준으로 현재 진행중인 펀딩 [페이지네이션]
+    // Slice - Page 페이지네이션 수정 적용
+    @GetMapping("/all")
+    public ResponseEntity<Page<FundingResponseDto>> getAllFundings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
+    ){
+        log.info("[getAllFundings] 모든 펀딩 리스트 조회 무한스크롤");
+
+        Page<FundingResponseDto> allFundingsPage = fundingService.getAllFundings(page, size, sortBy, sortOrder);
+        return ResponseEntity.ok(allFundingsPage);
+    }
+
     @GetMapping("/active")
     public ResponseEntity<Slice<FundingResponseDto>> getActiveFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
@@ -98,7 +113,7 @@ public class FundingController {
     @GetMapping("/finished")
     public ResponseEntity<Slice<FundingResponseDto>> getFinishedFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
@@ -162,5 +177,11 @@ public class FundingController {
         }
         fundingService.deleteFunding(fundingId, userDetails.getUser());
         return ResponseEntity.ok().body("해당 펀딩을 성공적으로 삭제하였습니다.");
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<FundingSummaryResponseDto> getFundingSummary() {
+        FundingSummaryResponseDto summaryResponseDto = fundingService.getFundingSummary();
+        return ResponseEntity.ok(summaryResponseDto);
     }
 }

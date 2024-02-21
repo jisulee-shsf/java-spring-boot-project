@@ -1,7 +1,6 @@
 package com.giftforyoube.funding.entity;
 
 import com.giftforyoube.donation.entity.Donation;
-import com.giftforyoube.funding.dto.FundingCreateRequestDto;
 import com.giftforyoube.funding.dto.FundingUpdateRequestDto;
 import com.giftforyoube.global.entity.Auditable;
 import com.giftforyoube.user.entity.User;
@@ -42,7 +41,7 @@ public class Funding extends Auditable implements Serializable {
     @Enumerated(EnumType.STRING)
     private FundingStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 
@@ -50,7 +49,7 @@ public class Funding extends Auditable implements Serializable {
     private List<Donation> donations = new ArrayList<>();
 
     @Builder
-    public Funding(String itemLink, String itemImage, String itemName,String showName,String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate,FundingStatus status) {
+    public Funding(String itemLink, String itemImage, String itemName, String showName, String title, String content, int currentAmount, int targetAmount, boolean publicFlag, LocalDate endDate, FundingStatus status) {
         this.itemLink = itemLink;
         this.itemImage = itemImage;
         this.itemName = itemName;
@@ -69,5 +68,12 @@ public class Funding extends Auditable implements Serializable {
         this.title = requestDto.getTitle();
         this.content = requestDto.getContent();
         this.publicFlag = requestDto.isPublicFlag();
+    }
+
+    public void setCurrentAmount(int currentAmount) {
+        this.currentAmount = currentAmount;
+        if (currentAmount >= targetAmount) {
+            this.status = FundingStatus.FINISHED;
+        }
     }
 }
