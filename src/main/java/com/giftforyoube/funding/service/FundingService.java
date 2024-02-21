@@ -8,7 +8,9 @@ import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.funding.entity.FundingItem;
 import com.giftforyoube.funding.entity.FundingStatus;
+import com.giftforyoube.funding.entity.FundingSummary;
 import com.giftforyoube.funding.repository.FundingRepository;
+import com.giftforyoube.funding.repository.FundingSummaryRepository;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.user.entity.User;
@@ -48,6 +50,7 @@ public class FundingService {
     private final UserRepository userRepository;
     private final RedissonClient redissonClient;
     private final DonationRepository donationRepository;
+    private final FundingSummaryRepository fundingSummaryRepository;
 
     private static final int TIMEOUT = 10000; // 10초
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
@@ -313,9 +316,10 @@ public class FundingService {
         }
 
         // 캐시에 데이터가 없는 경우, 데이터베이스에서 정보를 계산합니다.
-        long totalDonationsCount = donationRepository.count();
-        long successfulFundingsCount = fundingRepository.countSuccessfulFundings();
-        long totalFundingAmount = donationRepository.sumDonationAmounts();
+        FundingSummary fundingSummary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
+        long totalDonationsCount = fundingSummary.getTotalDonationsCount();
+        long successfulFundingsCount = fundingSummary.getSuccessfulFundingsCount();
+        long totalFundingAmount = fundingSummary.getTotalFundingAmount();
 
         // 계산된 통계 정보를 캐시에 저장합니다.
         FundingSummaryResponseDto summary = FundingSummaryResponseDto.builder()
@@ -327,6 +331,10 @@ public class FundingService {
         saveSummaryToCache(FUNDING_SUMMARY_CACHE_KEY, summary);
         return summary;
     }
+
+    // 목표금액 달성되어서 종료된 펀딩 카운트 증가 메서드 추가 예정
+
+
 
     // ---------------------------- 캐시 관련 메서드들과 OG 태그 메서드 ------------------------------------------
 

@@ -13,12 +13,4 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     List<Donation> findByFundingIdOrderByDonationRankingDesc(Long fundingId);
 
     List<Donation> findByFundingId(Long fundingId);
-
-    @Query("SELECT SUM(d.donationAmount) FROM Donation d WHERE d.funding.id = :fundingId")
-    int getTotalDonationAmountByFundingId(Long fundingId);
-
-    @Query("SELECT SUM(d.donationAmount) FROM Donation d")
-    Long sumDonationAmounts();
-
-
 }
