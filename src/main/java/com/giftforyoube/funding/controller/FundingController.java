@@ -83,8 +83,21 @@ public class FundingController {
     }
 
     // Slice - Page 페이지네이션 수정 적용
+    @GetMapping("/all")
+    public ResponseEntity<Page<FundingResponseDto>> getAllFundings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder
+    ){
+        log.info("[getAllFundings] 모든 펀딩 리스트 조회 무한스크롤");
+
+        Page<FundingResponseDto> allFundingsPage = fundingService.getAllFundings(page, size, sortBy, sortOrder);
+        return ResponseEntity.ok(allFundingsPage);
+    }
+
     @GetMapping("/active")
-    public ResponseEntity<Page<FundingResponseDto>> getActiveFundings(
+    public ResponseEntity<Slice<FundingResponseDto>> getActiveFundings(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -92,7 +105,7 @@ public class FundingController {
     ){
         log.info("[getActiveFundings] 진행중인 펀딩 리스트 조회 무한스크롤");
 
-        Page<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
+        Slice<FundingResponseDto> activeFundingsPage = fundingService.getActiveFundings(page, size, sortBy, sortOrder);
         return ResponseEntity.ok(activeFundingsPage);
     }
 
@@ -100,7 +113,7 @@ public class FundingController {
     @GetMapping("/finished")
     public ResponseEntity<Slice<FundingResponseDto>> getFinishedFundings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder
     ){
