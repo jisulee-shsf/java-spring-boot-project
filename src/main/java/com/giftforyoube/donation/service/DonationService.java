@@ -5,7 +5,9 @@ import com.giftforyoube.donation.dto.*;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
+import com.giftforyoube.funding.entity.FundingSummary;
 import com.giftforyoube.funding.repository.FundingRepository;
+import com.giftforyoube.funding.repository.FundingSummaryRepository;
 import com.giftforyoube.funding.service.FundingService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
@@ -41,16 +43,19 @@ public class DonationService {
     private final FundingRepository fundingRepository;
     private final FundingService fundingService;
     private final NotificationService notificationService;
+    private final FundingSummaryRepository fundingSummaryRepository;
 
     public DonationService(RestTemplate restTemplate, DonationRepository donationRepository,
                            UserRepository userRepository, FundingRepository fundingRepository,
-                           FundingService fundingService, NotificationService notificationService) {
+                           FundingService fundingService, NotificationService notificationService,
+                           FundingSummaryRepository fundingSummaryRepository) {
         this.restTemplate = restTemplate;
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
         this.fundingRepository = fundingRepository;
         this.fundingService = fundingService;
         this.notificationService = notificationService;
+        this.fundingSummaryRepository = fundingSummaryRepository;
     }
 
     @Value("${kakaopay.cid}")
@@ -157,6 +162,7 @@ public class DonationService {
             }
             Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
             donationRepository.save(donation);
+            updateStatisticsForNewDonation(donationAmount);
             fundingService.clearFundingCaches();
         } catch (IllegalArgumentException e) {
             throw new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND);
@@ -189,5 +195,13 @@ public class DonationService {
         String url = "https://www.giftipie.me/fundingdetail/" + fundingId;
         NotificationType notificationType = NotificationType.DONATION;
         notificationService.send(user, notificationType, content, url);
+    }
+
+    // 후원 발생시 summary 에 데이터 추가하는 메서드
+    private void updateStatisticsForNewDonation(int donationAmount) {
+        FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
+        summary.setTotalDonationsCount(summary.getTotalDonationsCount() + 1);
+        summary.setTotalFundingAmount(summary.getTotalFundingAmount() + donationAmount);
+        fundingSummaryRepository.save(summary);
     }
 }
