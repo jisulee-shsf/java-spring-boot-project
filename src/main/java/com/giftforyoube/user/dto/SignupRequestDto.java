@@ -22,5 +22,5 @@ public class SignupRequestDto {
             message = "비밀번호는 8자에서 15자 사이의 알파벳 대소문자, 숫자, 특수문자로 구성되어야 합니다.")
     private String password;
 
-    private Boolean isEmailNotificationAgreed;
+//    private Boolean isEmailNotificationAgreed;
 }
