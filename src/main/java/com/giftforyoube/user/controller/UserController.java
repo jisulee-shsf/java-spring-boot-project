@@ -68,6 +68,7 @@ public class UserController {
         String kakaoToken = kakaoService.kakaoLogin(code);
         Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, kakaoToken);
         cookie.setPath("/");
+        cookie.setDomain("api.giftipie.me");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         httpServletResponse.addCookie(cookie);
