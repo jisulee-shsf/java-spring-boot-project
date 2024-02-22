@@ -39,14 +39,9 @@ public class UserService {
             throw new BaseException(BaseResponseStatus.EMAIL_ALREADY_EXISTS);
         }
 
-        // 3. 휴대폰 번호 중복 여부 확인
-        if (userRepository.findByPhoneNumber(signupRequestDto.getPhoneNumber()).isPresent()) {
-            throw new BaseException(BaseResponseStatus.PHONENUMBER_ALREADY_EXISTS);
-        }
-
-        // 4. 회원가입 진행
+        // 3. 회원가입 진행
         String encryptedPassword = passwordEncoder.encode(signupRequestDto.getPassword());
-        User user = new User(signupRequestDto.getEmail(), encryptedPassword, signupRequestDto.getNickname(), signupRequestDto.getPhoneNumber());
+        User user = new User(signupRequestDto.getEmail(), encryptedPassword, signupRequestDto.getNickname(), signupRequestDto.getIsEmailNotificationAgreed());
         userRepository.save(user);
         log.info("[registerAccount] 회원가입 완료");
     }
