@@ -102,7 +102,6 @@ public class JwtUtil {
 
         Cookie cookie = new Cookie(AUTHORIZATION_HEADER, encodeToken);
         cookie.setPath("/");
-        cookie.setDomain("www.giftipie.me");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         httpServletResponse.addCookie(cookie);
