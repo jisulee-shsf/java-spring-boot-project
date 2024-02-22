@@ -29,8 +29,8 @@ public class User {
     @Column(nullable = false)
     private String nickname;
 
-    @Column(unique = true)
-    private String phoneNumber;
+    @Column(nullable = false)
+    private Boolean isEmailNotificationAgreed = false;
 
     // User 엔티티를 저장할 때 자동으로 연결된 Funding 엔티티도 저장되도록 cascade = CascadeType.ALL
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
@@ -51,20 +51,22 @@ public class User {
     @Column
     private String googleAccessToken;
 
-    public User(String email, String password, String nickname, String phoneNumber) {
+    // 1. 일반 회원가입
+    public User(String email, String password, String nickname, Boolean isEmailNotificationAgreed) {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
-        this.phoneNumber = phoneNumber;
+        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
     }
 
-    public User(String email, String password, String nickname, Long kakaoId, String kakaoAccessToken, String phoneNumber) {
+    // 2-1. 카카오 로그인
+    public User(String email, String password, String nickname, Long kakaoId, String kakaoAccessToken, Boolean isEmailNotificationAgreed) {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.kakaoId = kakaoId;
         this.kakaoAccessToken = kakaoAccessToken;
-        this.phoneNumber = phoneNumber;
+        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
     }
 
     public User kakaoIdAndAccessTokenUpdate(Long kakaoId, String kakaoAccessToken) {
@@ -78,13 +80,14 @@ public class User {
         return this;
     }
 
-    public User(String email, String password, String nickname, String googleId, String googleAccessToken, String phoneNumber) {
+    // 2-2. 구글 로그인
+    public User(String email, String password, String nickname, String googleId, String googleAccessToken, Boolean isEmailNotificationAgreed) {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.googleId = googleId;
         this.googleAccessToken = googleAccessToken;
-        this.phoneNumber = phoneNumber;
+        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
     }
 
     public User googleIdAndAccessTokenUpdate(String googleId, String googleAccessToken) {
