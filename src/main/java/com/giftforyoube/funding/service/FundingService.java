@@ -136,7 +136,7 @@ public class FundingService {
     public FundingResponseDto getMyFundingInfo(User currentUser) {
         log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
 
-        String cacheKey = "fundingDetail:" + currentUser.getId();
+        String cacheKey = "MyFundingInfo:" + currentUser.getId();
         // 캐시에서 조회 시도
         FundingResponseDto cachedFunding = cacheService.getFundingFromCache(cacheKey);
         if (cachedFunding != null) {
