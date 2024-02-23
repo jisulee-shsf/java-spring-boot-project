@@ -23,6 +23,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -89,7 +90,7 @@ public class FundingService {
         boolean lockAcquired = false;
         try {
             // 락 획득 시도를 최적화
-            lockAcquired = lock.tryLock(5, 1, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
+            lockAcquired = lock.tryLock(10, 2, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
             if (!lockAcquired) {
                 throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
             }
@@ -271,41 +272,65 @@ public class FundingService {
     public FundingResponseDto updateFunding(Long fundingId, User user, FundingUpdateRequestDto requestDto) {
         log.info("[updateFunding] 펀딩 수정하기");
 
-        // 펀딩 id 유효성검사
-        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
-                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
-        );
+        String lockKey = "fundingUpdateLock:" + fundingId;
+        RLock lock = redissonClient.getLock(lockKey);
+        try {
+            if (!lock.tryLock(10, 2, TimeUnit.MINUTES)) {
+                throw new IllegalStateException("펀딩 수정을 위한 락을 획득할 수 없습니다.");
+            }
 
-        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
-        if (!funding.getUser().getId().equals(user.getId())) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_UPDATE_FUNDING);
+            // 펀딩 id 유효성 검사 및 수정 로직
+            Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                    () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
+            );
+            // 현재 유저와 펀딩 유저가 같은지 유효성 검사
+            if (!funding.getUser().getId().equals(user.getId())) {
+                throw new BaseException(BaseResponseStatus.UNAUTHORIZED_UPDATE_FUNDING);
+            }
+
+            funding.update(requestDto); // 펀딩 내용수정
+            clearFundingCaches(); // 캐시 무효화
+            return FundingResponseDto.fromEntity(funding);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+        } finally {
+            lock.unlock();
         }
-
-        // 펀딩 내용수정
-        funding.update(requestDto);
-
-        clearFundingCaches();
-        return FundingResponseDto.fromEntity(funding);
     }
 
     // 펀딩 삭제
     @Transactional
     public void deleteFunding(Long fundingId, User user) {
-        log.info("[deleteFunding] 펀딩 수정하기");
+        log.info("[deleteFunding] 펀딩 삭제하기");
 
-        // 펀딩 id 유효성 검사
-        Funding funding = fundingRepository.findById(fundingId).orElseThrow(
-                () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
-        );
+        String lockKey = "fundingDeleteLock:" + fundingId;
+        RLock lock = redissonClient.getLock(lockKey);
+        try {
+            if (!lock.tryLock(10, 2, TimeUnit.MINUTES)) {
+                throw new IllegalStateException("펀딩 삭제를 위한 락을 획득할 수 없습니다.");
+            }
 
-        // 현재 유저와 펀딩 유저가 같은지 유효성 검사
-        if (!funding.getUser().getId().equals(user.getId())) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_FUNDING);
+            // 펀딩 id 유효성 검사 및 삭제 로직
+            Funding funding = fundingRepository.findById(fundingId).orElseThrow(
+                    () -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND)
+            );
+
+            // 현재 유저와 펀딩 유저가 같은지 유효성 검사
+            if (!funding.getUser().getId().equals(user.getId())) {
+                throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_FUNDING);
+            }
+
+            fundingRepository.delete(funding);
+            clearFundingCaches(); // 캐시 무효화
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+        } finally {
+            lock.unlock();
         }
-
-        fundingRepository.delete(funding);
-        clearFundingCaches();
     }
+
 
     @Transactional(readOnly = true)
     public FundingSummaryResponseDto getFundingSummary() {
@@ -355,7 +380,7 @@ public class FundingService {
     public FundingItem getCachedFundingProduct(String cacheKey) throws JsonProcessingException {
         log.info("[getCachedFundingProduct] 캐시에서 FundingItem 객체를 가져오기");
 
-        String fundingItemJson = redisTemplate.opsForValue().get(cacheKey);
+        String fundingItemJson = redisTemplate.opsForValue().get(cacheKey); // 역직렬화
         return fundingItemJson == null ? null : objectMapper.readValue(fundingItemJson, FundingItem.class);
     }
 
