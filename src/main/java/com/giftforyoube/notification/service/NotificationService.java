@@ -26,15 +26,12 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
-    // SSE 연결 지속 시간 (1시간)
-    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
-
+    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60; // SSE 연결 지속 시간 (1시간)
     private final EmitterRepository emitterRepository;
     private final NotificationRepository notificationRepository;
     private final MailingService mailingService;
 
     // subscribe
-    @Transactional
     public SseEmitter sseSubscribe(String username, String lastEventId, HttpServletResponse response) {
         String emitterId = createTimeIncludeId(username);
 
@@ -94,11 +91,12 @@ public class NotificationService {
             try {
                 mailingService.sendNotificationEmail(saveNotification);
             } catch (MessagingException e) {
-                throw new RuntimeException(e);
+                throw new BaseException(BaseResponseStatus.EMAIL_SEND_FAILED);
             }
         }
     }
 
+    // 알림 객체 생성
     private Notification createNotification(User receiver, NotificationType notificationType, String content, String url) {
         return Notification.builder()
                 .receiver(receiver)
@@ -109,6 +107,7 @@ public class NotificationService {
                 .build();
     }
 
+    // 누락된 데이터 전송
     private void sendLostData(String lastEventId, String username, String emitterId, SseEmitter emitter) {
         Map<String, Object> eventCaches = emitterRepository.findAllEventCacheStartWithByUserId(username); // 이벤트 캐시 조회
         eventCaches.entrySet().stream()
@@ -116,10 +115,12 @@ public class NotificationService {
                 .forEach(entry -> sendNotification(emitter, entry.getKey(), emitterId, entry.getValue())); // 놓친 이벤트 전송
     }
 
+    // 누락된 데이터 확인
     private boolean hasLostData(String lastEventId) {
         return !lastEventId.isEmpty();
     }
 
+    // 알림 발송
     private void sendNotification(SseEmitter emitter, String eventId, String emitterId, Object data) {
         try {
             emitter.send(SseEmitter.event()
@@ -129,6 +130,7 @@ public class NotificationService {
             );
         } catch (IOException exception) {
             emitterRepository.deleteById(emitterId);
+            throw new BaseException(BaseResponseStatus.NOTIFICATION_SEND_FAILED);
         }
     }
 
