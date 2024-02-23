@@ -11,7 +11,7 @@ import com.giftforyoube.funding.entity.FundingStatus;
 import com.giftforyoube.funding.entity.FundingSummary;
 import com.giftforyoube.funding.repository.FundingRepository;
 import com.giftforyoube.funding.repository.FundingSummaryRepository;
-import com.giftforyoube.funding.service.FundingService;
+import com.giftforyoube.funding.service.CacheService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
@@ -42,21 +42,21 @@ public class DonationService {
     private final DonationRepository donationRepository;
     private final UserRepository userRepository;
     private final FundingRepository fundingRepository;
-    private final FundingService fundingService;
     private final NotificationService notificationService;
     private final FundingSummaryRepository fundingSummaryRepository;
+    private final CacheService cacheService;
 
     public DonationService(RestTemplate restTemplate, DonationRepository donationRepository,
                            UserRepository userRepository, FundingRepository fundingRepository,
-                           FundingService fundingService, NotificationService notificationService,
-                           FundingSummaryRepository fundingSummaryRepository) {
+                           NotificationService notificationService,
+                           FundingSummaryRepository fundingSummaryRepository, CacheService cacheService) {
         this.restTemplate = restTemplate;
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
         this.fundingRepository = fundingRepository;
-        this.fundingService = fundingService;
         this.notificationService = notificationService;
         this.fundingSummaryRepository = fundingSummaryRepository;
+        this.cacheService = cacheService;
     }
 
     @Value("${kakaopay.cid}")
@@ -171,7 +171,7 @@ public class DonationService {
                 updateStatisticsForSuccessfulFunding();
             }
             updateStatisticsForNewDonation(donationAmount);
-            fundingService.clearFundingCaches();
+            cacheService.clearFundingCaches();
         } catch (IllegalArgumentException e) {
             throw new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND);
         }
