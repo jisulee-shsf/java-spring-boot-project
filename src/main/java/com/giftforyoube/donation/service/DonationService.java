@@ -7,8 +7,11 @@ import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
+import com.giftforyoube.funding.entity.FundingStatus;
+import com.giftforyoube.funding.entity.FundingSummary;
 import com.giftforyoube.funding.repository.FundingRepository;
-import com.giftforyoube.funding.service.FundingService;
+import com.giftforyoube.funding.repository.FundingSummaryRepository;
+import com.giftforyoube.funding.service.CacheService;
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
@@ -39,18 +42,21 @@ public class DonationService {
     private final DonationRepository donationRepository;
     private final UserRepository userRepository;
     private final FundingRepository fundingRepository;
-    private final FundingService fundingService;
     private final NotificationService notificationService;
+    private final FundingSummaryRepository fundingSummaryRepository;
+    private final CacheService cacheService;
 
     public DonationService(RestTemplate restTemplate, DonationRepository donationRepository,
                            UserRepository userRepository, FundingRepository fundingRepository,
-                           FundingService fundingService, NotificationService notificationService) {
+                           NotificationService notificationService,
+                           FundingSummaryRepository fundingSummaryRepository, CacheService cacheService) {
         this.restTemplate = restTemplate;
         this.donationRepository = donationRepository;
         this.userRepository = userRepository;
         this.fundingRepository = fundingRepository;
-        this.fundingService = fundingService;
         this.notificationService = notificationService;
+        this.fundingSummaryRepository = fundingSummaryRepository;
+        this.cacheService = cacheService;
     }
 
     @Value("${kakaopay.cid}")
@@ -161,7 +167,13 @@ public class DonationService {
             int currentAmount = funding.getCurrentAmount() + donationAmount;
             funding.setCurrentAmount(currentAmount);
             fundingRepository.save(funding);
-            fundingService.clearFundingCaches();
+            if(funding.getStatus().equals(FundingStatus.FINISHED)){
+                updateStatisticsForSuccessfulFunding();
+                // 성공했을때 알림 발송
+                sendSuccessfulNotification(fundingId);
+            }
+            updateStatisticsForNewDonation(donationAmount);
+            cacheService.clearFundingCaches();
         } catch (IllegalArgumentException e) {
             throw new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND);
         }
@@ -182,16 +194,40 @@ public class DonationService {
     }
 
     // 후원 결제 승인 시 알림메시지 발송
-    @Async
     public void sendDonationNotification (String sponsorNickname, Long fundingId) {
         // 후원 결제 승인 후 알림 발송
         log.info("후원 결제 승인 후 알림 발송 시작");
 
         User user = userRepository.findUserByFundingId(fundingId);
-//        String content = "님 펀딩에 " + sponsorNickname + "님이 후원하셨습니다!";
         String content = String.format("회원님 펀딩에 %s 님이 후원하셨습니다!", sponsorNickname);
         String url = "https://www.giftipie.me/fundingdetail/" + fundingId;
         NotificationType notificationType = NotificationType.DONATION;
         notificationService.send(user, notificationType, content, url);
+    }
+
+    // 펀딩 성공 시 알림메시지 발송
+    public void sendSuccessfulNotification (Long fundingId) {
+        // 펀딩 성공 시 알림 발송
+        log.info("펀딩 성공 시 알림 발송");
+
+        User user = userRepository.findUserByFundingId(fundingId);
+        String content = String.format("회원님의 선물펀딩이 목표금액에 달성되어 마감되었습니다!");
+        String url = "https://www.giftipie.me/fundingdetail/" + fundingId;
+        NotificationType notificationType = NotificationType.FUNDING_SUCCESS;
+        notificationService.send(user, notificationType, content, url);
+    }
+
+    // 후원 발생시 summary 에 데이터 추가하는 메서드
+    private void updateStatisticsForNewDonation(int donationAmount) {
+        FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
+        summary.setTotalDonationsCount(summary.getTotalDonationsCount() + 1);
+        summary.setTotalFundingAmount(summary.getTotalFundingAmount() + donationAmount);
+        fundingSummaryRepository.save(summary);
+    }
+
+    private void updateStatisticsForSuccessfulFunding() {
+        FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
+        summary.setSuccessfulFundingsCount(summary.getSuccessfulFundingsCount() + 1);
+        fundingSummaryRepository.save(summary);
     }
 }

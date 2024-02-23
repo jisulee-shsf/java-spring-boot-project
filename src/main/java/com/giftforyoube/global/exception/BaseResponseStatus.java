@@ -38,7 +38,6 @@ public enum BaseResponseStatus {
     NOT_FOUND_USER(false, 4000, "가입된 사용자 정보가 없습니다."),
     PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
-    PHONENUMBER_ALREADY_EXISTS(false, 4000, "이미 가입된 휴대폰 번호입니다."),
     LOGIN_FAILURE(false, 4000, "로그인에 실패했습니다."),
     REGISTOR_ACCOUNT_FAILURE(false, 4000, "회원가입에 실패했습니다."),
     DELETE_ACCOUNT_FAILURE(false, 4000, "회원탈퇴에 실패했습니다."),
@@ -79,7 +78,13 @@ public enum BaseResponseStatus {
     SERVER_ERROR(false, 5000, "서버와 연결에 실패하였습니다."),
     UNEXPECTED_ERROR(false, 5000, "예상치 못한 에러가 발생했습니다."),
     FAIL_TO_ENCODING(false, 5000, "요청 인코딩에 실패했습니다."),
-    FAIL_TO_JSON(false, 5000, "JSON 파싱 에러가 발생했습니다.");
+    FAIL_TO_JSON(false, 5000, "JSON 파싱 에러가 발생했습니다."),
+
+    // 1. 이메일
+    EMAIL_SEND_FAILED(false, 5000, "이메일 전송에 실패했습니다."),
+
+    // 2. 알림
+    NOTIFICATION_SEND_FAILED(false, 5000, "알림 전송에 실패했습니다.");
 
     private final boolean isSuccess;
     private final int code;

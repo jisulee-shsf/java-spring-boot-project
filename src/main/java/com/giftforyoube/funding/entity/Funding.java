@@ -45,7 +45,7 @@ public class Funding extends Auditable implements Serializable {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "funding", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     private List<Donation> donations = new ArrayList<>();
 
     @Builder

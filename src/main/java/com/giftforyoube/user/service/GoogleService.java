@@ -118,13 +118,13 @@ public class GoogleService {
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), googleId, googleAccessToken, null);
+                googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), googleId, googleAccessToken, false);
             }
         }
 
         googleUser = googleUser.googleAccessTokenUpdate(googleAccessToken);
         userRepository.save(googleUser);
-        log.info("[googleLogin] 카카오 로그인 완료");
+        log.info("[googleLogin] 구글 로그인 완료");
         return googleUser;
     }
 }
