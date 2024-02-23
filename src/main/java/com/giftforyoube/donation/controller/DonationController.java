@@ -10,11 +10,8 @@ import com.giftforyoube.donation.service.DonationService;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
-import com.giftforyoube.notification.entity.NotificationType;
-import com.giftforyoube.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,9 +29,9 @@ import java.util.stream.Collectors;
 @Tag(name = "후원", description = "후원 관련 API")
 public class DonationController {
 
+    private Long fundingId; // 유저 테스트용
     private final DonationService donationService;
     private final HttpSession session;
-
 
     public DonationController(DonationService donationService, HttpSession session) {
         this.donationService = donationService;
@@ -57,7 +54,7 @@ public class DonationController {
     public ResponseEntity<BaseResponse<ReadyDonationResponseDto>> readyDonation(@PathVariable Long id,
                                                                                 @RequestBody ReadyDonationRequestDto readyDonationRequestDto) {
         ReadyDonationResponseDto readyDonationResponseDto = donationService.readyDonation(readyDonationRequestDto);
-        session.setAttribute("fundingId", id);
+        this.fundingId = id;
         session.setAttribute("sponsorNickname", readyDonationRequestDto.getSponsorNickname());
         session.setAttribute("sponsorComment", readyDonationRequestDto.getSponsorComment());
         session.setAttribute("tid", readyDonationResponseDto.getTid());
@@ -69,34 +66,34 @@ public class DonationController {
     // 3-1. 후원 결제 승인
     @GetMapping("/donation/approve")
     public ResponseEntity<Void> approveDonation(@RequestParam("pg_token") String pgToken,
-                               @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException, URISyntaxException {
+                                                @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException, URISyntaxException {
         String tid = (String) session.getAttribute("tid");
         String sponsorNickname = (String) session.getAttribute("sponsorNickname");
         String sponsorComment = (String) session.getAttribute("sponsorComment");
-        Long fundingId = (Long) session.getAttribute("fundingId");
         donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(new URI("https://www.giftipie.me/fundingdetail/" + fundingId));
+        headers.setLocation(new URI(giftipieRedirectUrl + "fundingdetail/" + fundingId));
 
         // 후원 결제 승인 시 알람 발송
         donationService.sendDonationNotification(sponsorNickname, fundingId);
-
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     // 3-2. 후원 결제 실패
     @GetMapping("/donation/fail")
-    public ResponseEntity<BaseResponse> failDonation() {
-        BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_FAIL);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
+    public ResponseEntity<Void> failDonation() throws URISyntaxException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(new URI(giftipieRedirectUrl + "fundingdetail/" + fundingId));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     // 3-3. 후원 결제 취소
     @GetMapping("/donation/cancel")
-    public ResponseEntity<BaseResponse> cancelDonation() {
-        BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.DONATION_CANCEL);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(baseResponse);
+    public ResponseEntity<Void> cancelDonation() throws URISyntaxException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(new URI(giftipieRedirectUrl + "fundingdetail/" + fundingId));
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     // 4-1. 후원 정보 리스트 조회

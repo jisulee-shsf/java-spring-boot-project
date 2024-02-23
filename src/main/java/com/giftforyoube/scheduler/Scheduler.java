@@ -36,12 +36,17 @@ public class Scheduler {
             funding.setStatus(FundingStatus.FINISHED);
             fundingRepository.save(funding);
 
-            // 알림메세지 발송
-            log.info("[autoFinishFundings] 펀딩 마감! 펀딩 종료!");
-            String content = "펀딩 마감일이되어 펀딩이 종료되었습니다.";
-            String url = "https://giftipie.me/fundingdetail/" + funding.getId();
-            NotificationType notificationType = NotificationType.FUNDING_TIME_OUT;
-            notificationService.send(funding.getUser(), notificationType, content, url);
+
+            // 이메일 수신 동의 했을때
+            if (funding.getUser().getIsEmailNotificationAgreed()) {
+                // 알림메세지 발송
+                log.info("[autoFinishFundings] 펀딩 마감! 펀딩 종료!");
+                String content = "펀딩 마감일이되어 펀딩이 종료되었습니다.";
+                String url = "https://giftipie.me/fundingdetail/" + funding.getId();
+                NotificationType notificationType = NotificationType.FUNDING_TIME_OUT;
+                notificationService.send(funding.getUser(), notificationType, content, url);
+            }
+
         }
         cacheService.clearFundingCaches();
     }

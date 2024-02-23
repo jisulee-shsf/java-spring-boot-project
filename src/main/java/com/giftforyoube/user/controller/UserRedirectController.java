@@ -11,19 +11,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 @RestController
-@RequestMapping("/api/login")
+@RequestMapping("/api")
 public class UserRedirectController {
 
-    // 유저 테스트 시 적용 예정
-    @GetMapping("/success")
+    // 유저 테스트 후 적용 예정
+    @GetMapping("/login/success")
     public ResponseEntity<Void> redirectToLoginSuccessUri() throws URISyntaxException {
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(new URI("https://www.giftipie.me/"));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    // 유저 테스트 시 적용 예정
-    @GetMapping("/fail")
+    // 유저 테스트 후 적용 예정
+    @GetMapping("/login/fail")
     public ResponseEntity<Void> redirectToLoginFailUri() throws URISyntaxException {
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(new URI("https://www.giftipie.me/"));

@@ -169,6 +169,8 @@ public class DonationService {
             fundingRepository.save(funding);
             if(funding.getStatus().equals(FundingStatus.FINISHED)){
                 updateStatisticsForSuccessfulFunding();
+                // 성공했을때 알림 발송
+                sendSuccessfulNotification(fundingId);
             }
             updateStatisticsForNewDonation(donationAmount);
             cacheService.clearFundingCaches();
@@ -192,16 +194,26 @@ public class DonationService {
     }
 
     // 후원 결제 승인 시 알림메시지 발송
-    @Async
     public void sendDonationNotification (String sponsorNickname, Long fundingId) {
         // 후원 결제 승인 후 알림 발송
         log.info("후원 결제 승인 후 알림 발송 시작");
 
         User user = userRepository.findUserByFundingId(fundingId);
-//        String content = "님 펀딩에 " + sponsorNickname + "님이 후원하셨습니다!";
         String content = String.format("회원님 펀딩에 %s 님이 후원하셨습니다!", sponsorNickname);
         String url = "https://www.giftipie.me/fundingdetail/" + fundingId;
         NotificationType notificationType = NotificationType.DONATION;
+        notificationService.send(user, notificationType, content, url);
+    }
+
+    // 펀딩 성공 시 알림메시지 발송
+    public void sendSuccessfulNotification (Long fundingId) {
+        // 펀딩 성공 시 알림 발송
+        log.info("펀딩 성공 시 알림 발송");
+
+        User user = userRepository.findUserByFundingId(fundingId);
+        String content = String.format("회원님의 선물펀딩이 목표금액에 달성되어 마감되었습니다!");
+        String url = "https://www.giftipie.me/fundingdetail/" + fundingId;
+        NotificationType notificationType = NotificationType.FUNDING_SUCCESS;
         notificationService.send(user, notificationType, content, url);
     }
 

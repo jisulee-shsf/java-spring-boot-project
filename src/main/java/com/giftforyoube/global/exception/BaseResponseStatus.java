@@ -38,7 +38,6 @@ public enum BaseResponseStatus {
     NOT_FOUND_USER(false, 4000, "가입된 사용자 정보가 없습니다."),
     PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
-    PHONENUMBER_ALREADY_EXISTS(false, 4000, "이미 가입된 휴대폰 번호입니다."),
     LOGIN_FAILURE(false, 4000, "로그인에 실패했습니다."),
     REGISTOR_ACCOUNT_FAILURE(false, 4000, "회원가입에 실패했습니다."),
     DELETE_ACCOUNT_FAILURE(false, 4000, "회원탈퇴에 실패했습니다."),
