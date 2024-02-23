@@ -12,7 +12,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
@@ -70,7 +69,7 @@ public class MailingService {
     ////////////////////////////////////////////////////////////////
 
     // 회원가입 검증 이메일 생성
-    public MimeMessage createMail(String mail, int authenticationCode) throws MessagingException {
+    public MimeMessage createSignupMail(String mail, int authenticationCode) throws MessagingException {
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -79,15 +78,27 @@ public class MailingService {
         emailAddress.validate();
 
         // 메일 세팅
-        helper.setFrom(senderEmail);
-        helper.setTo(mail);
+        // 이메일 제목
         helper.setSubject(EMAIL_TITLE_PREFIX + "이메일 인증 코드입니다.");
-        String body = "";
-        body += "<h3>" + "안녕하세요. 기프티파이입니다." + "</h3>";
-        body += "<h3>" + "요청하신 인증 번호 입니다." + "</h3>";
-        body += "<h1>" + authenticationCode + "</h1>";
-        body += "<h3>" + "감사합니다!" + "</h3>";
-        helper.setText(body, true);
+
+        // 이메일 보내는 사람
+        helper.setFrom(senderEmail);
+
+        // 이메일 받는 사람
+        helper.setTo(mail);
+
+        // 템플릿에 전달할 데이터
+        Context context = new Context();
+        context.setVariable("authenticationCode", authenticationCode); // 추가된부분
+
+//        String body = "";
+//        body += "<h3>" + "안녕하세요. 기프티파이입니다." + "</h3>";
+//        body += "<h3>" + "요청하신 인증 번호 입니다." + "</h3>";
+//        body += "<h1>" + authenticationCode + "</h1>";
+//        body += "<h3>" + "감사합니다!" + "</h3>";
+        String htmlContent = templateEngine.process("EmailTemplateSignup", context);
+
+        helper.setText(htmlContent, true);
 
         return message;
     }
@@ -99,7 +110,7 @@ public class MailingService {
 
         try {
             // 메일 생성 및 전송
-            MimeMessage message = createMail(mail, authenticationCode);
+            MimeMessage message = createSignupMail(mail, authenticationCode);
             javaMailSender.send(message);
         } catch (MessagingException e) {
             throw new BaseException(BaseResponseStatus.EMAIL_SEND_FAILED);
