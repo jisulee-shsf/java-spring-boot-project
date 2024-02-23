@@ -1,5 +1,7 @@
 package com.giftforyoube.notification.service;
 
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.notification.entity.Notification;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
@@ -100,7 +102,7 @@ public class MailingService {
             MimeMessage message = createMail(mail, authenticationCode);
             javaMailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("이메일 전송 중 오류가 발생했습니다.", e);
+            throw new BaseException(BaseResponseStatus.EMAIL_SEND_FAILED);
         }
 
         return authenticationCode;
