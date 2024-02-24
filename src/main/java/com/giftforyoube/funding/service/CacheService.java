@@ -201,6 +201,7 @@ public class CacheService {
         clearCacheByPattern("allFundings:*");
         clearCacheByPattern("activeFundings:*");
         clearCacheByPattern("finishedFundings:*");
+        clearCacheByPattern("MyFundingInfo:*");
 
         // 상세 페이지 캐시 삭제 추가
         clearCacheByPattern("fundingDetail:*");

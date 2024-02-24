@@ -136,14 +136,14 @@ public class FundingService {
     public FundingResponseDto getMyFundingInfo(User currentUser) {
         log.info("[getMyFundingInfo] 내 펀딩 정보 조회");
 
-        String cacheKey = "fundingDetail:" + currentUser.getId();
+        String cacheKey = "MyFundingInfo:" + currentUser.getId();
         // 캐시에서 조회 시도
         FundingResponseDto cachedFunding = cacheService.getFundingFromCache(cacheKey);
         if (cachedFunding != null) {
             return cachedFunding;
         }
 
-        Funding funding = fundingRepository.findByUserAndStatus(currentUser, FundingStatus.ACTIVE);
+        Funding funding = fundingRepository.findByUserIdAndStatus(currentUser.getId(), FundingStatus.ACTIVE);
         if (funding == null) {
             return FundingResponseDto.emptyDto();
         }
@@ -169,7 +169,7 @@ public class FundingService {
         }
 
         // DB에서 조회
-        Page<Funding> mainFundings = fundingRepository.findById(pageable);
+        Page<Funding> mainFundings = fundingRepository.findAllAndPublicFlagTrue(pageable);
         Page<FundingResponseDto> fundingResponseDtoPage = mainFundings.map(FundingResponseDto::fromEntity);
 
         // 결과를 캐시에 저장
@@ -190,7 +190,7 @@ public class FundingService {
         }
 
         // DB에서 조회
-        Page<Funding> allFunding = fundingRepository.findAll(pageable);
+        Page<Funding> allFunding = fundingRepository.findAllAndPublicFlagTrue(pageable);
         Page<FundingResponseDto> allFundings = allFunding.map(FundingResponseDto::fromEntity);
 
         // 결과를 캐시에 저장
@@ -212,7 +212,7 @@ public class FundingService {
         }
 
         // DB에서 조회 및 캐시 저장
-        Slice<FundingResponseDto> activeFundings = fundingRepository.findByStatus(FundingStatus.ACTIVE, pageable).map(FundingResponseDto::fromEntity);
+        Slice<FundingResponseDto> activeFundings = fundingRepository.findByStatusAndPublicFlagTrue(FundingStatus.ACTIVE, pageable).map(FundingResponseDto::fromEntity);
         cacheService.saveFundingListToCache(cacheKey, activeFundings);
 
         return activeFundings;
@@ -232,7 +232,7 @@ public class FundingService {
         }
 
         // DB에서 조회 및 캐시 저장
-        Slice<FundingResponseDto> finishedFundings = fundingRepository.findByStatus(FundingStatus.FINISHED, pageable).map(FundingResponseDto::fromEntity);
+        Slice<FundingResponseDto> finishedFundings = fundingRepository.findByStatusAndPublicFlagTrue(FundingStatus.FINISHED, pageable).map(FundingResponseDto::fromEntity);
         cacheService.saveFundingListToCache(cacheKey, finishedFundings);
 
         return finishedFundings;

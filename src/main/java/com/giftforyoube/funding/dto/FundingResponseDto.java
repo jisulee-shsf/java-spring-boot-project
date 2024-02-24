@@ -64,7 +64,11 @@ public class FundingResponseDto implements Serializable {
         if (targetAmount == 0) {
             this.achievementRate = 0;
         } else {
-            this.achievementRate = (int) Math.round((double) currentAmount / targetAmount * 100);
+            int achieve = (int) Math.round((double) currentAmount / targetAmount * 100);
+            if(achieve >= 100){
+                achieve = 100;
+            }
+            this.achievementRate = achieve;
         }
     }
 

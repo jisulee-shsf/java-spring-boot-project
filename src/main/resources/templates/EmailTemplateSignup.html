@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Giftipie Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        @keyframes sway {
+            0%, 100% {
+                transform: rotate(-5deg);
+            }
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+        .sway-animation {
+            width: 100px; /* Adjust as needed for your image */
+            height: auto;
+            margin: 20px auto;
+            animation: sway 2s ease-in-out infinite;
+        }
+        .button {
+            display: inline-block;
+            background-color: #FF7C7C;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <img src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcoMe54%2FbtsFaOZYM2M%2FZfk52wGVxuAwbykHDMADoK%2Fimg.png" class="sway-animation" alt="Gift Animation"/>
+    <h2>안녕하세요, Giftipie 입니다.</h2>
+    <p>아래의 회원가입 인증코드를 페이지에서 입력해주세요</p>
+    <h1 th:text = "${authenticationCode}"> 인증코드</h1>
+</div>
+</body>
+</html>
