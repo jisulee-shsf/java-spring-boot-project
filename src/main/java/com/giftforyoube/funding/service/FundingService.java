@@ -243,12 +243,13 @@ public class FundingService {
         log.info("[finishFunding] 펀딩 종료하기");
 
         Funding funding = fundingRepository.findById(fundingId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 펀딩을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND));
+        // 해당 펀딩을 찾을 수 없습니다.
 
         // 펀딩을 등록한 사용자가 현재 로그인한 사용자와 일치하는지 확인
         if (!funding.getUser().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("이 펀딩을 종료할 권한이 없습니다.");
-        }
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_FINISHED_FUNDING);
+        } // 이 펀딩을 종료할 권한이 없습니다.
 
         funding.setStatus(FundingStatus.FINISHED);
         fundingRepository.save(funding);
