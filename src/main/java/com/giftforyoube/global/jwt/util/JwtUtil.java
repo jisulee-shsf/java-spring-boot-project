@@ -1,4 +1,4 @@
-package com.giftforyoube.global.jwt;
+package com.giftforyoube.global.jwt.util;
 
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
@@ -24,7 +24,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${spring.jwt.secret.key}")
+    @Value("${jwt.secret}")
     private String secretKey;
     private Key key;
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;

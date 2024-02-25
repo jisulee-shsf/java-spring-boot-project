@@ -2,7 +2,7 @@ package com.giftforyoube.global.controller;
 
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
-import com.giftforyoube.global.jwt.JwtUtil;
+import com.giftforyoube.global.jwt.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;

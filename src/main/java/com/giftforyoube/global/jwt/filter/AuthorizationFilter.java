@@ -1,8 +1,9 @@
-package com.giftforyoube.global.jwt;
+package com.giftforyoube.global.jwt.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
+import com.giftforyoube.global.jwt.util.JwtUtil;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -21,12 +22,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Slf4j
-public class JwtAuthorizationFilter extends OncePerRequestFilter {
+public class AuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
 
-    public JwtAuthorizationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
+    public AuthorizationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
     }
