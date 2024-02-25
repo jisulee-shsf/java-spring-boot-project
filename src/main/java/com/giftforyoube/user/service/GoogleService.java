@@ -3,11 +3,14 @@ package com.giftforyoube.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.global.jwt.JwtUtil;
-import com.giftforyoube.user.dto.GoogleUserInfoDto;
+import com.giftforyoube.global.jwt.dto.JwtTokenDto;
+import com.giftforyoube.global.jwt.service.TokenManager;
+import com.giftforyoube.user.dto.LoginResponseDto;
+import com.giftforyoube.user.dto.OauthUserInfoDto;
 import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.entity.UserType;
 import com.giftforyoube.user.repository.UserRepository;
-import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -15,34 +18,24 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class GoogleService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
-    private final JwtUtil jwtUtil;
-
-    @Getter
-    private String googleAccessToken;
-
-    public GoogleService(PasswordEncoder passwordEncoder, UserRepository userRepository, RestTemplate restTemplate, JwtUtil jwtUtil) {
-        this.passwordEncoder = passwordEncoder;
-        this.userRepository = userRepository;
-        this.restTemplate = restTemplate;
-        this.jwtUtil = jwtUtil;
-    }
+    private final TokenManager tokenManager;
 
     @Value("${google.client.id}")
     private String clientId;
@@ -51,16 +44,13 @@ public class GoogleService {
     @Value("${google.redirect.uri}")
     private String redirectUri;
 
-    public String googleLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
+    public LoginResponseDto googleLogin(String code) throws JsonProcessingException {
         log.info("[googleLogin] 구글 로그인 시도");
 
         String googleAccessToken = getGoogleAccessToken(code);
-        GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
-        User googleUser = registerGoogleUserIfNeeded(googleUserInfoDto);
-
-        String googleToken = jwtUtil.createToken(googleUser.getEmail());
-        googleToken = URLEncoder.encode(googleToken, "UTF-8").replaceAll("\\+", "%20");
-        return googleToken;
+        OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
+        JwtTokenDto jwtTokenDto = registerGoogleUserIfNeeded(googleUserInfoDto);
+        return new LoginResponseDto(jwtTokenDto);
     }
 
     // 1. 구글 access token 요청
@@ -86,12 +76,11 @@ public class GoogleService {
 
         JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
         String googleAccessToken = jsonNode.get("access_token").asText();
-        this.googleAccessToken = googleAccessToken;
         return googleAccessToken;
     }
 
     // 2. 구글 사용자 정보 요청
-    private GoogleUserInfoDto getGoogleUserInfo(String googleAccessToken) throws JsonProcessingException {
+    private OauthUserInfoDto.GoogleUserInfoDto getGoogleUserInfo(String googleAccessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://www.googleapis.com/oauth2/v2/userinfo")
                 .queryParam("access_token", googleAccessToken)
@@ -100,12 +89,13 @@ public class GoogleService {
                 .toUri();
 
         ResponseEntity<String> ResponseEntity = restTemplate.getForEntity(uri, String.class);
-        GoogleUserInfoDto googleUserInfoDto = new ObjectMapper().readValue(ResponseEntity.getBody(), GoogleUserInfoDto.class);
+        OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = new ObjectMapper().readValue(ResponseEntity.getBody(), OauthUserInfoDto.GoogleUserInfoDto.class);
         return googleUserInfoDto;
     }
 
     // 3. 구글 사용자 등록
-    private User registerGoogleUserIfNeeded(GoogleUserInfoDto googleUserInfoDto) {
+    @Transactional
+    public JwtTokenDto registerGoogleUserIfNeeded(OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto) {
         String googleId = googleUserInfoDto.getId();
         User googleUser = userRepository.findByGoogleId(googleId).orElse(null);
 
@@ -114,17 +104,19 @@ public class GoogleService {
             User sameEmailUser = userRepository.findByEmail(googleEmail).orElse(null);
             if (sameEmailUser != null) {
                 googleUser = sameEmailUser;
-                googleUser = googleUser.googleIdAndAccessTokenUpdate(googleId, googleAccessToken);
+                googleUser = googleUser.updateGoogleId(googleId);
+
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), googleId, googleAccessToken, false);
+                googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), false, UserType.GOOGLE_USER, googleId);
             }
         }
 
-        googleUser = googleUser.googleAccessTokenUpdate(googleAccessToken);
+        JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(googleUser.getEmail());
+        googleUser.updateRefreshToken(jwtTokenDto);
         userRepository.save(googleUser);
         log.info("[googleLogin] 구글 로그인 완료");
-        return googleUser;
+        return jwtTokenDto;
     }
 }

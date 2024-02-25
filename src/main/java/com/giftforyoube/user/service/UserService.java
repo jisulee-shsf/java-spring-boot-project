@@ -4,7 +4,9 @@ import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.user.dto.SignupRequestDto;
 import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.entity.UserType;
 import com.giftforyoube.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,15 +16,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @Transactional
     public void registerAccount(SignupRequestDto signupRequestDto,
@@ -41,7 +39,7 @@ public class UserService {
 
         // 3. 회원가입 진행
         String encryptedPassword = passwordEncoder.encode(signupRequestDto.getPassword());
-        User user = new User(signupRequestDto.getEmail(), encryptedPassword, signupRequestDto.getNickname(), signupRequestDto.getIsEmailNotificationAgreed());
+        User user = new User(signupRequestDto.getEmail(), encryptedPassword, signupRequestDto.getNickname(), signupRequestDto.getIsEmailNotificationAgreed(), UserType.USER);
         userRepository.save(user);
         log.info("[registerAccount] 회원가입 완료");
     }

@@ -1,9 +1,12 @@
 package com.giftforyoube.global.config;
 
-import com.giftforyoube.global.jwt.JwtAuthenticationFilter;
-import com.giftforyoube.global.jwt.JwtAuthorizationFilter;
-import com.giftforyoube.global.jwt.JwtUtil;
+import com.giftforyoube.global.jwt.filter.AuthenticationFilter;
+import com.giftforyoube.global.jwt.filter.AuthorizationFilter;
+import com.giftforyoube.global.jwt.service.TokenManager;
+import com.giftforyoube.global.jwt.util.JwtUtil;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,20 +18,26 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class WebSecurityConfig {
+
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
 
-    public WebSecurityConfig(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService, AuthenticationConfiguration authenticationConfiguration) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-        this.authenticationConfiguration = authenticationConfiguration;
+    @Value("${jwt.accsss-token-expiration-time}")
+    private String accessTokenExpirationTime;
+    @Value("${jwt.refresh-token-expiration-time}")
+    private String refreshTokenExpirationTime;
+    @Value("${jwt.secret}")
+    private String tokenSecret;
+
+    @Bean
+    public TokenManager tokenManager() {
+        return new TokenManager(accessTokenExpirationTime, refreshTokenExpirationTime, tokenSecret);
     }
 
     @Bean
@@ -37,15 +46,15 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() throws Exception {
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtUtil);
+    public AuthenticationFilter jwtAuthenticationFilter() throws Exception {
+        AuthenticationFilter filter = new AuthenticationFilter(jwtUtil);
         filter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
         return filter;
     }
 
     @Bean
-    public JwtAuthorizationFilter jwtAuthorizationFilter() {
-        return new JwtAuthorizationFilter(jwtUtil, userDetailsService);
+    public AuthorizationFilter jwtAuthorizationFilter() {
+        return new AuthorizationFilter(jwtUtil, userDetailsService);
     }
 
     @Bean
@@ -67,24 +76,8 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll()
         );
 
-        http.addFilterBefore(jwtAuthorizationFilter(), JwtAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthorizationFilter(), AuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
-
-//@Configuration
-//public class WebConfig implements WebMvcConfigurer {
-//
-//    @Override
-//    public void addCorsMappings(CorsRegistry registry) {
-//        registry.addMapping("/**")
-//                .allowCredentials(true)
-//                .allowedOrigins("https://www.giftipie.me", "https://giftipie.me", "http://api.giftipie.me", "https://api.giftipie.me",
-//                        "http://localhost:3000", "http://localhost:3001",
-//                        "https://.vercel.app")
-//                .allowedMethods("*")
-//                .allowedHeaders("*")
-//                .exposedHeaders("*");
-//    }
-//}
