@@ -148,14 +148,17 @@ public class FundingController {
         log.info("[finishFunding] 펀딩 종료하기" + fundingId);
 
         if(userDetails == null){
-            throw new NullPointerException("로그인을 해주십쇼");
+            throw new BaseException(BaseResponseStatus.AUTHENTICATION_FAILED);
         }
-        try {
-            fundingService.finishFunding(fundingId, userDetails.getUser());
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error finishing funding: " + e.getMessage());
-        }
+        // 로그인 필요
+//        try {
+//            fundingService.finishFunding(fundingId, userDetails.getUser());
+//            return ResponseEntity.ok().build();
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error finishing funding: " + e.getMessage());
+//        }
+        fundingService.finishFunding(fundingId, userDetails.getUser());
+        return ResponseEntity.ok().body("해당 펀딩을 성공적으로 종료하였습니다.");
     }
 
     // 펀딩 수정

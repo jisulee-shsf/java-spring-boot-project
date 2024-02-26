@@ -65,6 +65,7 @@ public enum BaseResponseStatus {
     UNAUTHORIZED_UPDATE_FUNDING(false, 4000, "펀딩 수정 권한이 없습니다."),
     UNAUTHORIZED_DELETE_FUNDING(false, 4000, "펀딩 삭제 권한이 없습니다."),
     UNAUTHORIZED_READ_FUNDING(false, 4000, "펀딩 조회 권한이 없습니다."),
+    UNAUTHORIZED_FINISHED_FUNDING(false, 4000, "펀딩 종료 권한이 없습니다."),
 
     // 2-5. 후원
     DONATION_FAIL(false, 4000, "후원 결제에 실패했습니다."),
