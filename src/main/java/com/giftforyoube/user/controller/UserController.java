@@ -93,7 +93,7 @@ public class UserController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-//    // 유저 테스트 후 적용 예정
+//    // 유저 테스트 이후 적용 예정
 //    @GetMapping("/kakao/callback")
 //    public ResponseEntity<BaseResponse<String>> kakaoLogin(@RequestParam String code,
 //                                                           HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
@@ -108,7 +108,7 @@ public class UserController {
 //        return ResponseEntity.status(HttpStatus.OK).body(baseResponse);
 //    }
 
-//    // 유저 테스트 후 적용 예정
+//    // 유저 테스트 이후 적용 예정
 //    @GetMapping("/login/oauth2/code/google")
 //    public ResponseEntity<BaseResponse<String>> googleLogin(@RequestParam String code,
 //                                                            HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
