@@ -18,6 +18,7 @@ public class CorsConfig {
         config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of(
                 "https://www.giftipie.me", "https://giftipie.me", "http://api.giftipie.me", "https://api.giftipie.me",
+                "http://www.giftipie.me", "http://giftipie.me",
                 "http://localhost:3000", "http://localhost:3001",
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app",
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app/"));
