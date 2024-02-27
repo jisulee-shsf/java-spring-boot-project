@@ -33,6 +33,7 @@ public class NotificationService {
 
     // subscribe
     public SseEmitter sseSubscribe(String username, String lastEventId, HttpServletResponse response) {
+        log.info("sse 연결 시작...");
         String emitterId = createTimeIncludeId(username);
 
         // 클라이언트의 SSE 연결 요청에 응답하기 위한 SseEmitter 객체 생성
@@ -55,6 +56,7 @@ public class NotificationService {
         if (hasLostData(lastEventId)) {
             sendLostData(lastEventId, username, emitterId, emitter);
         }
+        log.info("sse 연결 완료");
         return emitter;
     }
 
