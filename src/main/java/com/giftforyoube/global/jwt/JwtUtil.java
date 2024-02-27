@@ -104,7 +104,7 @@ public class JwtUtil {
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
-        cookie.setDomain(".giftipie.me"); // 쿠키가 전송될 도메인 설정 - eventSource 의 쿠키 전달을 위함
+        cookie.setDomain("giftipie.me"); // 쿠키가 전송될 도메인 설정 - eventSource 의 쿠키 전달을 위함
         httpServletResponse.addCookie(cookie);
         log.info("[addJwtToCookie] JWT 쿠키 전달 완료: " + encodeToken);
         return encodeToken;
