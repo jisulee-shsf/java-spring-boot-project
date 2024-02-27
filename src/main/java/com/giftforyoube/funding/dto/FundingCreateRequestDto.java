@@ -15,7 +15,7 @@ public class FundingCreateRequestDto {
     private String showName;
     private String title;
     private String content;
-    private int targetAmount;
+    private String targetAmount;
     private boolean publicFlag;
     private LocalDate endDate;
 
@@ -34,7 +34,7 @@ public class FundingCreateRequestDto {
                 .title(this.title)
                 .content(this.content)
                 .currentAmount(0)
-                .targetAmount(this.targetAmount)
+                .targetAmount(Integer.parseInt(this.targetAmount.replace(",","")))
                 .publicFlag(this.publicFlag)
                 .endDate(this.getEndDate())
                 .status(status)
