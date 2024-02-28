@@ -82,7 +82,7 @@ public class NotificationService {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
                     sendNotification(emitter, eventId, emitterId, new NotificationResponseDto(saveNotification.getId(),
                             saveNotification.getContent(), saveNotification.getUrl(),
-                            saveNotification.getNotificationType(), saveNotification.getIsRead()));
+                            saveNotification.getNotificationType(), saveNotification.getIsRead(), saveNotification.getCreatedAt()));
                 }
         );
 
