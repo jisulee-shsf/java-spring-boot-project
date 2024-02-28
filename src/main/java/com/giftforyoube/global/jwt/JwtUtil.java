@@ -38,13 +38,16 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    public String getTokenFromRequest(HttpServletRequest httpServletRequest) {
+    // 1. 쿠키에서 JWT 토큰을 가져오는 경우
+    public String getTokenFromCookie(HttpServletRequest httpServletRequest) {
         Cookie[] cookies = httpServletRequest.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equals(AUTHORIZATION_HEADER)) {
                     try {
-                        return URLDecoder.decode(cookie.getValue(), "UTF-8");
+                        String decodeToken = URLDecoder.decode(cookie.getValue(), "UTF-8");
+                        log.info("[getTokenFromCookie] decodeToken: " + decodeToken);
+                        return decodeToken;
                     } catch (UnsupportedEncodingException e) {
                         return null;
                     }
@@ -54,9 +57,24 @@ public class JwtUtil {
         return null;
     }
 
-    public static String substringToken(String token) {
-        if (StringUtils.hasText(token) && token.startsWith(BEARER_PREFIX)) {
-            String tokenValue = token.substring(7);
+    // 2. 헤더에서 JWT 토큰을 가져오는 경우
+    public String getTokenFromRequestHeader(HttpServletRequest httpServletRequest) {
+        String authorizationHeader = httpServletRequest.getHeader(AUTHORIZATION_HEADER);
+        if (authorizationHeader != null) {
+            try {
+                String decodeToken = URLDecoder.decode(authorizationHeader, "UTF-8");
+                log.info("[getTokenFromRequestHeader] decodeToken: " + decodeToken);
+                return decodeToken;
+            } catch (UnsupportedEncodingException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public static String substringToken(String decodeToken) {
+        if (StringUtils.hasText(decodeToken) && decodeToken.startsWith(BEARER_PREFIX)) {
+            String tokenValue = decodeToken.substring(7);
             return tokenValue;
         }
         throw new BaseException(BaseResponseStatus.NOT_FOUND_TOKEN);
@@ -104,7 +122,7 @@ public class JwtUtil {
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
-        cookie.setDomain("giftipie.me"); // 쿠키가 전송될 도메인 설정 - eventSource 의 쿠키 전달을 위함
+//        cookie.setDomain("giftipie.me"); // 쿠키가 전송될 도메인 설정 - eventSource 의 쿠키 전달을 위함
         httpServletResponse.addCookie(cookie);
         log.info("[addJwtToCookie] JWT 쿠키 전달 완료: " + encodeToken);
         return encodeToken;
