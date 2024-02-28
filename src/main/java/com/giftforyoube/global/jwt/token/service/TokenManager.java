@@ -1,4 +1,4 @@
-package com.giftforyoube.global.jwt.service;
+package com.giftforyoube.global.jwt.token.service;
 
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
@@ -73,11 +73,9 @@ public class TokenManager {
                     .parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException | SignatureException e) {
-            throw new BaseException(BaseResponseStatus.INVALID_TOKEN);
+            throw new BaseException(BaseResponseStatus.NOT_VALID_TOKEN);
         } catch (ExpiredJwtException e) {
-            throw new BaseException(BaseResponseStatus.EXPIRED_TOKEN);
-        } catch (IllegalArgumentException e) {
-            throw new BaseException(BaseResponseStatus.NOT_FOUND_TOKEN);
+            throw new BaseException(BaseResponseStatus.TOKEN_EXPIRED);
         }
     }
 
@@ -90,7 +88,7 @@ public class TokenManager {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (Exception e) {
-            throw new BaseException(BaseResponseStatus.INVALID_TOKEN);
+            throw new BaseException(BaseResponseStatus.NOT_VALID_TOKEN);
         }
         return claims;
     }

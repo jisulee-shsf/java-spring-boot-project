@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.global.jwt.dto.JwtTokenDto;
-import com.giftforyoube.global.jwt.service.TokenManager;
+import com.giftforyoube.global.jwt.token.service.TokenManager;
 import com.giftforyoube.user.dto.LoginResponseDto;
 import com.giftforyoube.user.dto.OauthUserInfoDto;
 import com.giftforyoube.user.entity.User;

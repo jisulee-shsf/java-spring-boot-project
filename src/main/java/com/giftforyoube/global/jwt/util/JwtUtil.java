@@ -59,7 +59,7 @@ public class JwtUtil {
             String tokenValue = token.substring(7);
             return tokenValue;
         }
-        throw new BaseException(BaseResponseStatus.NOT_FOUND_TOKEN);
+        throw new BaseException(BaseResponseStatus.BAD_REQUEST); // 수정 필요
     }
 
     public boolean validateToken(String tokenValue) {
@@ -67,11 +67,9 @@ public class JwtUtil {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(tokenValue);
             return true;
         } catch (SecurityException | MalformedJwtException | SignatureException e) {
-            throw new BaseException(BaseResponseStatus.INVALID_TOKEN);
+            throw new BaseException(BaseResponseStatus.NOT_VALID_TOKEN);
         } catch (ExpiredJwtException e) {
-            throw new BaseException(BaseResponseStatus.EXPIRED_TOKEN);
-        } catch (IllegalArgumentException e) {
-            throw new BaseException(BaseResponseStatus.NOT_FOUND_TOKEN);
+            throw new BaseException(BaseResponseStatus.TOKEN_EXPIRED);
         }
     }
 

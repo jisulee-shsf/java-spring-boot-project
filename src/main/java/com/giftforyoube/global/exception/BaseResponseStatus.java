@@ -1,6 +1,7 @@
 package com.giftforyoube.global.exception;
 
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 public enum BaseResponseStatus {
@@ -43,10 +44,13 @@ public enum BaseResponseStatus {
     DELETE_ACCOUNT_FAILURE(false, 4000, "회원탈퇴에 실패했습니다."),
 
     // 2-2. 인증 및 인가
-    AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다"),
-    INVALID_TOKEN(false, 4000, "JWT 토큰이 유효하지 않습니다."),
-    NOT_FOUND_TOKEN(false, 4000, "JWT 토큰을 찾을 수 없습니다."),
-    EXPIRED_TOKEN(false, 4000, "JWT 토큰이 만료되었습니다."),
+    AUTHENTICATION_FAILED(false, HttpStatus.UNAUTHORIZED.value(),"인증에 실패했습니다"),
+    TOKEN_EXPIRED(false, HttpStatus.UNAUTHORIZED.value(), "JWT 토큰이 만료되었습니다."),
+    NOT_VALID_TOKEN(false, HttpStatus.UNAUTHORIZED.value(), "JWT 토큰이 유효하지 않습니다."),
+    NOT_EXISTS_AUTHORIZATION(false, HttpStatus.UNAUTHORIZED.value(), "Authorization header가 빈값입니다."),
+    NOT_VALID_BEARER_GRANT_TYPE(false, HttpStatus.UNAUTHORIZED.value(), "인증 타입이 Bearer이 아닙니다."),
+    REFRESH_TOKEN_NOT_FOUND(false, HttpStatus.UNAUTHORIZED.value(), "refresh token이 존재하지 않습니다."),
+    REFRESH_TOKEN_EXPIRED(false, HttpStatus.UNAUTHORIZED.value(), "refresh token이 만료됐습니다."),
 
     // 2-3. 알림
     NOTIFICATION_NOT_FOUND(false, 4000, "알림을 찾을 수 없습니다."),

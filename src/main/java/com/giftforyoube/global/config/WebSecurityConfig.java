@@ -2,7 +2,7 @@ package com.giftforyoube.global.config;
 
 import com.giftforyoube.global.jwt.filter.AuthenticationFilter;
 import com.giftforyoube.global.jwt.filter.AuthorizationFilter;
-import com.giftforyoube.global.jwt.service.TokenManager;
+import com.giftforyoube.global.jwt.token.service.TokenManager;
 import com.giftforyoube.global.jwt.util.JwtUtil;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;

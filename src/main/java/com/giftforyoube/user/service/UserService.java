@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -60,5 +62,16 @@ public class UserService {
         // 3. 회원탈퇴 진행
         userRepository.delete(user);
         log.info("[deleteAccount] 회원탈퇴 완료");
+    }
+
+    @Transactional(readOnly = true)
+    public User findUserByRefreshToken(String refreshToken) {
+        User user = userRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new BaseException((BaseResponseStatus.REFRESH_TOKEN_NOT_FOUND)));
+        LocalDateTime tokenExpirationTime = user.getTokenExpirationTime();
+        if (tokenExpirationTime.isBefore(LocalDateTime.now())) {
+            throw new BaseException(BaseResponseStatus.REFRESH_TOKEN_EXPIRED);
+        }
+        return user;
     }
 }

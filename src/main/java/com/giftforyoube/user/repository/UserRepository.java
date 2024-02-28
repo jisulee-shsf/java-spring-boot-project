@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u JOIN u.fundings f WHERE f.id = :fundingId")
     User findUserByFundingId(@Param("fundingId") Long fundingId);
+
+    Optional<User> findByRefreshToken(String refreshToken);
 }
