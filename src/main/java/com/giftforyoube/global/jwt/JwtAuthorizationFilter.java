@@ -35,10 +35,14 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
                                     HttpServletResponse httpServletResponse,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String token = jwtUtil.getTokenFromRequest(httpServletRequest);
+        String decodeToken = jwtUtil.getTokenFromRequestHeader(httpServletRequest);
 
-        if (StringUtils.hasText(token)) {
-            String tokenValue = jwtUtil.substringToken(token);
+        if (decodeToken == null) {
+            decodeToken = jwtUtil.getTokenFromCookie(httpServletRequest);
+        }
+
+        if (StringUtils.hasText(decodeToken)) {
+            String tokenValue = jwtUtil.substringToken(decodeToken);
             if (!jwtUtil.validateToken(tokenValue)) {
                 BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.AUTHENTICATION_FAILED);
                 httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
