@@ -33,7 +33,6 @@ public class NotificationService {
     private final MailingService mailingService;
 
     // subscribe
-    @Transactional
     public SseEmitter sseSubscribe(String username, String lastEventId, HttpServletResponse response) {
         log.info("sse 연결 시작...");
         String emitterId = createTimeIncludeId(username);
@@ -64,7 +63,6 @@ public class NotificationService {
 
 
     // 알람 send
-    @Transactional
     public void send(User receiver, NotificationType notificationType, String content, String url) {
         log.info("메세지 send 시작....");
         // notification 객체 생성 후 db 저장
