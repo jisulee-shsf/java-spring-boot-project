@@ -166,8 +166,9 @@ public class NotificationService {
     @Transactional
     public void deleteNotificationIsReadTrue(User user) {
         List<Notification> notificationList = notificationRepository.findAllByReceiverAndIsReadTrue(user);
+        log.info(notificationList.toString());
 
-        if (notificationList == null) {
+        if (notificationList.isEmpty()) {
             throw new BaseException(BaseResponseStatus.NOTIFICATION_NOT_FOUND);
         }
 
