@@ -47,6 +47,7 @@ public enum BaseResponseStatus {
     INVALID_TOKEN(false, 4000, "JWT 토큰이 유효하지 않습니다."),
     NOT_FOUND_TOKEN(false, 4000, "JWT 토큰을 찾을 수 없습니다."),
     EXPIRED_TOKEN(false, 4000, "JWT 토큰이 만료되었습니다."),
+    NOT_FOUND_USERDETAILS(false, 4000, "유저의 정보를 찾을 수 없습니다."),
 
     // 2-3. 알림
     NOTIFICATION_NOT_FOUND(false, 4000, "알림을 찾을 수 없습니다."),

@@ -53,7 +53,7 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<List<NotificationResponseDto>> getNotifications(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (userDetails == null) {
-            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_GET_NOTIFICATION);
+            throw new BaseException(BaseResponseStatus.NOT_FOUND_USERDETAILS);
         }
         return new ResponseEntity<>(notificationService.getNotifications(userDetails.getUser()), HttpStatus.OK);
     }
@@ -62,12 +62,18 @@ public class NotificationController {
     @PatchMapping("/{notificationId}")
     public ResponseEntity<NotificationResponseDto> readNotification(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                  @PathVariable Long notificationId) {
+        if (userDetails == null) {
+            throw new BaseException(BaseResponseStatus.NOT_FOUND_USERDETAILS);
+        }
         return new ResponseEntity<>(notificationService.readNotification(userDetails.getUser(), notificationId), HttpStatus.OK);
     }
 
     // 해당 유저 읽은 알림 메세지 전체 삭제
     @DeleteMapping
     public ResponseEntity<?> deleteNotificationIsReadTrue(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            throw new BaseException(BaseResponseStatus.NOT_FOUND_USERDETAILS);
+        }
         notificationService.deleteNotificationIsReadTrue(userDetails.getUser());
         return ResponseEntity.ok().body("읽은 모든 알림 메세지를 성공적으로 삭제하였습니다.");
     }
@@ -75,6 +81,9 @@ public class NotificationController {
     // 해당 유저 원하는 알림 메세지 삭제
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<?> deleteNotification(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long notificationId) {
+        if (userDetails == null) {
+            throw new BaseException(BaseResponseStatus.NOT_FOUND_USERDETAILS);
+        }
         notificationService.deleteNotification(userDetails.getUser(), notificationId);
         return ResponseEntity.ok().body("해당 알림 메세지를 성공적으로 삭제하였습니다.");
     }
