@@ -36,9 +36,10 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                                     HttpServletResponse httpServletResponse,
                                     FilterChain filterChain) throws ServletException, IOException {
         String decodeToken = jwtUtil.getTokenFromRequestHeader(httpServletRequest);
-
+        log.info("헤더 토큰 체크 : " + decodeToken);
         if (decodeToken == null) {
             decodeToken = jwtUtil.getTokenFromCookie(httpServletRequest);
+            log.info("쿠키 토큰 체크 : " + decodeToken);
         }
 
         if (StringUtils.hasText(decodeToken)) {
