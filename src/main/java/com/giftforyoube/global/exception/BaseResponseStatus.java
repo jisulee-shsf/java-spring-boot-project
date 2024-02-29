@@ -54,6 +54,7 @@ public enum BaseResponseStatus {
     NOTIFICATION_NOT_DELETED(false, 4000, "알림을 삭제할 수 없습니다."),
     UNAUTHORIZED_READ_NOTIFICATION(false, 4000, "알림 조회 권한이 없습니다."),
     UNAUTHORIZED_DELETE_NOTIFICATION(false, 4000, "알림 삭제 권한이 없습니다."),
+    READ_NOTIFICATION_LIST_NOT_FOUND(false, 4000, "읽은 메시지가 없습니다"),
 
     // 2-4. 펀딩
     UNAUTHORIZED_TO_ADD_LINK(false, 4000, "링크 추가 권한이 없습니다."),

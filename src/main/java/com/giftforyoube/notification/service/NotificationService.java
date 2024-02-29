@@ -80,6 +80,7 @@ public class NotificationService {
         emitters.forEach(
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
+
                     sendNotification(emitter, eventId, emitterId, new NotificationResponseDto(saveNotification.getId(),
                             saveNotification.getContent(), saveNotification.getUrl(),
                             saveNotification.getNotificationType(), saveNotification.getIsRead(), saveNotification.getCreatedAt()));
@@ -169,7 +170,7 @@ public class NotificationService {
         log.info(notificationList.toString());
 
         if (notificationList.isEmpty()) {
-            throw new BaseException(BaseResponseStatus.NOTIFICATION_NOT_FOUND);
+            throw new BaseException(BaseResponseStatus.READ_NOTIFICATION_LIST_NOT_FOUND);
         }
 
         notificationRepository.deleteAll(notificationList);
