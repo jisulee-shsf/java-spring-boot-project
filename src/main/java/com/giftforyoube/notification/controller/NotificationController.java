@@ -59,7 +59,7 @@ public class NotificationController {
     }
 
     // 해당 알림 조회 시 읽음 처리 API
-    @PutMapping("/{notificationId}")
+    @PatchMapping("/{notificationId}")
     public ResponseEntity<NotificationResponseDto> readNotification(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                  @PathVariable Long notificationId) {
         return new ResponseEntity<>(notificationService.readNotification(userDetails.getUser(), notificationId), HttpStatus.OK);
