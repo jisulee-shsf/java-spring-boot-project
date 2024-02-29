@@ -63,7 +63,6 @@ public class NotificationService {
 
 
     // 알람 send
-    @Async
     public void send(User receiver, NotificationType notificationType, String content, String url) {
         log.info("메세지 send 시작....");
         // notification 객체 생성 후 db 저장
