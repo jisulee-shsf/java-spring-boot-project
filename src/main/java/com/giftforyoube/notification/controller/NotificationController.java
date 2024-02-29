@@ -1,5 +1,7 @@
 package com.giftforyoube.notification.controller;
 
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.notification.dto.NotificationResponseDto;
 import com.giftforyoube.notification.entity.NotificationType;
@@ -50,6 +52,9 @@ public class NotificationController {
     // 전체 알림 조회 API
     @GetMapping
     public ResponseEntity<List<NotificationResponseDto>> getNotifications(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_GET_NOTIFICATION);
+        }
         return new ResponseEntity<>(notificationService.getNotifications(userDetails.getUser()), HttpStatus.OK);
     }
 

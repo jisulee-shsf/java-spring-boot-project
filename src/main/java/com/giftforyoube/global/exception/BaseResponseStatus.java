@@ -85,7 +85,8 @@ public enum BaseResponseStatus {
     EMAIL_SEND_FAILED(false, 5000, "이메일 전송에 실패했습니다."),
 
     // 2. 알림
-    NOTIFICATION_SEND_FAILED(false, 5000, "알림 전송에 실패했습니다.");
+    NOTIFICATION_SEND_FAILED(false, 5000, "알림 전송에 실패했습니다."),
+    UNAUTHORIZED_GET_NOTIFICATION(false, 5000, "알림을 읽을 권한이 업습니다.");
 
     private final boolean isSuccess;
     private final int code;
