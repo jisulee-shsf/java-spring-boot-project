@@ -165,7 +165,7 @@ public class NotificationService {
     // 해당 유저 읽은 알림 메세지 전체 삭제
     @Transactional
     public void deleteNotificationIsReadTrue(User user) {
-        List<Notification> notificationList = notificationRepository.findAllByReceiver(user);
+        List<Notification> notificationList = notificationRepository.findAllByReceiverAndIsReadTrue(user);
         notificationRepository.deleteAll(notificationList);
     }
 
