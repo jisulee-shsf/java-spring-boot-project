@@ -100,4 +100,9 @@ public class User {
         this.googleAccessToken = googleAccessToken;
         return this;
     }
+
+    // 테스트코드용 //
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

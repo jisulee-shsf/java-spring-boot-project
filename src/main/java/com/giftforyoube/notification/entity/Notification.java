@@ -46,4 +46,21 @@ public class Notification extends Auditable {
     public void setIsRead(boolean isRead) {
         this.isRead = isRead;
     }
+
+    ////////////////////////////////
+//    // test용
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+//
+//    @Builder
+//    public Notification(Long notificationId, User receiver, NotificationType notificationType, String content, String url, Boolean isRead) {
+//        this.id = notificationId;
+//        this.receiver = receiver;
+//        this.notificationType = notificationType;
+//        this.content = content;
+//        this.url = new RelatedUrl(url);
+//        this.isRead = isRead;
+//    }
 }

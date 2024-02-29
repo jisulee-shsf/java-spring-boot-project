@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -51,6 +52,7 @@ class NotificationServiceTest {
     void setUp() {
         // 테스트를 위한 데이터 세팅
         receiver = new User("user@example.com", "password", "testNickname", true);
+        receiver.setId(1L);
         notificationType = NotificationType.DONATION;
         content = "Test content";
         url = "test.com";
@@ -103,46 +105,86 @@ class NotificationServiceTest {
     @Test
     @DisplayName("getNotifications 테스트 - NotificationResponseDto List 반환")
     void getNotificationsTest() {
-        // Given: User 객체와 Notification 목록 준비
-        User user = new User(); // User 객체는 적절히 초기화되어야 함
-        List<Notification> notifications = List.of(new Notification()); // Notification 객체들의 목록 준비
-        when(notificationRepository.findAllByReceiverOrderByCreatedAtDesc(any(User.class))).thenReturn(notifications);
+        // given: 사용자에 대한 알림 목록을 스터빙으로 설정
+        List<Notification> notifications = List.of(
+                Notification.builder()
+                        .receiver(receiver)
+                        .notificationType(NotificationType.DONATION)
+                        .content("Donation received")
+                        .url("donation.com")
+                        .isRead(false)
+                        .build(),
+                Notification.builder()
+                        .receiver(receiver)
+                        .notificationType(NotificationType.FUNDING_TIME_OUT)
+                        .content("Thank you for your donation")
+                        .url("thankyou.com")
+                        .isRead(true)
+                        .build()
+        );
+        when(notificationRepository.findAllByReceiverOrderByCreatedAtDesc(receiver)).thenReturn(notifications);
 
-        // When: getNotifications 메소드 실행
-        List<NotificationResponseDto> result = notificationService.getNotifications(user);
+        // when: getNotifications 메서드 실행
+        List<NotificationResponseDto> result = notificationService.getNotifications(receiver);
 
-        // Then: 반환된 리스트가 비어있지 않은지 확인
-        assertFalse(result.isEmpty(), "Result should not be empty");
+        // then: 반환된 알림 목록의 크기가 예상과 일치하는지 확인
+        assertEquals(2, result.size(), "Returned notifications count should match expected");
+
+        // then: 반환된 알림의 내용이 예상과 일치하는지 확인
+        NotificationResponseDto firstNotification = result.get(0);
+        assertEquals("Donation received", firstNotification.getContent(), "First notification content should match");
+        assertEquals("donation.com", firstNotification.getUrl(), "First notification URL should match");
+        assertFalse(firstNotification.getIsRead(), "First notification read status should be false");
+
+        NotificationResponseDto secondNotification = result.get(1);
+        assertEquals("Thank you for your donation", secondNotification.getContent(), "Second notification content should match");
+        assertEquals("thankyou.com", secondNotification.getUrl(), "Second notification URL should match");
+        assertTrue(secondNotification.getIsRead(), "Second notification read status should be true");
     }
 
     @Test
-    @DisplayName("readNotifications 테스트 - isRead 상태 변환 확인")
-    void whenReadNotification_thenNotificationIsMarkedAsRead() {
-        // Given: User 객체와 Notification 객체 준비
-        User user = new User(); // User 객체는 적절히 초기화되어야 함
-        Notification notification = new Notification(); // Notification 객체는 적절히 초기화되어야 함
-        notification.setIsRead(false);
-        when(notificationRepository.findById(anyLong())).thenReturn(Optional.of(notification));
+    @DisplayName("readNotifications 테스트 - 특정 알림 읽음 처리")
+    void readNotificationTest() {
+        // given: 읽으려는 알림의 ID 설정
+        Long notificationId = 1L;
 
-        // When: readNotification 메소드 실행
-        NotificationResponseDto result = notificationService.readNotification(user, 1L);
+        // Notification 객체 준비
+        notification.setId(notificationId); // 알림 ID 설정
 
-        // Then: 반환된 NotificationResponseDto가 읽음 처리된 상태인지 확인
-        assertTrue(result.getIsRead(), "Notification should be marked as read");
+        // NotificationRepository.findById 스터빙: 특정 ID의 Notification 객체를 반환하도록 설정
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(notification));
+
+        // NotificationRepository.save 스터빙: 반환되는 Notification 객체가 읽음 상태로 업데이트 되었는지 확인
+        when(notificationRepository.save(any(Notification.class))).then(returnsFirstArg());
+
+        // when: readNotification 메서드 실행
+        NotificationResponseDto responseDto = notificationService.readNotification(receiver, notificationId);
+
+        // then: 반환된 NotificationResponseDto 객체가 null이 아닌지 확인
+        assertNotNull(responseDto, "NotificationResponseDto should not be null");
+
+        // then: 알림의 읽음 상태가 true로 업데이트 되었는지 확인
+        assertTrue(responseDto.getIsRead(), "Notification should be marked as read");
+
+        // NotificationRepository.save가 호출되었는지 확인
+        verify(notificationRepository, times(1)).save(any(Notification.class));
     }
 
     @Test
-    @DisplayName("deleteNotification 테스트 - 삭제 확인")
-    void whenDeleteNotification_thenNotificationIsDeleted() {
-        // Given: User 객체와 Notification 객체 준비
-        User user = new User(); // User 객체는 적절히 초기화되어야 함
-        Notification notification = new Notification(); // Notification 객체는 적절히 초기화되어야 함
-        when(notificationRepository.findById(anyLong())).thenReturn(Optional.of(notification));
+    @DisplayName("deleteNotification 테스트 - 특정 알림 삭제 처리")
+    void deleteNotificationTest() {
+        // given: 삭제하려는 알림의 ID 설정
+        Long notificationId = 1L;
 
-        // When: deleteNotification 메소드 실행
-        notificationService.deleteNotification(user, 1L);
+        // Notification 객체 준비 및 NotificationRepository.findById 스터빙
+        // setUp 메서드에서 이미 초기화된 notification 객체를 사용
+        notification.setId(notificationId); // 알림 ID 설정
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(notification));
 
-        // Then: notificationRepository의 delete 메소드가 호출되었는지 확인
-        verify(notificationRepository, times(1)).delete(any(Notification.class));
+        // when: deleteNotification 메서드 실행
+        notificationService.deleteNotification(receiver, notificationId);
+
+        // then: NotificationRepository.delete가 호출되었는지 확인
+        verify(notificationRepository, times(1)).delete(notification);
     }
 }
