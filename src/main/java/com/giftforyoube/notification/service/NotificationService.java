@@ -2,6 +2,7 @@ package com.giftforyoube.notification.service;
 
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
+import com.giftforyoube.notification.dto.MessageResponseDto;
 import com.giftforyoube.notification.dto.NotificationResponseDto;
 import com.giftforyoube.notification.dto.SubscribeDummyDto;
 import com.giftforyoube.notification.entity.Notification;
@@ -81,7 +82,7 @@ public class NotificationService {
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
 
-                    sendNotification(emitter, eventId, emitterId, new NotificationResponseDto(saveNotification.getId(),
+                    sendNotification(emitter, eventId, emitterId, new MessageResponseDto(saveNotification.getId(),
                             saveNotification.getContent(), saveNotification.getUrl(),
                             saveNotification.getNotificationType(), saveNotification.getIsRead(), saveNotification.getCreatedAt()));
                 }
