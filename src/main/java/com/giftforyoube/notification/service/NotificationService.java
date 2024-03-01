@@ -87,10 +87,9 @@ public class NotificationService {
                 }
         );
 
-        // 이메일 수신 동의 했을때
+        // 이메일 수신 동의 했을때 추가로 이메일 알림 발송
         if (saveNotification.getReceiver().getIsEmailNotificationAgreed()) {
             log.info("sse 메시지 발송 완료. 알림 이메일 발송 시작");
-            // 이메일 알림 발송
             try {
                 mailingService.sendNotificationEmail(saveNotification);
             } catch (MessagingException e) {
