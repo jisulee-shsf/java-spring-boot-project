@@ -45,6 +45,17 @@ public class FundingService {
 
     private static final int TIMEOUT = 10000; // 10초
 
+    /**
+     * 락을 획득한 후에 로직 진행
+     * 링크를 입력하여 해당 링크에 있는 OG태그를 이용해 이미지와 링크를 가져옵니다.
+     * 가져온 상품의 정보를 임시로 캐시에 저장합니다.
+     * 로직이 끝나면 락 해제
+     *
+     * @param requestDto 링크 등록 RequestDto
+     * @param userId 링크를 등록하는 User의 ID
+     * @return 링크 입력으로 생성된 FundingItemResponseDto 반환
+     * @throws IOException
+     */
     // 데이터베이스 트랜잭션에 직접적으로 관련된 작업이 없으므로 @Transactional 어노테이션을 사용할 필요가 없음.
     public FundingItemResponseDto addLinkAndSaveToCache(AddLinkRequestDto requestDto, Long userId) throws IOException {
         log.info("[addLinkAndSaveToCache] 상품링크 캐쉬에 저장하기");
@@ -70,6 +81,18 @@ public class FundingService {
         }
     }
 
+    /**
+     * 락을 획득 후 로직 진행
+     * 캐시 저장소에 있는 addLinkAndSaveToCache 메서드로 등록된 상품을 가져옵니다.
+     * 캐시에서 가져온 상품과 펀딩 등록에 필요한 나머지 정보들을 통해 Funding을 생성한 뒤 DB에 저장합니다.
+     * DB에 저장 후 캐시 무효화를 진행합니다.
+     * 로직이 끝난 뒤 락 해제
+     *
+     * @param requestDto 펀딩 생성 RequestDto
+     * @param userId 펀딩을 등록하는 User의 ID
+     * @return 펀딩 등록으로 생성된 FundingResponseDto 반환
+     * @throws JsonProcessingException
+     */
     @Transactional
     public FundingResponseDto saveToDatabase(FundingCreateRequestDto requestDto, Long userId) throws JsonProcessingException {
         log.info("[saveToDatabase] DB에 저장하기");
@@ -112,6 +135,13 @@ public class FundingService {
         }
     }
 
+    /**
+     * 찾으려고하는 캐시의 키값을 통해 캐시에서 해당 펀딩을 조회합니다.
+     * 없다면 DB에서 조회합니다.
+     *
+     * @param fundingId 조회할 Funding의 ID값
+     * @return 조회된 펀딩의 FundingResponseDto 반환
+     */
     @Transactional(readOnly = true)
     public FundingResponseDto findFunding(Long fundingId) {
         String cacheKey = "fundingDetail:" + fundingId;
@@ -131,6 +161,13 @@ public class FundingService {
         return fundingResponseDto;
     }
 
+    /**
+     * 찾으려고 하는 캐시의 키값을 통해 캐시에서 로그인한 유저의 펀딩을 조회합니다.
+     * 없다면 DB에서 조회합니다.
+     *
+     * @param currentUser 현재 로그인한 User
+     * @return 현재 로그인한 User의 진행중인 펀딩의 FundingResponseDto 반환
+     */
     // 메인페이지에 보여질 내 펀딩 정보
     @Transactional(readOnly = true)
     public FundingResponseDto getMyFundingInfo(User currentUser) {
@@ -155,6 +192,11 @@ public class FundingService {
         return fundingResponseDto;
     }
 
+    /**
+     * 찾으려고 하는 캐시의 키값을 통해 캐시에서 진행중인 펀딩 목록을 가져옵니다.
+     * 없다면 DB에서 조회합니다.
+     * @return 컨트롤러에서 전달받은 데이터 개수 만큼 조회된 진행중인 펀딩 페이지네이션 반환
+     */
     @Transactional(readOnly = true)
     public Page<FundingResponseDto> getActiveMainFunding(int page, int size, String sortBy, String sortOrder) {
         log.info("[getActiveMainFundings] 메인페이지 진행중인 펀딩 조회");
@@ -178,6 +220,11 @@ public class FundingService {
         return fundingResponseDtoPage;
     }
 
+    /**
+     * 찾으려고 하는 캐시의 키값을 통해 캐시에서 모든 펀딩 목록을 가져옵니다.
+     * 없다면 DB에서 조회합니다.
+     * @return 현재 등록된 모든 펀딩들 페이지네이션 반환
+     */
     @Transactional(readOnly = true)
     public Page<FundingResponseDto> getAllFundings(int page, int size, String sortBy, String sortOrder) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortOrder.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
@@ -199,6 +246,11 @@ public class FundingService {
         return allFundings;
     }
 
+    /**
+     * 찾으려고 하는 캐시의 키값을 통해 캐시에서 모든 펀딩 목록을 가져옵니다.
+     * 없다면 DB에서 조회합니다.
+     * @return 현재 등록된 진행중인 펀딩들 페이지네이션 반환
+     */
     // Slice - Page 페이지네이션 수정 적용
     @Transactional(readOnly = true)
     public Slice<FundingResponseDto> getActiveFundings(int page, int size, String sortBy, String sortOrder) {
@@ -218,6 +270,11 @@ public class FundingService {
         return activeFundings;
     }
 
+    /**
+     * 찾으려고 하는 캐시의 키값을 통해 캐시에서 모든 펀딩 목록을 가져옵니다.
+     * 없다면 DB에서 조회합니다.
+     * @return 현재 등록된 완료된 펀딩들 페이지네이션 반환
+     */
     // 완료된 펀딩 페이지네이션 적용
     // 완료된 펀딩 조회
     @Transactional(readOnly = true)
@@ -238,6 +295,13 @@ public class FundingService {
         return finishedFundings;
     }
 
+    /**
+     * 전달받은 fundingId에 해당하는 펀딩의 상태를 종료 상태로 바꿉니다.
+     * 캐시 무효화 진행
+     *
+     * @param fundingId 해당 펀딩의 ID
+     * @param currentUser 현재 로그인한 USER
+     */
     @Transactional
     public void finishFunding(Long fundingId, User currentUser) {
         log.info("[finishFunding] 펀딩 종료하기");
@@ -256,6 +320,17 @@ public class FundingService {
         cacheService.clearFundingCaches();
     }
 
+    /**
+     * 락을 획득한 후 로직 진행
+     * Request로 받은 수정 정보를 통해 펀딩을 수정합니다.
+     * 캐시를 무효화 합니다.
+     * 로직이 끝난 뒤에 락 해제
+     *
+     * @param fundingId 해당 펀딩의 ID
+     * @param user API를 호출한 USER
+     * @param requestDto Funding 수정 Request
+     * @return 수정된 Funding의 ResponseDto 반환
+     */
     // 펀딩 수정
     @Transactional
     public FundingResponseDto updateFunding(Long fundingId, User user, FundingUpdateRequestDto requestDto) {
@@ -290,6 +365,15 @@ public class FundingService {
         }
     }
 
+    /**
+     * 락을 획득한 후 로직 진행
+     * 해당 펀딩을 삭제합니다.
+     * 캐시를 무효화 합니다.
+     * 로직이 끝난 뒤에 락 해제
+     *
+     * @param fundingId 삭제할 Funding의 ID
+     * @param user API를 호출한 USER
+     */
     // 펀딩 삭제
     @Transactional
     public void deleteFunding(Long fundingId, User user) {
@@ -325,6 +409,13 @@ public class FundingService {
     }
 
 
+    /**
+     * 캐시에서 통계 데이터를 조회합니다.
+     * 없다면 DB에서 조회하고, DB에도 없다면 정보를 새로 저장합니다.
+     * 등록된 Funding의 통계 정보를 계산해서 업데이트 합니다.
+     *
+     * @return 등록되어있는 펀딩의 통계 반환
+     */
     @Transactional(readOnly = true)
     public FundingSummaryResponseDto getFundingSummary() {
         // 캐시에서 통계 데이터를 검색합니다.
@@ -353,6 +444,13 @@ public class FundingService {
     // ---------------------------- OG 태그 메서드 ------------------------------------------
 
 
+    /**
+     * 아이템 링크를 입력하여 Jsoup을 이용해 og:image 태그의 이미지를 가져옵니다.
+     *
+     * @param itemLink 이미지를 가져올 사이트의 링크
+     * @return 링크 입력을 통해 가져온 이미지와 링크로 FundingItem 객체 생성 및 반환
+     * @throws IOException
+     */
     public FundingItem previewItem(String itemLink) throws IOException {
         log.info("[previewItem] 상품 미리보기");
 
@@ -364,6 +462,9 @@ public class FundingService {
         return new FundingItem(itemLink, itemImage);
     }
 
+    /**
+     * @return 해당 링크의 특정 태그를 통해 크롤링한 정보 반환
+     */
     private static String getMetaTagContent(Document document, String property) {
         log.info("[getMetaTagContent] 메타 태크에서 상품이미지 가져오기");
 

@@ -29,11 +29,24 @@ public class CacheService {
     private static final String FUNDING_ITEM_CACHE_PREFIX = "cachedFundingItem:";
     private static final String FUNDING_SUMMARY_CACHE_KEY = "fundingSummary";
 
+    /**
+     * USERID로 캐시키를 생성합니다.
+     *
+     * @param userId USER의 ID
+     * @return 생성된 캐시 키 반환
+     */
     public String buildCacheKey(String userId) {
         return FUNDING_ITEM_CACHE_PREFIX + userId;
     }
 
-    // FundingItem 객체를 JSON으로 변환하여 캐시에 저장
+    /**
+     * FundingItem객체를 JSON으로 변환(직렬화)하여 캐시에 저장
+     *
+     * @param fundingItem FundingItem 객체
+     * @param userId USER의 ID
+     * @throws JsonProcessingException
+     */
+
     public void saveToCache(FundingItem fundingItem, String userId) throws JsonProcessingException {
         log.info("[saveToCache] 캐쉬에 저장하기");
 
@@ -42,7 +55,14 @@ public class CacheService {
         redisTemplate.opsForValue().set(cacheKey, fundingItemJson, Duration.ofDays(1));
     }
 
-    // 캐시에서 FundingItem 객체를 가져오기
+    /**
+     * 캐시에서 JSON 정보를 가져와서 역직렬화
+     *
+     * @param cacheKey 캐시값을 찾을 캐시 키
+     * @return 캐시에저 가져온 FundingItem 객체 반환
+     * @throws JsonProcessingException
+     */
+
     public FundingItem getCachedFundingProduct(String cacheKey) throws JsonProcessingException {
         log.info("[getCachedFundingProduct] 캐시에서 FundingItem 객체를 가져오기");
 
@@ -51,6 +71,11 @@ public class CacheService {
     }
 
 
+    /**
+     * userCacheKey를 이용해서 캐시키를 생성 후 해당 캐시값 삭제
+     *
+     * @param userCacheKey USER의 캐시 키
+     */
     public void clearCache(String userCacheKey) {
         log.info("[clearCache] 캐쉬 삭제하기");
 
@@ -58,11 +83,18 @@ public class CacheService {
         redisTemplate.delete(cacheKey);
     }
 
-    //    // 캐시에 Page 데이터 저장
+    /**
+     * 캐시에 Page 데이터 저장
+     * Page 내용만 캐시하고, 페이징 정보는 별도로 관리함
+     *
+     * @param cacheKey 캐시를 저장할 캐시 키
+     * @param page 페이지 정보
+     */
+    // 캐시에 Page 데이터 저장
     public void saveFundingPageToCache(String cacheKey, Page<FundingResponseDto> page) {
         try {
             // Page 구현체를 JSON으로 변환하는 과정에서는 구현체의 구체적인 클래스 정보가 필요할 수 있으므로,
-            // Page 내용만 캐시하고, 페이징 정보는 별도로 관리하는 것을 고려해야 할 수 있습니다.
+
             String jsonContent = objectMapper.writeValueAsString(page.getContent());
             redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
         } catch (JsonProcessingException e) {
@@ -70,7 +102,13 @@ public class CacheService {
         }
     }
 
-    // 캐시에서 Page 데이터 조회
+    /**
+     * 캐시에서 Page 데이터 조회
+     *
+     * @param cacheKey 캐시를 조회할 캐시 키 값
+     * @param pageable 페이지 정보
+     * @return 캐시에서 조회한 페이지 정보 반환
+     */
     public Page<FundingResponseDto> getFundingPageFromCache(String cacheKey, Pageable pageable) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
@@ -78,14 +116,19 @@ public class CacheService {
         }
         try {
             List<FundingResponseDto> content = objectMapper.readValue(jsonContent, new TypeReference<List<FundingResponseDto>>(){});
-            // 여기서는 캐시된 내용과 Pageable 정보를 기반으로 새 Page 객체를 생성해야 합니다.
-            // 실제 페이지 크기와 전체 페이지 수 등은 DB 조회 없이 알 수 없으므로, 이 부분은 적절히 조정이 필요합니다.
+            // 캐시된 내용과 Pageable 정보를 기반으로 새 Page 객체를 생성해야함.
+            // 실제 페이지 크기와 전체 페이지 수 등은 DB 조회 없이 알 수 없으므로, 조정이 필요.
             return new PageImpl<>(content, pageable, content.size());
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error deserializing funding page data", e);
         }
     }
-    // 캐시 관련 메서드 수정
+
+    /**
+     * 페이지 정보를 캐시에 저장
+     * @param cacheKey 캐시를 저장할 캐시 키 값
+     * @param page 페이지 정보
+     */
     public void saveFundingsPageToCache(String cacheKey, Page<FundingResponseDto> page) {
         try {
             FundingPageCached<FundingResponseDto> cachedPage = new FundingPageCached<>();
@@ -99,6 +142,12 @@ public class CacheService {
         }
     }
 
+    /**
+     * 캐시에서 페이지 정보를 조회
+     * @param cacheKey 캐시를 조회할 캐시 키 값
+     * @param pageable 페이지 정보
+     * @return 캐시에서 조회한 페이지 정보 반환
+     */
     public Page<FundingResponseDto> getFundingsPageFromCache(String cacheKey, Pageable pageable) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
@@ -114,7 +163,11 @@ public class CacheService {
     }
 
 
-    // 캐시에 펀딩 목록 저장하는 로직
+    /**
+     *  캐시에 펀딩 목록 저장하는 로직
+     * @param cacheKey 캐시에 저장할 캐시 키 값
+     * @param fundings 펀딩리스트
+     */
     public void saveFundingListToCache(String cacheKey, Slice<FundingResponseDto> fundings) {
         FundingResponseDtoCache cache = new FundingResponseDtoCache(
                 new ArrayList<>(fundings.getContent()),
@@ -131,7 +184,13 @@ public class CacheService {
         }
     }
 
-    // 캐시에서 목록 조회하는 로직
+    /**
+     * // 캐시에서 목록 조회하는 로직
+     *
+     * @param cacheKey 캐시에서 조회할 캐시 키 값
+     * @param pageable 페이지 정보
+     * @return 캐시에서 조회한 펀딩 리스트 slice  반환
+     */
     public Slice<FundingResponseDto> getFundingListFromCache(String cacheKey, Pageable pageable) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
@@ -145,7 +204,12 @@ public class CacheService {
         }
     }
 
-    // 펀딩 상세 정보 캐시에 저장
+    /**
+     * // 펀딩 상세 정보 캐시에 저장
+     *
+     * @param cacheKey 캐시에 저장할 캐시 키 값
+     * @param fundingResponseDto 펀딩 상세 정보
+     */
     public void saveFundingToCache(String cacheKey, FundingResponseDto fundingResponseDto) {
         try {
             String jsonContent = objectMapper.writeValueAsString(fundingResponseDto);
@@ -155,7 +219,11 @@ public class CacheService {
         }
     }
 
-    // 펀딩 상세 정보 캐시에서 조회
+    /**
+     * 펀딩 상세 정보 캐시에서 조회
+     * @param cacheKey 캐시에서 조회할 캐시 키 값
+     * @return 캐시에서 조회한 펀딩 상세 정보 반환
+     */
     public FundingResponseDto getFundingFromCache(String cacheKey) {
         String jsonContent = redisTemplate.opsForValue().get(cacheKey);
         if (jsonContent == null) {
@@ -168,7 +236,10 @@ public class CacheService {
         }
     }
 
-    // Giftipie에서 함께한 선물 캐시에서 가져오기
+    /**
+     *  캐시에 저장된 펀딩 통계 정보 가져오기
+     * @return 펀딩 통계 정보 반환
+     */
     public FundingSummaryResponseDto getSummaryFromCache() {
         String jsonContent = redisTemplate.opsForValue().get(FUNDING_SUMMARY_CACHE_KEY);
         if (jsonContent == null) {
@@ -182,7 +253,9 @@ public class CacheService {
         }
     }
 
-    // Giftipie에서 함께한 선물 캐시에 저장
+    /** 펀딩 통계 정보 캐시에 저장
+     * @param summary 저장할 통계 정보
+     */
     public void saveSummaryToCache(FundingSummaryResponseDto summary) {
         try {
             String jsonContent = objectMapper.writeValueAsString(summary);
@@ -192,7 +265,11 @@ public class CacheService {
         }
     }
 
-    // 펀딩 생성, 업데이트, 삭제 시 캐시 삭제
+
+
+    /**
+     * 펀딩 생성, 업데이트, 삭제 시 캐시 삭제
+     */
     public void clearFundingCaches() {
         // 메인 펀딩 관련 캐시 삭제
         clearCacheByPattern("activeMainFundings:*");
@@ -210,6 +287,10 @@ public class CacheService {
         clearCacheByPattern(FUNDING_SUMMARY_CACHE_KEY);
     }
 
+    /**
+     * 입력받은 패턴의 캐시키로 캐시 값 삭제
+     * @param pattern 캐시키의 패턴
+     */
     public void clearCacheByPattern(String pattern) {
         Set<String> keys = redisTemplate.keys(pattern);
         if (keys != null && !keys.isEmpty()) {
