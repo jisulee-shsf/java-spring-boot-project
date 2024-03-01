@@ -26,22 +26,15 @@ import java.util.List;
 public class NotificationController {
     private final NotificationService notificationService;
 
-
-    // 알림메세지 테스트
-    @PostMapping("/test")
-    public ResponseEntity<String> NotificationTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        String testContent = "테스트 알림입니다!";
-        String testUrl = "https://the2.sfo2.cdn.digitaloceanspaces.com/m_photo/411589.webp";
-        NotificationType testNotificationType = NotificationType.DONATION;
-        notificationService.send(userDetails.getUser(), testNotificationType, testContent, testUrl);
-
-        String responseText = "알림메시지 발송 성공";
-        return new ResponseEntity<>(responseText, HttpStatus.OK);
-    }
-
-    /////
-
-    // 사용자 SSE 연결 API
+    /**
+     * SSE 연결을 설정하여 클라이언트가 서버로부터 실시간 업데이트를 받을 수 있도록 합니다.
+     * 클라이언트는 이 엔드포인트를 호출하여 SSE 연결을 초기화하고, 서버로부터 실시간 알림을 수신할 수 있습니다.
+     *
+     * @param userDetails 인증된 사용자의 세부 정보. Spring Security의 @AuthenticationPrincipal을 통해 자동 주입됩니다.
+     * @param lastEventId 클라이언트가 마지막으로 수신한 이벤트 ID. 누락된 이벤트를 처리하기 위해 사용됩니다.
+     * @param response HttpServletResponse 객체. SSE 연결 설정에 필요한 헤더를 설정하는 데 사용됩니다.
+     * @return SseEmitter 객체를 포함하는 ResponseEntity. 클라이언트는 이 객체를 통해 서버로부터 이벤트를 수신합니다.
+     */
     @GetMapping(value = "/subscribe", produces = "text/event-stream")
     public ResponseEntity<SseEmitter> sseConnect(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                  @RequestHeader(value = "Last-Event-ID", required = false, defaultValue = "") String lastEventId,
@@ -49,7 +42,13 @@ public class NotificationController {
         return new ResponseEntity<>(notificationService.sseSubscribe(userDetails.getUsername(),lastEventId, response), HttpStatus.OK);
     }
 
-    // 전체 알림 조회 API
+    /**
+     * 인증된 사용자의 모든 알림을 조회합니다.
+     *
+     * @param userDetails 인증된 사용자의 세부 정보. Spring Security에서 자동 주입됩니다.
+     * @return 사용자의 모든 알림에 대한 리스트를 담은 ResponseEntity.
+     * @throws BaseException 사용자 세부 정보가 존재하지 않을 경우 예외 발생.
+     */
     @GetMapping
     public ResponseEntity<List<NotificationResponseDto>> getNotifications(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (userDetails == null) {
@@ -58,7 +57,14 @@ public class NotificationController {
         return new ResponseEntity<>(notificationService.getNotifications(userDetails.getUser()), HttpStatus.OK);
     }
 
-    // 해당 알림 조회 시 읽음 처리 API
+    /**
+     * 지정된 알림을 읽음 처리합니다. 이 작업은 알림을 조회하는 동시에 수행됩니다.
+     *
+     * @param userDetails 인증된 사용자의 세부 정보.
+     * @param notificationId 읽음 처리할 알림의 ID.
+     * @return 읽음 처리된 알림에 대한 ResponseEntity.
+     * @throws BaseException 사용자 세부 정보가 존재하지 않을 경우 예외 발생.
+     */
     @PatchMapping("/{notificationId}")
     public ResponseEntity<NotificationResponseDto> readNotification(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                  @PathVariable Long notificationId) {
@@ -68,7 +74,13 @@ public class NotificationController {
         return new ResponseEntity<>(notificationService.readNotification(userDetails.getUser(), notificationId), HttpStatus.OK);
     }
 
-    // 해당 유저 읽은 알림 메세지 전체 삭제
+    /**
+     * 사용자가 읽은 모든 알림 메세지를 삭제합니다.
+     *
+     * @param userDetails 인증된 사용자의 세부 정보.
+     * @return 삭제 성공 메시지를 담은 ResponseEntity.
+     * @throws BaseException 사용자 세부 정보가 존재하지 않을 경우 예외 발생.
+     */
     @DeleteMapping
     public ResponseEntity<?> deleteNotificationIsReadTrue(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (userDetails == null) {
@@ -78,7 +90,14 @@ public class NotificationController {
         return ResponseEntity.ok().body("읽은 모든 알림 메세지를 성공적으로 삭제하였습니다.");
     }
 
-    // 해당 유저 원하는 알림 메세지 삭제
+    /**
+     * 사용자가 지정한 알림 메세지를 삭제합니다.
+     *
+     * @param userDetails 인증된 사용자의 세부 정보.
+     * @param notificationId 삭제할 알림의 ID.
+     * @return 삭제 성공 메시지를 담은 ResponseEntity.
+     * @throws BaseException 사용자 세부 정보가 존재하지 않을 경우 예외 발생.
+     */
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<?> deleteNotification(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable Long notificationId) {
         if (userDetails == null) {
@@ -86,5 +105,17 @@ public class NotificationController {
         }
         notificationService.deleteNotification(userDetails.getUser(), notificationId);
         return ResponseEntity.ok().body("해당 알림 메세지를 성공적으로 삭제하였습니다.");
+    }
+
+    // 알림메시지 테스트
+    @PostMapping("/test")
+    public ResponseEntity<String> NotificationTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        String testContent = "테스트 알림입니다!";
+        String testUrl = "https://giftipie.me";
+        NotificationType testNotificationType = NotificationType.DONATION;
+        notificationService.send(userDetails.getUser(), testNotificationType, testContent, testUrl);
+
+        String responseText = "알림메시지 발송 성공";
+        return new ResponseEntity<>(responseText, HttpStatus.OK);
     }
 }
