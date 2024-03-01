@@ -30,7 +30,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class KakaoService {
+public class KakaoUserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
@@ -116,13 +116,22 @@ public class KakaoService {
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                kakaoUser = new User(kakaoUserInfoDto.getEmail(), encodedPassword, kakaoUserInfoDto.getNickname(), false, UserType.KAKAO_USER, kakaoId);
+                kakaoUser = User.builder()
+                        .email(kakaoUserInfoDto.getEmail())
+                        .password(encodedPassword)
+                        .nickname(kakaoUserInfoDto.getNickname())
+                        .isEmailNotificationAgreed(false)
+                        .userType(UserType.KAKAO_USER)
+                        .kakaoId(kakaoId)
+                        .build();
             }
         }
 
+        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 업데이트 후 저장
         JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(kakaoUser.getEmail());
         kakaoUser.updateRefreshToken(jwtTokenDto);
         userRepository.save(kakaoUser);
+
         log.info("[kakaoLogin] 카카오 로그인 완료");
         return jwtTokenDto;
     }

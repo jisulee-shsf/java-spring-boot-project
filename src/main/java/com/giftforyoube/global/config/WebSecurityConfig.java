@@ -1,12 +1,12 @@
 package com.giftforyoube.global.config;
 
-import com.giftforyoube.global.jwt.filter.AuthenticationFilter;
-import com.giftforyoube.global.jwt.filter.AuthorizationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.giftforyoube.global.jwt.filter.jwtAuthenticationFilter;
+import com.giftforyoube.global.jwt.filter.jwtAuthorizationFilter;
 import com.giftforyoube.global.jwt.token.service.TokenManager;
-import com.giftforyoube.global.jwt.util.JwtUtil;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
+import com.giftforyoube.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,21 +24,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    private final JwtUtil jwtUtil;
+    private final TokenManager tokenManager;
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
-
-    @Value("${jwt.accsss-token-expiration-time}")
-    private String accessTokenExpirationTime;
-    @Value("${jwt.refresh-token-expiration-time}")
-    private String refreshTokenExpirationTime;
-    @Value("${jwt.secret}")
-    private String tokenSecret;
-
-    @Bean
-    public TokenManager tokenManager() {
-        return new TokenManager(accessTokenExpirationTime, refreshTokenExpirationTime, tokenSecret);
-    }
+    private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -46,15 +36,15 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public AuthenticationFilter jwtAuthenticationFilter() throws Exception {
-        AuthenticationFilter filter = new AuthenticationFilter(jwtUtil);
+    public jwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) throws Exception {
+        jwtAuthenticationFilter filter = new jwtAuthenticationFilter(tokenManager, objectMapper, userRepository);
         filter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
         return filter;
     }
 
     @Bean
-    public AuthorizationFilter jwtAuthorizationFilter() {
-        return new AuthorizationFilter(jwtUtil, userDetailsService);
+    public jwtAuthorizationFilter jwtAuthorizationFilter() {
+        return new jwtAuthorizationFilter(tokenManager, userDetailsService);
     }
 
     @Bean
@@ -76,8 +66,8 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll()
         );
 
-        http.addFilterBefore(jwtAuthorizationFilter(), AuthenticationFilter.class);
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthorizationFilter(), jwtAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthenticationFilter(userRepository), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

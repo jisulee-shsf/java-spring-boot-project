@@ -25,8 +25,11 @@ public enum BaseResponseStatus {
     FUNDING_ITEM_LINK_SUCCESS(true, 2000, "펀딩 아이템이 저장되었습니다."),
 
     // 1-3. 후원
-    DONATION_READY_SUCCESS(true, 2000, "후원 결제준비 요청이 완료되었습니다."),
-    DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제승인 요청이 완료되었습니다."),
+    DONATION_READY_SUCCESS(true, 2000, "후원 결제 준비 요청이 완료되었습니다."),
+    DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제 승인 요청이 완료되었습니다."),
+
+    // 1-4. 인증 / 인가
+    ACCESS_TOKEN_ISSUED(true, 2000, "Access token이 발급되었습니다."),
 
     /**
      * 2. 클라이언트 에러가 발생한 경우(4000)
@@ -36,21 +39,22 @@ public enum BaseResponseStatus {
     BAD_REQUEST(false, 4000, "잘못된 요청입니다."),
 
     // 2-1. 회원가입 / 로그인 / 회원탈퇴
-    NOT_FOUND_USER(false, 4000, "가입된 사용자 정보가 없습니다."),
+    USER_NOT_FOUND(false, 4000, "가입된 사용자 정보가 없습니다."),
     PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
     LOGIN_FAILURE(false, 4000, "로그인에 실패했습니다."),
-    REGISTOR_ACCOUNT_FAILURE(false, 4000, "회원가입에 실패했습니다."),
+    REGISTER_ACCOUNT_FAILURE(false, 4000, "회원가입에 실패했습니다."),
     DELETE_ACCOUNT_FAILURE(false, 4000, "회원탈퇴에 실패했습니다."),
 
-    // 2-2. 인증 및 인가
-    AUTHENTICATION_FAILED(false, HttpStatus.UNAUTHORIZED.value(),"인증에 실패했습니다"),
-    TOKEN_EXPIRED(false, HttpStatus.UNAUTHORIZED.value(), "JWT 토큰이 만료되었습니다."),
-    NOT_VALID_TOKEN(false, HttpStatus.UNAUTHORIZED.value(), "JWT 토큰이 유효하지 않습니다."),
-    NOT_EXISTS_AUTHORIZATION(false, HttpStatus.UNAUTHORIZED.value(), "Authorization header가 빈값입니다."),
-    NOT_VALID_BEARER_GRANT_TYPE(false, HttpStatus.UNAUTHORIZED.value(), "인증 타입이 Bearer이 아닙니다."),
-    REFRESH_TOKEN_NOT_FOUND(false, HttpStatus.UNAUTHORIZED.value(), "refresh token이 존재하지 않습니다."),
-    REFRESH_TOKEN_EXPIRED(false, HttpStatus.UNAUTHORIZED.value(), "refresh token이 만료됐습니다."),
+    // 2-2. 인증 / 인가
+    AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다", HttpStatus.UNAUTHORIZED),
+    TOKEN_EXPIRED(false, 4000, "JWT token이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_TOKEN(false, 4000, "JWT token이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    AUTHORIZATION_HEADER_NOT_FOUND(false, 4000, "Authorization header가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_BEARER_GRANT_TYPE(false, 4000, "Bearer 타입이 아닙니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_ACCESS_TOKEN_TYPE(false, 4000, "Access token 타입이 아닙니다.", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_NOT_FOUND(false, 4000, "Refresh token이 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_EXPIRED(false, 4000, "만료된 Refresh token입니다.", HttpStatus.UNAUTHORIZED),
 
     // 2-3. 알림
     NOTIFICATION_NOT_FOUND(false, 4000, "알림을 찾을 수 없습니다."),
@@ -94,10 +98,18 @@ public enum BaseResponseStatus {
     private final boolean isSuccess;
     private final int code;
     private final String message;
+    private HttpStatus httpStatus;
 
     BaseResponseStatus(boolean isSuccess, int code, String message) {
         this.isSuccess = isSuccess;
         this.code = code;
         this.message = message;
+    }
+
+    BaseResponseStatus(boolean isSuccess, int code, String message, HttpStatus httpStatus) {
+        this.isSuccess = isSuccess;
+        this.code = code;
+        this.message = message;
+        this.httpStatus = httpStatus;
     }
 }

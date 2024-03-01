@@ -1,10 +1,12 @@
 package com.giftforyoube.global.jwt.token.controller;
 
+import com.giftforyoube.global.exception.BaseResponse;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.jwt.token.dto.AccessTokenResponseDto;
 import com.giftforyoube.global.jwt.token.service.TokenService;
-import com.giftforyoube.global.jwt.util.AuthorizationHeaderUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,13 +19,12 @@ public class TokenController {
 
     private final TokenService tokenService;
 
+    // 리프레시 토큰으로 액세스 토큰 재발급
     @PostMapping("/access-token/issue")
-    public ResponseEntity<AccessTokenResponseDto> createAccessToken(HttpServletRequest httpServletRequest) {
-        String authorizationHeader = httpServletRequest.getHeader("Authorization");
-        AuthorizationHeaderUtil.validateAuthorization(authorizationHeader);
+    public ResponseEntity<BaseResponse<AccessTokenResponseDto>> createAccessTokenByRefreshToken(HttpServletRequest httpServletRequest) {
+        AccessTokenResponseDto accessTokenResponseDto = tokenService.createAccessTokenByRefreshToken(httpServletRequest);
 
-        String refreshToken = authorizationHeader.split(" ")[1];
-        AccessTokenResponseDto accessTokenResponseDto = tokenService.createAccessTokenByRefreshToken(refreshToken);
-        return ResponseEntity.ok(accessTokenResponseDto);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new BaseResponse<>(BaseResponseStatus.ACCESS_TOKEN_ISSUED, accessTokenResponseDto));
     }
 }

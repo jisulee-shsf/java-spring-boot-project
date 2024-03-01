@@ -30,7 +30,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GoogleService {
+public class GoogleUserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
@@ -89,7 +89,8 @@ public class GoogleService {
                 .toUri();
 
         ResponseEntity<String> ResponseEntity = restTemplate.getForEntity(uri, String.class);
-        OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = new ObjectMapper().readValue(ResponseEntity.getBody(), OauthUserInfoDto.GoogleUserInfoDto.class);
+        OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = new ObjectMapper()
+                .readValue(ResponseEntity.getBody(), OauthUserInfoDto.GoogleUserInfoDto.class);
         return googleUserInfoDto;
     }
 
@@ -109,13 +110,22 @@ public class GoogleService {
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), false, UserType.GOOGLE_USER, googleId);
+                googleUser = User.builder()
+                        .email(googleUserInfoDto.getEmail())
+                        .password(encodedPassword)
+                        .nickname(googleUserInfoDto.getName())
+                        .isEmailNotificationAgreed(false)
+                        .userType(UserType.GOOGLE_USER)
+                        .googleId(googleId)
+                        .build();
             }
         }
 
+        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 업데이트 후 저장
         JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(googleUser.getEmail());
         googleUser.updateRefreshToken(jwtTokenDto);
         userRepository.save(googleUser);
+
         log.info("[googleLogin] 구글 로그인 완료");
         return jwtTokenDto;
     }

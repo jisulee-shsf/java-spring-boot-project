@@ -5,6 +5,7 @@ import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.global.common.BaseTimeEntity;
 import com.giftforyoube.global.jwt.dto.JwtTokenDto;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -56,35 +57,27 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Donation> donations = new ArrayList<>();
 
-    public User(String email, String password, String nickname, Boolean isEmailNotificationAgreed, UserType userType) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
-        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
-        this.userType = userType;
-    }
-
-    public User(String email, String password, String nickname, Boolean isEmailNotificationAgreed, UserType userType, Long kakaoId) {
+    @Builder
+    public User(Long id, String email, String password, String nickname, Boolean isEmailNotificationAgreed,
+                UserType userType, Long kakaoId, String googleId, String refreshToken,
+                LocalDateTime tokenExpirationTime, List<Funding> fundings, List<Donation> donations) {
+        this.id = id;
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.isEmailNotificationAgreed = isEmailNotificationAgreed;
         this.userType = userType;
         this.kakaoId = kakaoId;
+        this.googleId = googleId;
+        this.refreshToken = refreshToken;
+        this.tokenExpirationTime = tokenExpirationTime;
+        this.fundings = fundings;
+        this.donations = donations;
     }
 
     public User updateKakaoId(Long kakaoId) {
         this.kakaoId = kakaoId;
         return this;
-    }
-
-    public User(String email, String password, String nickname, Boolean isEmailNotificationAgreed, UserType userType, String googleId) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
-        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
-        this.userType = userType;
-        this.googleId = googleId;
     }
 
     public User updateGoogleId(String googleId) {
@@ -95,5 +88,9 @@ public class User extends BaseTimeEntity {
     public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
         this.refreshToken = jwtTokenDto.getRefreshToken();
         this.tokenExpirationTime = convertToLocalDateTime(jwtTokenDto.getRefreshTokenExpireTime());
+    }
+
+    public void expireRefreshToken(LocalDateTime now) {
+        this.tokenExpirationTime = now;
     }
 }

@@ -3,9 +3,12 @@ package com.giftforyoube.global.jwt.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
-import com.giftforyoube.global.jwt.util.JwtUtil;
+import com.giftforyoube.global.jwt.dto.JwtTokenDto;
+import com.giftforyoube.global.jwt.token.service.TokenManager;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.dto.LoginRequestDto;
+import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,13 +21,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.io.IOException;
 
 @Slf4j
-public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+public class jwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-    private final JwtUtil jwtUtil;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final TokenManager tokenManager;
+    private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
 
-    public AuthenticationFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    public jwtAuthenticationFilter(TokenManager tokenManager, ObjectMapper objectMapper, UserRepository userRepository) {
+        this.tokenManager = tokenManager;
+        this.objectMapper = objectMapper;
+        this.userRepository = userRepository;
+
         setFilterProcessesUrl("/api/login");
     }
 
@@ -32,6 +39,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     public Authentication attemptAuthentication(HttpServletRequest request,
                                                 HttpServletResponse response) throws AuthenticationException {
         log.info("[attemptAuthentication] 로그인 시도");
+
         try {
             LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
             return getAuthenticationManager().authenticate(
@@ -53,11 +61,14 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
                                             FilterChain chain,
                                             Authentication authResult) throws IOException {
         log.info("[successfulAuthentication] 로그인 완료");
-        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
-        String token = jwtUtil.createToken(email);
-        String valueToken = jwtUtil.addJwtToCookie(token, httpServletResponse);
 
-        BaseResponse baseResponse = new BaseResponse(BaseResponseStatus.LOGIN_SUCCESS, valueToken);
+        User user = ((UserDetailsImpl) authResult.getPrincipal()).getUser();
+        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
+        JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(email);
+        user.updateRefreshToken(jwtTokenDto);
+        userRepository.save(user);
+
+        BaseResponse baseResponse = new BaseResponse(BaseResponseStatus.LOGIN_SUCCESS, jwtTokenDto);
         httpServletResponse.setContentType("application/json;charset=UTF-8");
         httpServletResponse.getWriter().write(objectMapper.writeValueAsString(baseResponse));
         httpServletResponse.setStatus(HttpServletResponse.SC_OK);
@@ -68,6 +79,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
                                               HttpServletResponse httpServletResponse,
                                               AuthenticationException failed) throws IOException {
         log.info("[unsuccessfulAuthentication] 로그인 실패");
+
         BaseResponse baseResponse = new BaseResponse<>(BaseResponseStatus.LOGIN_FAILURE);
         httpServletResponse.setContentType("application/json;charset=UTF-8");
         httpServletResponse.getWriter().write(objectMapper.writeValueAsString(baseResponse));
