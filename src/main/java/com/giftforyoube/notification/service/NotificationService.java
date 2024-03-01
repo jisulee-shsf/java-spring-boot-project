@@ -111,10 +111,11 @@ public class NotificationService {
                             saveNotification.getCreatedAt()));
                 }
         );
+        log.info("메세지 전송 완료");
 
         // 사용자가 이메일 알림 수신에 동의한 경우, 이에일로 알림 발송
         if (saveNotification.getReceiver().getIsEmailNotificationAgreed()) {
-            log.info("SSE 메시지 전송 완료. 알림 이메일 발송 시작");
+            log.info("알림 이메일 발송 시작");
             try {
                 mailingService.sendNotificationEmail(saveNotification);
             } catch (MessagingException e) {
