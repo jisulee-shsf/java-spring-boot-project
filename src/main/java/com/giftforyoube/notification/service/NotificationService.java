@@ -187,7 +187,8 @@ public class NotificationService {
             );
         } catch (IOException exception) {
             emitterRepository.deleteById(emitterId);
-            throw new BaseException(BaseResponseStatus.NOTIFICATION_SEND_FAILED);
+//            throw new BaseException(BaseResponseStatus.NOTIFICATION_SEND_FAILED);
+            throw new RuntimeException("sse send failed" + exception);
         }
     }
 
