@@ -107,6 +107,8 @@ public class NotificationController {
         return ResponseEntity.ok().body("해당 알림 메세지를 성공적으로 삭제하였습니다.");
     }
 
+    ////////////////////////////////////////////////////////////////////////
+
     // 알림메시지 테스트
     @PostMapping("/test")
     public ResponseEntity<String> NotificationTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {

@@ -102,9 +102,13 @@ public class NotificationService {
         emitters.forEach(
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
-                    sendNotification(emitter, eventId, emitterId, new MessageResponseDto(saveNotification.getId(),
-                            saveNotification.getContent(), saveNotification.getUrl(),
-                            saveNotification.getNotificationType(), saveNotification.getIsRead(), saveNotification.getCreatedAt()));
+                    sendNotification(emitter, eventId, emitterId, new MessageResponseDto(
+                            saveNotification.getId(),
+                            saveNotification.getContent(),
+                            saveNotification.getUrl(),
+                            saveNotification.getNotificationType(),
+                            saveNotification.getIsRead(),
+                            saveNotification.getCreatedAt()));
                 }
         );
 
