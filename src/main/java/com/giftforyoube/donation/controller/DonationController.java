@@ -7,11 +7,13 @@ import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
 import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.service.DonationService;
+import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,7 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @Tag(name = "후원", description = "후원 관련 API")
@@ -76,7 +78,12 @@ public class DonationController {
         headers.setLocation(new URI(giftipieRedirectUrl + "fundingdetail/" + fundingId));
 
         // 후원 결제 승인 시 알람 발송
-        donationService.sendDonationNotification(sponsorNickname, fundingId);
+        try {
+            donationService.sendDonationNotification(sponsorNickname, fundingId);
+        } catch (Exception e) {
+            log.error("SSE 알림 error: ", e);
+        }
+
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
