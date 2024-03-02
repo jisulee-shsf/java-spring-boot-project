@@ -39,22 +39,20 @@ public enum BaseResponseStatus {
     BAD_REQUEST(false, 4000, "잘못된 요청입니다."),
 
     // 2-1. 회원가입 / 로그인 / 회원탈퇴
+    LOGIN_FAILED(false, 4000, "로그인에 실패했습니다."),
     USER_NOT_FOUND(false, 4000, "가입된 사용자 정보가 없습니다."),
-    PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
+    PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다. 비밀번호를 다시 입력해 주세요."),
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
-    LOGIN_FAILURE(false, 4000, "로그인에 실패했습니다."),
-    REGISTER_ACCOUNT_FAILURE(false, 4000, "회원가입에 실패했습니다."),
-    DELETE_ACCOUNT_FAILURE(false, 4000, "회원탈퇴에 실패했습니다."),
+//    REGISTER_ACCOUNT_FAILED(false, 4000, "회원가입에 실패했습니다."),
+//    DELETE_ACCOUNT_FAILED(false, 4000, "회원탈퇴에 실패했습니다."),
 
     // 2-2. 인증 / 인가
+    ACCESS_TOKEN_NOT_FOUND(false, 4000, "Access token이 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    ACCESS_TOKEN_EXPIRED(false, 4000, "Access token이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
+    ACCESS_TOKEN_INVALID(false, 4000, "Access token이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
     AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다", HttpStatus.UNAUTHORIZED),
-    TOKEN_EXPIRED(false, 4000, "JWT token이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
-    INVALID_TOKEN(false, 4000, "JWT token이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
-    AUTHORIZATION_HEADER_NOT_FOUND(false, 4000, "Authorization header가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
     INVALID_BEARER_GRANT_TYPE(false, 4000, "Bearer 타입이 아닙니다.", HttpStatus.UNAUTHORIZED),
-    INVALID_ACCESS_TOKEN_TYPE(false, 4000, "Access token 타입이 아닙니다.", HttpStatus.UNAUTHORIZED),
-    REFRESH_TOKEN_NOT_FOUND(false, 4000, "Refresh token이 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
-    REFRESH_TOKEN_EXPIRED(false, 4000, "만료된 Refresh token입니다.", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_EXPIRED(false, 4000, "Refresh token이 만료되었습니다..", HttpStatus.UNAUTHORIZED),
 
     // 2-3. 알림
     NOTIFICATION_NOT_FOUND(false, 4000, "알림을 찾을 수 없습니다."),
@@ -84,7 +82,7 @@ public enum BaseResponseStatus {
      */
 
     // 0. 공통
-    SERVER_ERROR(false, 5000, "서버와 연결에 실패하였습니다."),
+    INTERNAL_SERVER_ERROR(false, 5000, "서버 내부 에러가 발생했습니다."),
     UNEXPECTED_ERROR(false, 5000, "예상치 못한 에러가 발생했습니다."),
     FAIL_TO_ENCODING(false, 5000, "요청 인코딩에 실패했습니다."),
     FAIL_TO_JSON(false, 5000, "JSON 파싱 에러가 발생했습니다."),

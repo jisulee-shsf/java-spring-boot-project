@@ -5,11 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.global.jwt.dto.JwtTokenDto;
 import com.giftforyoube.global.jwt.token.service.TokenManager;
-import com.giftforyoube.user.dto.LoginResponseDto;
 import com.giftforyoube.user.dto.OauthUserInfoDto;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.entity.UserType;
 import com.giftforyoube.user.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.UUID;
 
@@ -44,13 +46,12 @@ public class GoogleUserService {
     @Value("${google.redirect.uri}")
     private String redirectUri;
 
-    public LoginResponseDto googleLogin(String code) throws JsonProcessingException {
+    public void googleLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
         log.info("[googleLogin] 구글 로그인 시도");
 
         String googleAccessToken = getGoogleAccessToken(code);
         OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
-        JwtTokenDto jwtTokenDto = registerGoogleUserIfNeeded(googleUserInfoDto);
-        return new LoginResponseDto(jwtTokenDto);
+        registerGoogleUserIfNeeded(googleUserInfoDto, httpServletResponse);
     }
 
     // 1. 구글 access token 요청
@@ -96,7 +97,8 @@ public class GoogleUserService {
 
     // 3. 구글 사용자 등록
     @Transactional
-    public JwtTokenDto registerGoogleUserIfNeeded(OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto) {
+    public JwtTokenDto registerGoogleUserIfNeeded(OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto,
+                                                  HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
         String googleId = googleUserInfoDto.getId();
         User googleUser = userRepository.findByGoogleId(googleId).orElse(null);
 
@@ -121,8 +123,11 @@ public class GoogleUserService {
             }
         }
 
-        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 업데이트 후 저장
+        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 정보 업데이트
         JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(googleUser.getEmail());
+        Cookie jwtCookie = tokenManager.addTokenToCookie(jwtTokenDto.getAccessToken());
+        httpServletResponse.addCookie(jwtCookie);
+
         googleUser.updateRefreshToken(jwtTokenDto);
         userRepository.save(googleUser);
 

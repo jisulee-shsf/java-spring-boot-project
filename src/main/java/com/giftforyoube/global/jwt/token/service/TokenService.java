@@ -1,15 +1,16 @@
 package com.giftforyoube.global.jwt.token.service;
 
-import com.giftforyoube.global.jwt.constant.GrantType;
-import com.giftforyoube.global.jwt.token.dto.AccessTokenResponseDto;
-import com.giftforyoube.global.jwt.util.AuthorizationHeaderUtil;
-import com.giftforyoube.user.entity.User;
-import com.giftforyoube.user.service.UserService;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
 @Service
@@ -17,27 +18,23 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class TokenService {
 
-    private final UserService userService;
     private final TokenManager tokenManager;
 
-    public AccessTokenResponseDto createAccessTokenByRefreshToken(HttpServletRequest httpServletRequest) {
+    public void issueAccessToken(HttpServletRequest httpServletRequest,
+                                 HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
+        String token = tokenManager.getTokenFromRequest(httpServletRequest);
+        String tokenValue = tokenManager.substringToken(token);
 
-        // Authorization 헤더 검증
-        String authorizationHeader = httpServletRequest.getHeader("Authorization");
-        AuthorizationHeaderUtil.validateAuthorization(authorizationHeader);
+        if (tokenManager.isRefreshTokenValid(tokenValue)) {
+            Claims tokenClaims = tokenManager.getTokenClaims(tokenValue);
+            String email = (String) tokenClaims.get("email");
+            Date accessTokenExpireTime = tokenManager.createAccessTokenExpireTime();
 
-        // 해당 리프레시 토큰을 가진 사용자 확인
-        String refreshToken = authorizationHeader.split(" ")[1];
-        User user = userService.findUserByRefreshToken(refreshToken);
-
-        // 액세스 토큰 생성 후 DTO 반환
-        Date accessTokenExpireTime = tokenManager.createAccessTokenExpireTime();
-        String accessToken = tokenManager.createAccessToken(user.getEmail(), accessTokenExpireTime);
-
-        return AccessTokenResponseDto.builder()
-                .grantType(GrantType.BEARER.getType())
-                .accessToken(accessToken)
-                .accessTokenExpireTime(accessTokenExpireTime)
-                .build();
+            String accessToken = tokenManager.createAccessToken(email, accessTokenExpireTime);
+            Cookie jwtCookie = tokenManager.addTokenToCookie(accessToken);
+            httpServletResponse.addCookie(jwtCookie);
+        } else {
+            throw new BaseException(BaseResponseStatus.REFRESH_TOKEN_EXPIRED);
+        }
     }
 }

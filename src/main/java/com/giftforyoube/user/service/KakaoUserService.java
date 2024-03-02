@@ -5,11 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.global.jwt.dto.JwtTokenDto;
 import com.giftforyoube.global.jwt.token.service.TokenManager;
-import com.giftforyoube.user.dto.LoginResponseDto;
 import com.giftforyoube.user.dto.OauthUserInfoDto;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.entity.UserType;
 import com.giftforyoube.user.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.UUID;
 
@@ -42,13 +44,12 @@ public class KakaoUserService {
     @Value("${kakao.redirect.uri}")
     private String redirectUri;
 
-    public LoginResponseDto kakaoLogin(String code) throws JsonProcessingException {
+    public void kakaoLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
         log.info("[kakaoLogin] 카카오 로그인 시도");
 
         String kakaoAccessToken = getKakaoAccessToken(code);
         OauthUserInfoDto.KakaoUserInfoDto kakaoUserInfoDto = getKakaoUserInfo(kakaoAccessToken);
-        JwtTokenDto jwtTokenDto = registerKakaoUserIfNeeded(kakaoUserInfoDto);
-        return new LoginResponseDto(jwtTokenDto);
+        registerKakaoUserIfNeeded(kakaoUserInfoDto, httpServletResponse);
     }
 
     // 1. 카카오 access token 요청
@@ -103,7 +104,8 @@ public class KakaoUserService {
 
     // 3. 카카오 사용자 등록
     @Transactional
-    public JwtTokenDto registerKakaoUserIfNeeded(OauthUserInfoDto.KakaoUserInfoDto kakaoUserInfoDto) {
+    public void registerKakaoUserIfNeeded(OauthUserInfoDto.KakaoUserInfoDto kakaoUserInfoDto,
+                                          HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
         Long kakaoId = kakaoUserInfoDto.getId();
         User kakaoUser = userRepository.findByKakaoId(kakaoId).orElse(null);
 
@@ -127,12 +129,14 @@ public class KakaoUserService {
             }
         }
 
-        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 업데이트 후 저장
+        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 정보 업데이트
         JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(kakaoUser.getEmail());
+        Cookie jwtCookie = tokenManager.addTokenToCookie(jwtTokenDto.getAccessToken());
+        httpServletResponse.addCookie(jwtCookie);
+
         kakaoUser.updateRefreshToken(jwtTokenDto);
         userRepository.save(kakaoUser);
 
         log.info("[kakaoLogin] 카카오 로그인 완료");
-        return jwtTokenDto;
     }
 }

@@ -1,8 +1,7 @@
 package com.giftforyoube.global.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.global.jwt.filter.jwtAuthenticationFilter;
-import com.giftforyoube.global.jwt.filter.jwtAuthorizationFilter;
+import com.giftforyoube.global.jwt.filter.JwtAuthenticationFilter;
+import com.giftforyoube.global.jwt.filter.JwtAuthorizationFilter;
 import com.giftforyoube.global.jwt.token.service.TokenManager;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import com.giftforyoube.user.repository.UserRepository;
@@ -28,7 +27,6 @@ public class WebSecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -36,15 +34,15 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public jwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) throws Exception {
-        jwtAuthenticationFilter filter = new jwtAuthenticationFilter(tokenManager, objectMapper, userRepository);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) throws Exception {
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenManager, userRepository);
         filter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
         return filter;
     }
 
     @Bean
-    public jwtAuthorizationFilter jwtAuthorizationFilter() {
-        return new jwtAuthorizationFilter(tokenManager, userDetailsService);
+    public JwtAuthorizationFilter jwtAuthorizationFilter() {
+        return new JwtAuthorizationFilter(tokenManager, userDetailsService);
     }
 
     @Bean
@@ -66,7 +64,7 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll()
         );
 
-        http.addFilterBefore(jwtAuthorizationFilter(), jwtAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthorizationFilter(), JwtAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter(userRepository), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

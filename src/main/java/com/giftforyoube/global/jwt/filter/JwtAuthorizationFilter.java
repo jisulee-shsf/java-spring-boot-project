@@ -1,10 +1,8 @@
 package com.giftforyoube.global.jwt.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.global.exception.BaseException;
-import com.giftforyoube.global.exception.BaseResponse;
-import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.jwt.token.service.TokenManager;
+import com.giftforyoube.global.jwt.util.FilterResponseUtil;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -25,11 +23,12 @@ import java.io.IOException;
 
 @Slf4j
 @RequiredArgsConstructor
-public class jwtAuthorizationFilter extends OncePerRequestFilter {
+public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private final TokenManager tokenManager;
     private final UserDetailsServiceImpl userDetailsService;
 
+    // 1. 토큰 기반 필터 체인 진행
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
                                     HttpServletResponse httpServletResponse,
@@ -37,31 +36,24 @@ public class jwtAuthorizationFilter extends OncePerRequestFilter {
         String token = tokenManager.getTokenFromRequest(httpServletRequest);
 
         if (StringUtils.hasText(token)) {
+            String tokenValue = tokenManager.substringToken(token);
             try {
-                if (!tokenManager.validateToken(token)) {
-                    BaseResponse<Void> baseResponse = new BaseResponse<>(BaseResponseStatus.INVALID_TOKEN);
-                    httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    httpServletResponse.setContentType("application/json;charset=UTF-8");
-                    httpServletResponse.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
-                    return;
+                if (tokenManager.validateToken(tokenValue)) {
+                    Claims claims = tokenManager.getTokenClaims(tokenValue);
+                    setAuthentication((String) claims.get("email"));
+                    filterChain.doFilter(httpServletRequest, httpServletResponse);
                 }
-                Claims tokenClaims = tokenManager.getTokenClaims(token);
-                setAuthentication((String) tokenClaims.get("email"));
             } catch (BaseException e) {
-                BaseResponseStatus responseStatus = e.getStatus();
-
-                int statusCode = responseStatus.getHttpStatus().value();
-                BaseResponse<Void> baseResponse = new BaseResponse<>(responseStatus);
-                httpServletResponse.setStatus(statusCode);
-                httpServletResponse.setContentType("application/json;charset=UTF-8");
-                httpServletResponse.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
-                return;
+                FilterResponseUtil.sendFilterResponse(httpServletResponse,
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        e.getStatus());
             }
+        } else {
+            filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
-
-        filterChain.doFilter(httpServletRequest, httpServletResponse);
     }
 
+    // 2. 이메일 기반 사용자 인증 & 보안 컨택스트 설정
     public void setAuthentication(String email) {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         Authentication authentication = createAuthentication(email);
@@ -69,6 +61,7 @@ public class jwtAuthorizationFilter extends OncePerRequestFilter {
         SecurityContextHolder.setContext(context);
     }
 
+    // 3. 이메일 기반 사용자 인증 객체 생성
     private Authentication createAuthentication(String email) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 

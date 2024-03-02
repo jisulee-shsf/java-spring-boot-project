@@ -1,15 +1,16 @@
 package com.giftforyoube.global.jwt.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.jwt.dto.JwtTokenDto;
 import com.giftforyoube.global.jwt.token.service.TokenManager;
+import com.giftforyoube.global.jwt.util.FilterResponseUtil;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.dto.LoginRequestDto;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -21,17 +22,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.io.IOException;
 
 @Slf4j
-public class jwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final TokenManager tokenManager;
-    private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
 
-    public jwtAuthenticationFilter(TokenManager tokenManager, ObjectMapper objectMapper, UserRepository userRepository) {
+    public JwtAuthenticationFilter(TokenManager tokenManager, UserRepository userRepository) {
         this.tokenManager = tokenManager;
-        this.objectMapper = objectMapper;
         this.userRepository = userRepository;
-
         setFilterProcessesUrl("/api/login");
     }
 
@@ -41,11 +39,11 @@ public class jwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         log.info("[attemptAuthentication] 로그인 시도");
 
         try {
-            LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
+            LoginRequestDto loginRequestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
             return getAuthenticationManager().authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            requestDto.getEmail(),
-                            requestDto.getPassword(),
+                            loginRequestDto.getEmail(),
+                            loginRequestDto.getPassword(),
                             null
                     )
             );
@@ -65,13 +63,16 @@ public class jwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         User user = ((UserDetailsImpl) authResult.getPrincipal()).getUser();
         String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
         JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(email);
+
+        Cookie jwtCookie = tokenManager.addTokenToCookie(jwtTokenDto.getAccessToken());
+        httpServletResponse.addCookie(jwtCookie);
+
         user.updateRefreshToken(jwtTokenDto);
         userRepository.save(user);
 
-        BaseResponse baseResponse = new BaseResponse(BaseResponseStatus.LOGIN_SUCCESS, jwtTokenDto);
-        httpServletResponse.setContentType("application/json;charset=UTF-8");
-        httpServletResponse.getWriter().write(objectMapper.writeValueAsString(baseResponse));
-        httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+        FilterResponseUtil.sendFilterResponse(httpServletResponse,
+                HttpServletResponse.SC_OK,
+                BaseResponseStatus.LOGIN_SUCCESS);
     }
 
     @Override
@@ -80,9 +81,8 @@ public class jwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                                               AuthenticationException failed) throws IOException {
         log.info("[unsuccessfulAuthentication] 로그인 실패");
 
-        BaseResponse baseResponse = new BaseResponse<>(BaseResponseStatus.LOGIN_FAILURE);
-        httpServletResponse.setContentType("application/json;charset=UTF-8");
-        httpServletResponse.getWriter().write(objectMapper.writeValueAsString(baseResponse));
-        httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        FilterResponseUtil.sendFilterResponse(httpServletResponse,
+                HttpServletResponse.SC_UNAUTHORIZED,
+                BaseResponseStatus.LOGIN_FAILED);
     }
 }
