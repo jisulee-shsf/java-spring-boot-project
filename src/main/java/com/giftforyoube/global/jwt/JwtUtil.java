@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -114,16 +115,34 @@ public class JwtUtil {
         return token;
     }
 
+    // 기존 코드
+//    public static String addJwtToCookie(String token,
+//                                        HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
+//        String encodeToken = URLEncoder.encode(token, "utf-8").replaceAll("\\+", "%20");
+//
+//        Cookie cookie = new Cookie(AUTHORIZATION_HEADER, encodeToken);
+//        cookie.setPath("/");
+//        cookie.setHttpOnly(true);
+//        cookie.setSecure(true);
+////        cookie.setDomain("giftipie.me"); // 쿠키가 전송될 도메인 설정 - eventSource 의 쿠키 전달을 위함
+//        httpServletResponse.addCookie(cookie);
+//        log.info("[addJwtToCookie] JWT 쿠키 전달 완료: " + encodeToken);
+//        return encodeToken;
+//    }
+
+    // 테스트를 위한 ResponseCookie 사용
     public static String addJwtToCookie(String token,
                                         HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
         String encodeToken = URLEncoder.encode(token, "utf-8").replaceAll("\\+", "%20");
 
-        Cookie cookie = new Cookie(AUTHORIZATION_HEADER, encodeToken);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-//        cookie.setDomain("giftipie.me"); // 쿠키가 전송될 도메인 설정 - eventSource 의 쿠키 전달을 위함
-        httpServletResponse.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(AUTHORIZATION_HEADER, encodeToken)
+                .path("/")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None") // SameSite 설정 추가
+                .build();
+
+        httpServletResponse.setHeader("Set-Cookie", cookie.toString());
         log.info("[addJwtToCookie] JWT 쿠키 전달 완료: " + encodeToken);
         return encodeToken;
     }

@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
@@ -62,15 +63,35 @@ public class UserController {
     }
 
     // 3-1. 카카오 로그인
+//    @GetMapping("/kakao/callback")
+//    public ResponseEntity<String> kakaoLogin(@RequestParam String code,
+//                                             HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException, URISyntaxException {
+//        String kakaoToken = kakaoService.kakaoLogin(code);
+//        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, kakaoToken);
+//        cookie.setPath("/");
+//        cookie.setHttpOnly(true);
+//        cookie.setSecure(true);
+//        httpServletResponse.addCookie(cookie);
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setLocation(new URI("https://www.giftipie.me/"));
+//        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+//    }
+
+    // 테스트를 위한 ResponseCookie 사용
     @GetMapping("/kakao/callback")
     public ResponseEntity<String> kakaoLogin(@RequestParam String code,
                                              HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException, URISyntaxException {
         String kakaoToken = kakaoService.kakaoLogin(code);
-        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, kakaoToken);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        httpServletResponse.addCookie(cookie);
+
+        ResponseCookie cookie = ResponseCookie.from(JwtUtil.AUTHORIZATION_HEADER, kakaoToken)
+                .path("/")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None") // SameSite 설정 추가
+                .build();
+
+        httpServletResponse.setHeader("Set-Cookie", cookie.toString());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(new URI("https://www.giftipie.me/"));
@@ -78,15 +99,35 @@ public class UserController {
     }
 
     // 3-2. 구글 로그인
+//    @GetMapping("/login/oauth2/code/google")
+//    public ResponseEntity<String> googleLogin(@RequestParam String code,
+//                                              HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException, URISyntaxException {
+//        String googleToken = googleService.googleLogin(code);
+//        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, googleToken);
+//        cookie.setPath("/");
+//        cookie.setHttpOnly(true);
+//        cookie.setSecure(true);
+//        httpServletResponse.addCookie(cookie);
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setLocation(new URI("https://www.giftipie.me/"));
+//        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+//    }
+
+    // 테스트를 위한 ResponseCookie 사용
     @GetMapping("/login/oauth2/code/google")
     public ResponseEntity<String> googleLogin(@RequestParam String code,
                                               HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException, URISyntaxException {
         String googleToken = googleService.googleLogin(code);
-        Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, googleToken);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        httpServletResponse.addCookie(cookie);
+
+        ResponseCookie cookie = ResponseCookie.from(JwtUtil.AUTHORIZATION_HEADER, googleToken)
+                .path("/")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None") // SameSite 설정 추가
+                .build();
+
+        httpServletResponse.setHeader("Set-Cookie", cookie.toString());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(new URI("https://www.giftipie.me/"));
