@@ -42,7 +42,7 @@ public class UserController {
                 .body(new BaseResponse<>(BaseResponseStatus.REGISTER_ACCOUNT_SUCCESS));
     }
 
-    @GetMapping("/kakao/callback")
+    @GetMapping("/kakao/login")
     public ResponseEntity<BaseResponse<Void>> kakaoLogin(@RequestParam String code,
                                                          HttpServletResponse httpServletResponse) {
         try {
@@ -56,7 +56,7 @@ public class UserController {
     }
 
     // 2-2. 구글 로그인
-    @GetMapping("/login/oauth2/code/google")
+    @GetMapping("/google/login")
     public ResponseEntity<BaseResponse<Void>> googleLogin(@RequestParam String code,
                                                           HttpServletResponse httpServletResponse) {
         try {
@@ -101,6 +101,6 @@ public class UserController {
     // [Test] 유저 정보 조회
     @GetMapping("/user-info")
     public void getUserInfoForTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        userService.getUserInfoForTest(userDetails.getUser().getEmail());
+        userService.getUserInfo(userDetails.getUser().getEmail());
     }
 }

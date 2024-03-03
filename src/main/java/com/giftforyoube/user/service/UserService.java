@@ -138,13 +138,13 @@ public class UserService {
 
     // [Test] 유저 정보 조회
     @Transactional(readOnly = true)
-    public void getUserInfoForTest(String email) {
+    public void getUserInfo(String email) {
         User user = findUserByEmail(email);
-        log.info("[getUserInfoAfterLogin] " + user.getUserType());
-        log.info("[getUserInfoAfterLogin] " + user.getEmail());
-        log.info("[getUserInfoAfterLogin] " + user.getAccessToken());
-        log.info("[getUserInfoAfterLogin] " + user.getAccessTokenExpirationTime());
-        log.info("[getUserInfoAfterLogin] " + user.getRefreshToken());
-        log.info("[getUserInfoAfterLogin] " + user.getRefreshTokenExpirationTime());
+        log.info("[getUserInfo] " + user.getUserType());
+        log.info("[getUserInfo] " + user.getEmail());
+        log.info("[getUserInfo] " + user.getAccessToken());
+        log.info("[getUserInfo] " + user.getAccessTokenExpirationTime());
+        log.info("[getUserInfo] " + user.getRefreshToken());
+        log.info("[getUserInfo] " + user.getRefreshTokenExpirationTime());
     }
 }

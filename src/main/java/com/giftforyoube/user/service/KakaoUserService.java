@@ -133,8 +133,9 @@ public class KakaoUserService {
         }
 
         // 이메일 기반 JWT 토큰 정보 생성
-        JwtTokenInfo.AccessTokenInfo accessTokenInfo = jwtTokenUtil.createAccessTokenInfo(kakaoUser.getEmail());
-        JwtTokenInfo.RefreshTokenInfo refreshTokenInfo = jwtTokenUtil.createRefreshTokenInfo(kakaoUser.getEmail());
+        String email = kakaoUser.getEmail();
+        JwtTokenInfo.AccessTokenInfo accessTokenInfo = jwtTokenUtil.createAccessTokenInfo(email);
+        JwtTokenInfo.RefreshTokenInfo refreshTokenInfo = jwtTokenUtil.createRefreshTokenInfo(email);
 
         // 액세스 토큰을 쿠키에 추가해 반환
         Cookie jwtCookie = jwtTokenUtil.addTokenToCookie(accessTokenInfo.getAccessToken());
