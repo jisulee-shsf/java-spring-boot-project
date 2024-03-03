@@ -18,13 +18,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-
-    // 이메일을 가진 사용자 확인
+    // 이메일 기반 유저 확인
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("가입된 사용자 정보가 없습니다."));
-
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
         return new UserDetailsImpl(user);
     }
 }

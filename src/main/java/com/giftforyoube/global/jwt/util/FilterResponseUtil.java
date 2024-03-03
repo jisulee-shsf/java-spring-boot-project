@@ -9,12 +9,12 @@ import java.io.IOException;
 
 public class FilterResponseUtil {
 
-    public static void sendFilterResponse(HttpServletResponse response,
+    public static void sendFilterResponse(HttpServletResponse httpServletResponse,
                                           int statusCode,
-                                          BaseResponseStatus status) throws IOException {
-        BaseResponse<Void> baseResponse = new BaseResponse<>(status);
-        response.setStatus(statusCode);
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
+                                          BaseResponseStatus baseResponseStatus) throws IOException {
+        BaseResponse<Void> baseResponse = new BaseResponse<>(baseResponseStatus);
+        httpServletResponse.setStatus(statusCode);
+        httpServletResponse.setContentType("application/json;charset=UTF-8");
+        httpServletResponse.getWriter().write(new ObjectMapper().writeValueAsString(baseResponse));
     }
 }

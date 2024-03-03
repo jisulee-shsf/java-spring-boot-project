@@ -3,8 +3,8 @@ package com.giftforyoube.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.global.jwt.dto.JwtTokenDto;
-import com.giftforyoube.global.jwt.token.service.TokenManager;
+import com.giftforyoube.global.jwt.dto.JwtTokenInfo;
+import com.giftforyoube.global.jwt.util.JwtTokenUtil;
 import com.giftforyoube.user.dto.OauthUserInfoDto;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.entity.UserType;
@@ -37,14 +37,17 @@ public class KakaoUserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
-    private final TokenManager tokenManager;
+    private final JwtTokenUtil jwtTokenUtil;
+    private final UserService userService;
 
     @Value("${kakao.rest.api.key}")
     private String restApiKey;
     @Value("${kakao.redirect.uri}")
     private String redirectUri;
 
-    public void kakaoLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
+    // 카카오 유저 로그인 처리
+    public void kakaoLogin(String code, HttpServletResponse httpServletResponse)
+            throws JsonProcessingException, UnsupportedEncodingException {
         log.info("[kakaoLogin] 카카오 로그인 시도");
 
         String kakaoAccessToken = getKakaoAccessToken(code);
@@ -52,7 +55,7 @@ public class KakaoUserService {
         registerKakaoUserIfNeeded(kakaoUserInfoDto, httpServletResponse);
     }
 
-    // 1. 카카오 access token 요청
+    // 1. 카카오 액세스 토큰 요청
     private String getKakaoAccessToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kauth.kakao.com")
@@ -78,7 +81,7 @@ public class KakaoUserService {
         return kakaoAccessToken;
     }
 
-    // 2. 카카오 사용자 정보 요청
+    // 2. 카카오 유저 정보 요청
     private OauthUserInfoDto.KakaoUserInfoDto getKakaoUserInfo(String kakaoAccessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kapi.kakao.com")
@@ -102,7 +105,7 @@ public class KakaoUserService {
         return kakaoUserInfoDto;
     }
 
-    // 3. 카카오 사용자 등록
+    // 3. 카카오 유저 등록
     @Transactional
     public void registerKakaoUserIfNeeded(OauthUserInfoDto.KakaoUserInfoDto kakaoUserInfoDto,
                                           HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
@@ -129,13 +132,18 @@ public class KakaoUserService {
             }
         }
 
-        // 이메일 기반 JwtTokenDto 생성 & DB 내 리프레시 토큰 정보 업데이트
-        JwtTokenDto jwtTokenDto = tokenManager.createJwtTokenDto(kakaoUser.getEmail());
-        Cookie jwtCookie = tokenManager.addTokenToCookie(jwtTokenDto.getAccessToken());
-        httpServletResponse.addCookie(jwtCookie);
+        // 이메일 기반 JWT 토큰 정보 생성
+        JwtTokenInfo.AccessTokenInfo accessTokenInfo = jwtTokenUtil.createAccessTokenInfo(kakaoUser.getEmail());
+        JwtTokenInfo.RefreshTokenInfo refreshTokenInfo = jwtTokenUtil.createRefreshTokenInfo(kakaoUser.getEmail());
 
-        kakaoUser.updateRefreshToken(jwtTokenDto);
-        userRepository.save(kakaoUser);
+        // 액세스 토큰을 쿠키에 추가해 반환
+        Cookie jwtCookie = jwtTokenUtil.addTokenToCookie(accessTokenInfo.getAccessToken());
+        httpServletResponse.addCookie(jwtCookie);
+        log.info("[kakaoLogin] 쿠키 전달 완료");
+
+        // JWT 토큰 정보 업데이트
+        userService.updateAccessToken(kakaoUser, accessTokenInfo);
+        userService.updateRefreshToken(kakaoUser, refreshTokenInfo);
 
         log.info("[kakaoLogin] 카카오 로그인 완료");
     }

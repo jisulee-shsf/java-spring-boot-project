@@ -2,12 +2,15 @@ package com.giftforyoube.user.service;
 
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
-import com.giftforyoube.global.jwt.dto.JwtTokenDto;
-import com.giftforyoube.global.jwt.token.service.TokenManager;
+import com.giftforyoube.global.jwt.constant.TokenType;
+import com.giftforyoube.global.jwt.dto.JwtTokenInfo;
+import com.giftforyoube.global.jwt.util.JwtTokenUtil;
 import com.giftforyoube.user.dto.SignupRequestDto;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.entity.UserType;
 import com.giftforyoube.user.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -24,11 +29,11 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final TokenManager tokenManager;
+    private final JwtTokenUtil jwtTokenUtil;
 
     // 1. 회원가입
-    public void registerAccount(SignupRequestDto signupRequestDto,
-                                BindingResult bindingResult) throws MethodArgumentNotValidException {
+    public void registerAccount(SignupRequestDto signupRequestDto, BindingResult bindingResult)
+            throws MethodArgumentNotValidException {
         log.info("[registerAccount] 회원가입 시도");
 
         // 가입정보 유효성 검증
@@ -55,63 +60,91 @@ public class UserService {
         log.info("[registerAccount] 회원가입 완료");
     }
 
-//    // 2. 로그아웃
-//    public void logout(HttpServletRequest httpServletRequest) {
-//        log.info("[logout] 로그아웃 시도");
-//
-//        // Authorization 헤더 검증
-//        String authorizationHeader = httpServletRequest.getHeader("Authorization");
-//        AuthorizationHeaderUtil.validateAuthorization(authorizationHeader);
-//
-//        // 토큰 검증
-//        String accessToken = authorizationHeader.split(" ")[1];
-//        tokenManager.validateToken(accessToken);
-//
-//        // 토큰 타입 확인
-//        Claims tokenClaims = tokenManager.getTokenClaims(accessToken);
-//        String tokenType = tokenClaims.getSubject();
-//        if (!TokenType.isAccessToken(tokenType)) {
-//            throw new BaseException(BaseResponseStatus.INVALID_ACCESS_TOKEN_TYPE);
-//        }
-//
-//        // 리프레시 토큰 만료 처리
-//        String email = (String) tokenClaims.get("email");
-//        User user = findUserByEmail(email);
-//        user.expireRefreshToken(LocalDateTime.now());
-//        userRepository.save(user);
-//
-//        log.info("[logout] 로그아웃 완료");
-//    }
+    // 2. 로그아웃
+    public void logout(User user, HttpServletResponse httpServletResponse) {
+        log.info("[logout] 로그아웃 시도");
+
+        // 쿠키 내 액세스 토큰 삭제
+        Cookie removedTokenCookie = jwtTokenUtil.removeTokenCookie();
+        httpServletResponse.addCookie(removedTokenCookie);
+
+        // 액세스 및 리프레시 토큰 유효시간 만료
+        expireToken(user, TokenType.ACCESS);
+        expireToken(user, TokenType.REFRESH);
+        userRepository.save(user);
+
+        log.info("[logout] 로그아웃 완료");
+    }
 
     // 3. 회원탈퇴
-    public void deleteAccount(Long userId, String inputPassword) {
+    public void deleteAccount(User user, String inputPassword, HttpServletResponse httpServletResponse) {
         log.info("[deleteAccount] 회원탈퇴 시도");
-
-        // 해당 userId를 가진 사용자 확인
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
         // 비밀번호 일치 여부 확인
         if (!passwordEncoder.matches(inputPassword, user.getPassword())) {
             throw new BaseException(BaseResponseStatus.PASSWORD_MISMATCH);
         }
 
-        // 회원탈퇴 진행
+        // 쿠키 내 액세스 토큰 삭제
+        Cookie removedTokenCookie = jwtTokenUtil.removeTokenCookie();
+        httpServletResponse.addCookie(removedTokenCookie);
         userRepository.delete(user);
 
         log.info("[deleteAccount] 회원탈퇴 완료");
     }
 
-    public void updateRefreshTokeninfo(User user, JwtTokenDto jwtTokenDto) {
-        user.updateRefreshToken(jwtTokenDto);
+    // 4. JWT 토큰 만료
+    public void expireToken(User user, TokenType tokenType) {
+        if (tokenType == TokenType.ACCESS) {
+            user.expireAccessTokenExpirationTime(LocalDateTime.now());
+        } else {
+            user.expireRefreshTokenExpirationTime(LocalDateTime.now());
+        }
+    }
+
+    // 5-1. 액세스 토큰 정보 업데이트
+    public void updateAccessToken(User user, JwtTokenInfo.AccessTokenInfo accessTokenInfo) {
+        user.updateAccessTokenInfo(accessTokenInfo);
         userRepository.save(user);
     }
 
-    // 해당 이메일을 가진 사용자 확인
+    // 5-2. 리프레시 토큰 정보 업데이트
+    public void updateRefreshToken(User user, JwtTokenInfo.RefreshTokenInfo refreshTokenInfo) {
+        user.updateRefreshTokenInfo(refreshTokenInfo);
+        userRepository.save(user);
+    }
+
+    // 6. 리프레시 토큰 유효 여부 확인
+    @Transactional(readOnly = true)
+    public boolean isRefreshTokenValid(String refreshToken) {
+        LocalDateTime refreshTokenExpirationTime = userRepository
+                .findRefreshTokenExpirationTimeByRefreshToken(refreshToken);
+        return !refreshTokenExpirationTime.isBefore(LocalDateTime.now());
+    }
+
+    // 7-1. 이메일 기반 유저 확인
     @Transactional(readOnly = true)
     public User findUserByEmail(String email) {
-        // 해당 이메일을 가진 사용자 확인
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+    }
+
+    // 7-2. 액세스 토큰 기반 유저 확인
+    @Transactional(readOnly = true)
+    public User findUserByAccessToken(String accessToken) {
+        return userRepository.findUserByAccessToken(accessToken)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.TOKEN_NOT_FOUND));
+    }
+
+    // [Test] 유저 정보 조회
+    @Transactional(readOnly = true)
+    public void getUserInfoForTest(String email) {
+        User user = findUserByEmail(email);
+        log.info("[getUserInfoAfterLogin] " + user.getUserType());
+        log.info("[getUserInfoAfterLogin] " + user.getEmail());
+        log.info("[getUserInfoAfterLogin] " + user.getAccessToken());
+        log.info("[getUserInfoAfterLogin] " + user.getAccessTokenExpirationTime());
+        log.info("[getUserInfoAfterLogin] " + user.getRefreshToken());
+        log.info("[getUserInfoAfterLogin] " + user.getRefreshTokenExpirationTime());
     }
 }

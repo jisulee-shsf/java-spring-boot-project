@@ -2,9 +2,10 @@ package com.giftforyoube.global.config;
 
 import com.giftforyoube.global.jwt.filter.JwtAuthenticationFilter;
 import com.giftforyoube.global.jwt.filter.JwtAuthorizationFilter;
-import com.giftforyoube.global.jwt.token.service.TokenManager;
+import com.giftforyoube.global.jwt.util.JwtTokenUtil;
 import com.giftforyoube.global.security.UserDetailsServiceImpl;
 import com.giftforyoube.user.repository.UserRepository;
+import com.giftforyoube.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -23,10 +24,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    private final TokenManager tokenManager;
+    private final JwtTokenUtil tokenUtil;
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -35,14 +37,14 @@ public class WebSecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserRepository userRepository) throws Exception {
-        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenManager, userRepository);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokenUtil, userService);
         filter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
         return filter;
     }
 
     @Bean
     public JwtAuthorizationFilter jwtAuthorizationFilter() {
-        return new JwtAuthorizationFilter(tokenManager, userDetailsService);
+        return new JwtAuthorizationFilter(tokenUtil, userDetailsService, userService);
     }
 
     @Bean

@@ -1,6 +1,6 @@
 package com.giftforyoube.user.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
@@ -10,7 +10,6 @@ import com.giftforyoube.user.service.GoogleUserService;
 import com.giftforyoube.user.service.KakaoUserService;
 import com.giftforyoube.user.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +20,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.UnsupportedEncodingException;
 
 @Slf4j
 @RestController
@@ -45,49 +42,65 @@ public class UserController {
                 .body(new BaseResponse<>(BaseResponseStatus.REGISTER_ACCOUNT_SUCCESS));
     }
 
-    // 2-1. 카카오 로그인
     @GetMapping("/kakao/callback")
     public ResponseEntity<BaseResponse<Void>> kakaoLogin(@RequestParam String code,
-                                                         HttpServletResponse httpServletResponse)
-            throws JsonProcessingException, UnsupportedEncodingException {
-        kakaoUserService.kakaoLogin(code, httpServletResponse);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS));
+                                                         HttpServletResponse httpServletResponse) {
+        try {
+            kakaoUserService.kakaoLogin(code, httpServletResponse);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_FAILED));
+        }
     }
 
     // 2-2. 구글 로그인
     @GetMapping("/login/oauth2/code/google")
     public ResponseEntity<BaseResponse<Void>> googleLogin(@RequestParam String code,
-                                                          HttpServletResponse httpServletResponse)
-            throws JsonProcessingException, UnsupportedEncodingException {
-        googleUserService.googleLogin(code, httpServletResponse);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_SUCCESS));
+                                                          HttpServletResponse httpServletResponse) {
+        try {
+            googleUserService.googleLogin(code, httpServletResponse);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_SUCCESS));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_FAILED));
+        }
     }
-//
-//    // 3. 로그아웃
-//    @PostMapping("/logout")
-//    public ResponseEntity<BaseResponse<Void>> logout(HttpServletRequest httpServletRequest) {
-//        userService.logout(httpServletRequest);
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(new BaseResponse<>(BaseResponseStatus.LOGOUT_SUCCESS));
-//    }
+
+    // 3. 로그아웃
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<Void>> logout(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                     HttpServletResponse httpServletResponse) {
+        try {
+            userService.logout(userDetails.getUser(), httpServletResponse);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new BaseResponse<>(BaseResponseStatus.LOGOUT_SUCCESS));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new BaseResponse<>(BaseResponseStatus.LOGOUT_FAILED));
+        }
+    }
 
     // 4. 회원탈퇴
     @DeleteMapping("/delete")
     public ResponseEntity<BaseResponse<Void>> deleteAccount(@Valid @RequestBody DeleteRequestDto deleteRequestDto,
-                                                            @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        userService.deleteAccount(userDetails.getUser().getId(), deleteRequestDto.getPassword());
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new BaseResponse<>(BaseResponseStatus.DELETE_ACCOUNT_SUCCESS));
+                                                            @AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                            HttpServletResponse httpServletResponse) {
+        try {
+            userService.deleteAccount(userDetails.getUser(), deleteRequestDto.getPassword(), httpServletResponse);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new BaseResponse<>(BaseResponseStatus.DELETE_ACCOUNT_SUCCESS));
+        } catch (BaseException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(BaseResponseStatus.DELETE_ACCOUNT_FAILED));
+        }
     }
 
-    // 0. 로그인 사용자 정보 조회(내부 테스트용)
-    @GetMapping("/user-info/test")
-    public void getUserInfoAfterLogin(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        log.info("[userDetails] getUser().getUserType(): " + userDetails.getUser().getUserType());
-        log.info("[userDetails] getUser().getEmail(): " + userDetails.getUser().getEmail());
-        log.info("[userDetails] getUser().getRefreshToken(): " + userDetails.getUser().getRefreshToken());
-        log.info("[userDetails] getUser().getTokenExpirationTime(): " + userDetails.getUser().getTokenExpirationTime());
+    // [Test] 유저 정보 조회
+    @GetMapping("/user-info")
+    public void getUserInfoForTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        userService.getUserInfoForTest(userDetails.getUser().getEmail());
     }
 }

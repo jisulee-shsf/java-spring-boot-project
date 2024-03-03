@@ -3,7 +3,7 @@ package com.giftforyoube.user.entity;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.global.common.BaseTimeEntity;
-import com.giftforyoube.global.jwt.dto.JwtTokenDto;
+import com.giftforyoube.global.jwt.dto.JwtTokenInfo;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -47,9 +47,14 @@ public class User extends BaseTimeEntity {
     private String googleId;
 
     @Column(length = 250)
+    private String accessToken;
+
+    private LocalDateTime accessTokenExpirationTime;
+
+    @Column(length = 250)
     private String refreshToken;
 
-    private LocalDateTime tokenExpirationTime;
+    private LocalDateTime refreshTokenExpirationTime;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Funding> fundings = new ArrayList<>();
@@ -59,8 +64,9 @@ public class User extends BaseTimeEntity {
 
     @Builder
     public User(Long id, String email, String password, String nickname, Boolean isEmailNotificationAgreed,
-                UserType userType, Long kakaoId, String googleId, String refreshToken,
-                LocalDateTime tokenExpirationTime, List<Funding> fundings, List<Donation> donations) {
+                UserType userType, Long kakaoId, String googleId, String accessToken,
+                LocalDateTime accessTokenExpirationTime, String refreshToken,
+                LocalDateTime refreshTokenExpirationTime, List<Funding> fundings, List<Donation> donations) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -69,8 +75,10 @@ public class User extends BaseTimeEntity {
         this.userType = userType;
         this.kakaoId = kakaoId;
         this.googleId = googleId;
+        this.accessToken = accessToken;
+        this.accessTokenExpirationTime = accessTokenExpirationTime;
         this.refreshToken = refreshToken;
-        this.tokenExpirationTime = tokenExpirationTime;
+        this.refreshTokenExpirationTime = refreshTokenExpirationTime;
         this.fundings = fundings;
         this.donations = donations;
     }
@@ -85,12 +93,21 @@ public class User extends BaseTimeEntity {
         return this;
     }
 
-    public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
-        this.refreshToken = jwtTokenDto.getRefreshToken();
-        this.tokenExpirationTime = convertToLocalDateTime(jwtTokenDto.getRefreshTokenExpireTime());
+    public void updateRefreshTokenInfo(JwtTokenInfo.RefreshTokenInfo refreshTokenInfo) {
+        this.refreshToken = refreshTokenInfo.getRefreshToken();
+        this.refreshTokenExpirationTime = convertToLocalDateTime(refreshTokenInfo.getRefreshTokenExpireTime());
     }
 
-    public void expireRefreshToken(LocalDateTime now) {
-        this.tokenExpirationTime = now;
+    public void updateAccessTokenInfo(JwtTokenInfo.AccessTokenInfo accessTokenInfo) {
+        this.accessToken = accessTokenInfo.getAccessToken();
+        this.accessTokenExpirationTime = convertToLocalDateTime(accessTokenInfo.getAccessTokenExpireTime());
+    }
+
+    public void expireRefreshTokenExpirationTime(LocalDateTime now) {
+        this.refreshTokenExpirationTime = now;
+    }
+
+    public void expireAccessTokenExpirationTime(LocalDateTime now) {
+        this.accessTokenExpirationTime = now;
     }
 }
