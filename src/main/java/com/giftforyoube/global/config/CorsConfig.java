@@ -23,8 +23,9 @@ public class CorsConfig {
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app",
                 "https://giftipie-vercel-qbjbn6707-torongs-projects.vercel.app/"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.addAllowedHeader("*");
-        config.addExposedHeader("*");
+//        config.addAllowedHeader("*");
+//        config.addExposedHeader("*");
+        config.addExposedHeader("Access-Control-Allow-Origin");
         config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setMaxAge(3600L);
