@@ -25,6 +25,8 @@ public class CorsConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.addAllowedHeader("*");
         config.addExposedHeader("*");
+        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept"));
+        config.setExposedHeaders(List.of("Authorization"));
         config.setMaxAge(3600L);
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
