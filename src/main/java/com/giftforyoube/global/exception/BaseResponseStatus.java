@@ -70,6 +70,8 @@ public enum BaseResponseStatus {
     UNAUTHORIZED_FINISHED_FUNDING(false, 4000, "펀딩 종료 권한이 없습니다."),
 
     // 2-5. 후원
+    DONATION_READY_FAILED(false, 4000, "후원 결제 준비에 실패했습니다."),
+    DONATION_APPROVE_FAILED(false, 4000, "후원 결제 승인에 실패했습니다."),
     DONATION_FAIL(false, 4000, "후원 결제에 실패했습니다."),
     DONATION_CANCEL(false, 4000, "후원 결제가 취소되었습니다."),
 
