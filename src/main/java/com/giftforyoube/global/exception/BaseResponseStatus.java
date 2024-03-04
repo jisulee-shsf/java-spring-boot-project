@@ -53,6 +53,7 @@ public enum BaseResponseStatus {
     AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다", HttpStatus.UNAUTHORIZED),
     REFRESH_TOKEN_EXPIRED(false, 4000, "리프레시 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     ACCESS_TOKEN_ISSUE_FAILED(false, 4000, "액세스 토큰 재발급에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+    NOT_FOUND_USERDETAILS(false, 4000, "유저의 정보를 찾을 수 없습니다."),
 
     // 2-3. 알림
     NOTIFICATION_NOT_FOUND(false, 4000, "알림을 찾을 수 없습니다."),
@@ -95,8 +96,7 @@ public enum BaseResponseStatus {
     NOTIFICATION_SEND_FAILED(false, 5000, "알림 전송에 실패했습니다."),
 
     // 3. 로그아웃
-    LOGOUT_FAILED(false, 4000, "로그아웃에 실패했습니다.");
-    NOTIFICATION_SEND_FAILED(false, 5000, "알림 전송에 실패했습니다."),
+    LOGOUT_FAILED(false, 4000, "로그아웃에 실패했습니다."),
     UNAUTHORIZED_GET_NOTIFICATION(false, 5000, "알림을 읽을 권한이 업습니다.");
 
     private final boolean isSuccess;
