@@ -42,7 +42,8 @@ public class UserController {
                 .body(new BaseResponse<>(BaseResponseStatus.REGISTER_ACCOUNT_SUCCESS));
     }
 
-    @GetMapping("/kakao/login")
+    // 2-1. 카카오 로그인
+    @GetMapping("/kakao/")
     public ResponseEntity<BaseResponse<Void>> kakaoLogin(@RequestParam String code,
                                                          HttpServletResponse httpServletResponse) {
         try {
