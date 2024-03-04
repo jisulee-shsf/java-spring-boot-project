@@ -2,6 +2,7 @@ package com.giftforyoube.notification.service;
 
 import com.giftforyoube.global.exception.BaseException;
 import com.giftforyoube.global.exception.BaseResponseStatus;
+import com.giftforyoube.notification.dto.MessageResponseDto;
 import com.giftforyoube.notification.dto.NotificationResponseDto;
 import com.giftforyoube.notification.dto.SubscribeDummyDto;
 import com.giftforyoube.notification.entity.Notification;
@@ -31,63 +32,90 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MailingService mailingService;
 
-    // subscribe
+    /**
+     * 사용자가 SSE(Server-Sent Events)를 통해 실시간 알림을 구독할 수 있도록 합니다.
+     * 이 메서드는 새 SseEmitter 객체를 생성하고, Nginx 버퍼링 문제를 회피하기 위한 헤더 설정,
+     * SSE 연결의 완료, 시간 초과, 에러 처리를 구성합니다.
+     * 또한, 클라이언트가 미수신한 이벤트가 있을 경우, 이를 전송하여 이벤트 유실을 방지합니다.
+     *
+     * @param username 로그인 중인 사용자의 이름
+     * @param lastEventId 클라이언트가 마지막으로 수신한 이벤트의 ID. 이는 미수신 이벤트 전송 로직에서 사용됩니다.
+     * @param response HttpServletResponse 객체, SSE 설정에 필요한 HTTP 헤더 설정에 사용
+     * @return SseEmitter 객체, 클라이언트에게 실시간 알림을 전송하기 위한 객체
+     */
     public SseEmitter sseSubscribe(String username, String lastEventId, HttpServletResponse response) {
+        log.info("sse 연결 시작...");
+
+        // 사용자별 고유 Emitter ID 생성. 현재 시간을 포함하여 중복 방지
         String emitterId = createTimeIncludeId(username);
 
-        // 클라이언트의 SSE 연결 요청에 응답하기 위한 SseEmitter 객체 생성
-        // 유효시간 지정으로 시간이 지나면 클라이언트에서 자동으로 재연결 요청
+        // SseEmitter 객체 생성 및 저장. 기본 타임아웃을 사용하여 자동 연결 종료 관리
         SseEmitter emitter = emitterRepository.save(emitterId, new SseEmitter(DEFAULT_TIMEOUT));
 
-        // Nginx Proxy에서의 필요설정. 불필요한 버퍼링 방지
+        // Nginx를 사용하는 환경에서 SSE 버퍼링 문제 해결을 위한 헤더 설정
         response.setHeader("X-Accel-Buffering", "no");
 
-        // SseEmitter 의 완료/시간초과/에러로 인한 전송 불가 시 sseEmitter 삭제
+        // SSE 연결 종료(완료, 시간 초과, 에러) 시 Emitter 저장소에서 해당 Emitter 삭제
         emitter.onCompletion(() -> emitterRepository.deleteAllEmitterStartWithId(emitterId));
         emitter.onTimeout(() -> emitterRepository.deleteAllEmitterStartWithId(emitterId));
         emitter.onError((e) -> emitterRepository.deleteAllEmitterStartWithId(emitterId));
 
+        // 신규 이벤트 ID 생성하여 구독 초기화 이벤트 발송
         String eventId = createTimeIncludeId(username);
-        // 수 많은 이벤트 들을 구분하기 위해 이벤트 ID에 시간을 통해 구분을 해줌
         sendNotification(emitter, eventId, emitterId, new SubscribeDummyDto(username));
 
-        // 클라이언트가 미수신한 Event 목록이 존재할 경우 전송하여 Event 유실을 예방
+        // 클라이언트가 이전에 놓친 이벤트가 있는 경우, 해당 이벤트 재전송. Event 유실을 예방
         if (hasLostData(lastEventId)) {
             sendLostData(lastEventId, username, emitterId, emitter);
         }
+        log.info("sse 연결 완료");
         return emitter;
     }
 
 
-    // 알람 send
-    @Async
+    /**
+     * 지정된 사용자에게 알림을 전송합니다. 이 메서드는 먼저 알림을 데이터베이스에 저장하고,
+     * 해당 사용자의 모든 SSE Emitter에 알림을 전송합니다.
+     * 사용자가 이메일 알림 수신에 동의한 경우, 이메일로도 알림을 발송합니다.
+     *
+     * @param receiver 알림을 받을 사용자 객체
+     * @param notificationType 알림의 유형 (펀딩 성공, 펀딩 시간 마감, 후원 발생)
+     * @param content 알림에 포함될 메시지 내용
+     * @param url 알림과 관련된 자원의 URL
+     * @throws BaseException 이메일 발송 실패 시 예외 발생
+     */
     public void send(User receiver, NotificationType notificationType, String content, String url) {
-        log.info("메세지 send 시작....");
-        // notification 객체 생성 후 db 저장
+        log.info("메세지 전송 시작...");
+
+        // 알림 객체 생성 및 DB에 저장
         Notification notification = createNotification(receiver, notificationType, content, url);
         Notification saveNotification = notificationRepository.save(notification);
 
-        String receiverId = receiver.getNickname();
+        // 알림을 받을 사용자의 ID를 기반으로 고유 이벤트 ID 생성
+        String receiverId = receiver.getEmail();
         String eventId = receiverId + "_" + System.currentTimeMillis();
 
-        // 특정 사용자의 모든 SseEmitter 호출하여 emitters 생성
+        // 해당 사용자의 모든 SSE Emitter 검색
         Map<String, SseEmitter> emitters = emitterRepository.findAllEmitterStartWithByUserId(receiverId);
 
-        // 호출된 emitter들을 EventCache에 각각 저장 후 각 emitter를 통해 sendNotification으로 알림을 보냄
-        // EventCache에 저장 -> 연결이 끊긴 후 다시 연결될 때 놓친 알림을 클라이언트에게 재 전송을 위함
+        // 각 Emitter에 알림 전송 및 이벤트 캐시에 저장하여 연결 중단 시 재전송 가능하게 함
         emitters.forEach(
                 (emitterId, emitter) -> {
                     emitterRepository.saveEventCache(emitterId, saveNotification);
-                    sendNotification(emitter, eventId, emitterId, new NotificationResponseDto(saveNotification.getId(),
-                            saveNotification.getContent(), saveNotification.getUrl(),
-                            saveNotification.getNotificationType(), saveNotification.getIsRead()));
+                    sendNotification(emitter, eventId, emitterId, new MessageResponseDto(
+                            saveNotification.getId(),
+                            saveNotification.getContent(),
+                            saveNotification.getUrl(),
+                            saveNotification.getNotificationType(),
+                            saveNotification.getIsRead(),
+                            saveNotification.getCreatedAt()));
                 }
         );
+        log.info("메세지 전송 완료");
 
-        // 이메일 수신 동의 했을때
+        // 사용자가 이메일 알림 수신에 동의한 경우, 이에일로 알림 발송
         if (saveNotification.getReceiver().getIsEmailNotificationAgreed()) {
-            log.info("sse 메시지 발송 완료. 알림 이메일 발송 시작");
-            // 이메일 알림 발송
+            log.info("알림 이메일 발송 시작");
             try {
                 mailingService.sendNotificationEmail(saveNotification);
             } catch (MessagingException e) {
@@ -96,7 +124,15 @@ public class NotificationService {
         }
     }
 
-    // 알림 객체 생성
+    /**
+     * 사용자에게 보낼 알림 객체를 생성합니다.
+     *
+     * @param receiver 알림을 받을 사용자 객체
+     * @param notificationType 알림의 유형
+     * @param content 알림에 포함될 내용
+     * @param url 알림과 관련된 URL
+     * @return 생성된 Notification 객체
+     */
     private Notification createNotification(User receiver, NotificationType notificationType, String content, String url) {
         return Notification.builder()
                 .receiver(receiver)
@@ -107,7 +143,15 @@ public class NotificationService {
                 .build();
     }
 
-    // 누락된 데이터 전송
+    /**
+     * 사용자에게 누락된 알림 데이터를 전송합니다.
+     * 마지막으로 수신한 이벤트 ID 이후의 모든 이벤트를 조회하여 전송합니다.
+     *
+     * @param lastEventId 사용자가 마지막으로 수신한 이벤트의 ID
+     * @param username 사용자의 이름
+     * @param emitterId 이벤트를 전송할 SseEmitter의 ID
+     * @param emitter 이벤트를 전송할 SseEmitter 객체
+     */
     private void sendLostData(String lastEventId, String username, String emitterId, SseEmitter emitter) {
         Map<String, Object> eventCaches = emitterRepository.findAllEventCacheStartWithByUserId(username); // 이벤트 캐시 조회
         eventCaches.entrySet().stream()
@@ -115,12 +159,26 @@ public class NotificationService {
                 .forEach(entry -> sendNotification(emitter, entry.getKey(), emitterId, entry.getValue())); // 놓친 이벤트 전송
     }
 
-    // 누락된 데이터 확인
+    /**
+     * 주어진 lastEventId가 비어있지 않은지 확인하여, 누락된 데이터가 있는지 여부를 반환합니다.
+     *
+     * @param lastEventId 사용자가 마지막으로 수신한 이벤트의 ID
+     * @return 누락된 데이터가 있으면 true, 그렇지 않으면 false
+     */
     private boolean hasLostData(String lastEventId) {
         return !lastEventId.isEmpty();
     }
 
-    // 알림 발송
+    /**
+     * 주어진 SseEmitter를 사용하여 알림을 전송합니다.
+     * 전송 중 오류가 발생하면, 해당 emitter를 삭제하고 예외를 발생시킵니다.
+     *
+     * @param emitter 알림을 전송할 SseEmitter 객체
+     * @param eventId 알림 이벤트의 ID
+     * @param emitterId 알림을 전송할 SseEmitter의 ID
+     * @param data 전송할 데이터
+     * @throws BaseException 알림 전송 실패 시
+     */
     private void sendNotification(SseEmitter emitter, String eventId, String emitterId, Object data) {
         try {
             emitter.send(SseEmitter.event()
@@ -130,10 +188,18 @@ public class NotificationService {
             );
         } catch (IOException exception) {
             emitterRepository.deleteById(emitterId);
-            throw new BaseException(BaseResponseStatus.NOTIFICATION_SEND_FAILED);
+//            throw new BaseException(BaseResponseStatus.NOTIFICATION_SEND_FAILED);
+            throw new RuntimeException("sse send failed" + exception);
         }
     }
 
+    /**
+     * 사용자명과 현재 시간을 결합하여 고유한 ID를 생성합니다.
+     * 이 ID는 알림이나 이벤트의 식별자로 사용될 수 있습니다.
+     *
+     * @param username 사용자명
+     * @return 생성된 고유 ID 문자열
+     */
     private String createTimeIncludeId(String username) {
         return username + "_" + System.currentTimeMillis();
     }
@@ -145,38 +211,72 @@ public class NotificationService {
         return notificationList.stream().map(NotificationResponseDto::new).toList();
     }
 
-    // 알림 읽음처리
+    /**
+     * 지정된 알림을 읽음으로 표시합니다. 사용자가 해당 알림의 수신자인 경우에만 읽음 처리가 가능합니다.
+     *
+     * @param user 알림을 읽으려는 사용자 객체
+     * @param notificationId 읽음 처리할 알림의 ID
+     * @return 읽음 처리된 알림에 대한 응답 DTO
+     * @throws BaseException 알림이 존재하지 않거나, 사용자가 알림의 수신자가 아닐 경우 예외 발생
+     */
     @Transactional
     public NotificationResponseDto readNotification(User user, Long notificationId) {
+        // 알림 ID로 알림 객체 조회, 없으면 예외 발생
         Notification notification = notificationRepository.findById(notificationId).orElseThrow(
                 () -> new BaseException(BaseResponseStatus.NOTIFICATION_NOT_FOUND));
 
+        // 요청한 사용자가 알림의 수신자가 아니면 권한 예외 발생
         if (!notification.getReceiver().getId().equals(user.getId())) {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_READ_NOTIFICATION);
         }
 
+        // 알림을 읽음으로 표시 후 저장
         notification.setIsRead(true);
         Notification saveNotification = notificationRepository.save(notification);
+
         return new NotificationResponseDto(saveNotification);
     }
 
-    // 해당 유저 읽은 알림 메세지 전체 삭제
+    /**
+     * 사용자가 읽은 모든 알림 메시지를 삭제합니다. 사용자에게 읽은 알림이 없을 경우 예외를 발생시킵니다.
+     *
+     * @param user 알림을 삭제할 사용자 객체
+     * @throws BaseException 읽은 알림 메시지가 존재하지 않을 경우 예외 발생
+     */
     @Transactional
     public void deleteNotificationIsReadTrue(User user) {
-        List<Notification> notificationList = notificationRepository.findAllByReceiver(user);
+        // 사용자의 읽은 모든 알림 조회
+        List<Notification> notificationList = notificationRepository.findAllByReceiverAndIsReadTrue(user);
+        log.info(notificationList.toString());
+
+        // 읽은 알림이 없으면 예외 발생
+        if (notificationList.isEmpty()) {
+            throw new BaseException(BaseResponseStatus.READ_NOTIFICATION_LIST_NOT_FOUND);
+        }
+
+        // 조회된 읽은 알림들을 전부 삭제
         notificationRepository.deleteAll(notificationList);
     }
 
-    // 해당 유저 원하는 알림 메세지 삭제
+    /**
+     * 사용자가 지정한 특정 알림 메시지를 삭제합니다. 사용자가 해당 알림의 수신자인 경우에만 삭제가 가능합니다.
+     *
+     * @param user 알림을 삭제하려는 사용자 객체
+     * @param notificationId 삭제할 알림의 ID
+     * @throws BaseException 알림이 존재하지 않거나, 사용자가 알림의 수신자가 아닐 경우 예외 발생
+     */
     @Transactional
     public void deleteNotification(User user, Long notificationId) {
+        // 알림 ID로 알림 객체 조회, 없으면 예외 발생
         Notification notification = notificationRepository.findById(notificationId).orElseThrow(
                 () -> new BaseException(BaseResponseStatus.NOTIFICATION_NOT_FOUND));
 
+        // 요청한 사용자가 알림의 수신자가 아니면 권한 예외 발생
         if (!notification.getReceiver().getId().equals(user.getId())) {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_DELETE_NOTIFICATION);
         }
 
+        // 조건을 만족하는 경우 해당 알림 삭제
         notificationRepository.delete(notification);
     }
 }
