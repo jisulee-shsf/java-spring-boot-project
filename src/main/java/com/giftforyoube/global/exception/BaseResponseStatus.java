@@ -28,8 +28,8 @@ public enum BaseResponseStatus {
     DONATION_RANKING_DELIVERY_SUCCESS(true, 2000, "후원 랭킹 전달이 완료되었습니다."),
     DONATION_READY_SUCCESS(true, 2000, "후원 결제준비 요청이 완료되었습니다."),
     DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제승인 요청이 완료되었습니다."),
-    DONATION_FAIL(false, 4000, "후원 결제에 실패했습니다."),
-    DONATION_CANCEL(false, 4000, "후원 결제가 취소되었습니다."),
+    DONATION_CANCEL(true, 2000, "후원 결제가 취소되었습니다."), // 클라이언트 요청으로 true 설정
+    DONATION_FAIL(true, 2000, "후원 결제에 실패했습니다."), // 클라이언트 요청으로 true 설정
 
     /**
      * 2. 클라이언트 에러가 발생한 경우(4000)
