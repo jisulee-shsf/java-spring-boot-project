@@ -27,7 +27,7 @@
 | 고훈(VL) | 펀딩 CRUD, SWAGGER, S3 이미지 업로드 기능, 펀딩 리스트 (전체, 진행중, 완료된 펀딩) 페이지네이션 기능 및 무한스크롤 기능 구현, 구글 애널리틱스 연동 | https://github.com/LyricZen | 
 | 현민영 | CI-CD, AWS 서버 관리, Nginx, SSL, 모니터링 구현, 펀딩 수정/삭제, 내 펀딩 조회, 실시간 알림기능(SSE), 알림 이메일 발송, 회원가입 시 이메일 검증 메일 기능, 테스트코드 작성(NotificationService), UT 총무 | https://github.com/95hyun |
 | 김도현 | 펀딩 CRUD, Redis 캐시 적용 및 캐시 무효화, 메타 태그 크롤링을 통한 링크 상품 이미지 등록, Scheduler를 이용한 펀딩 자동 갱신, 펀딩 통계(Summary) 계산, D-Day 및 목표 금액 달성율 계산, Redisson 락 적용(링크 상품 등록, 펀딩 생성/수정/삭제) | https://github.com/DoKkangs |
-| 이지수 | 회원가입, 로그인(Spring Security), 로그아웃, 회원탈퇴 기능 구현 / Spring Security 기반 인증 및 인가 기능 구현 / Social Login(Kakao & Google) 기능 구현 / Access & Refresh token 사용 로직 설계 및 기능 구현 / Kakaopay 온라인 결제 API & Kakaopay 데모 연동을 통한 결제 기능(준비 & 승인) 구현 / Global Exception Handler를 사용한 전역 예외 처리 기능 구현 / Github Organization 생성 및 관리 | https://github.com/jisulee-shsf |
+| 이지수 | 회원가입, 로그인(Spring Security), 로그아웃, 회원탈퇴 기능 구현 / Spring Security 기반 인증 및 인가 기능 구현 / 소셜 로그인(Kakao & Google) 기능 구현 / Access & Refresh token 사용 로직 설계 및 기능 구현 / Kakaopay 온라인 결제 API & Kakaopay 데모 연동을 통한 결제 기능(준비 & 승인) 구현 / Global Exception Handler를 사용한 전역 예외 처리 기능 구현 / Github Organization 생성 및 관리 | https://github.com/jisulee-shsf |
 
 
 ## 📆 프로젝트 기간
@@ -53,7 +53,7 @@
 | Blue-Green | 사용자에게 영향을 주지 않으면서 신규 버전을 안전하게 테스트하고 점진적으로 전환할 수 있으며, blue-green 두 환경이 독립적이기 때문에 새 버전의 오류가 기존 시스템에 영향을 미치지 않는 이점으로 해당 기술을 선택하였습니다. |
 | Nginx | 한정된 예산을 사용하는 상황에서 하나의 EC2 인스턴스로 서버를 구축하였기 때문에, nginx의 리버스 프록시 기능을 통해 한대의 서버로 무중단배포를 구현하였습니다. |
 | SSE (Server-Sent Events) | 서버에서 클라이언트로의 메세지 전달만 필요했기 때문에 단방향 통신 기술인 SSE가 가장 적합한 기술이라 판단하여 선택하였습니다. |
-| Social Login (Kakao, Google) | 펀딩 후원에 참여하기 위해 다수가 접근할 수 있는 점을 고려하여, 사용자의 접근성에 중점을 둔 Social Login(Kakao & Google) 기능 구현을 선택하였습니다.  |
+| Social Login(Kakao, Google) | 펀딩 후원에 참여하기 위해 다수가 접근할 수 있는 점을 고려하여, 사용자의 접근성에 중점을 둔 소셜 로그인(Kakao & Google) 기능 구현을 선택하였습니다.  |
 | Spring Security | 인증되지 않은 불특정 다수가 접근할 수 있는 점을 고려하여, 개인정보 보안성에 중점을 둔 Spring Security 기반의 로그인 기능 구현을 선택하였습니다. |
 | Kakaopay Online Payment API | 원하는 펀딩에 후원을 진행하고, 후원 결제 내역을 수집하기 위해 Kakaopay 온라인 결제 기능 구현을 선택하였습니다. |
 | Redis | 사용자들에게 빈번하게 보여지는 정보들은 캐시를 적용하여 처리하면 성능 개선을 할 수 있을 것이라고 생각하였고, 추후 사용자가 늘어남에 따라 동시성 문제도 발생할 수 있다고 생각하여 이를 제어할 수 있는 기능을 제공하는 해당 기술을 선택하였습니다. |
@@ -102,9 +102,7 @@ CI-CD를 통해 자동으로 배포가 이루어질 때, 포트 전환이 되면
 
 만료된 access token에서 claim을 추출할 경우, ServletException이 지속적으로 발생함
 
-이에 클라이언트가 만료된 access token으로 API를 요청할 경우, 
-
-유저를 식별하는 email을 추출하지 못해 아래 로직을 수행하지 못함
+이에 클라이언트가 만료된 access token으로 API를 요청할 경우, 유저를 식별하는 email을 추출하지 못해 아래 로직을 수행하지 못함
 
 - claim 내 email로 DB 내 refresh token 유효 여부를 판별할 수 없음
 - claim 내 email로 새로운 access token 재발급이 불가함
@@ -117,9 +115,7 @@ CI-CD를 통해 자동으로 배포가 이루어질 때, 포트 전환이 되면
 
 로그인 시 발급된 access token을 DB에 저장함
 
-이에 클라이언트가 만료된 access token으로 API를 요청할 경우, 
-
-만료된 access token으로 유저를 식별해 아래 로직을 수행함
+이에 클라이언트가 만료된 access token으로 API를 요청할 경우, 만료된 access token으로 유저를 식별해 아래 로직을 수행함
 
 - 식별된 유저의 refresh token으로 DB 내 refresh token 유효 여부를 판별함
 - 식별된 유저의 email로 새로운 access token을 재발급함
@@ -230,7 +226,7 @@ public RedisSerializer<Object> customRedisSerializer() {
 
 - 실제 사용 중인 이메일인지 인증 메일을 발송하고, 인증 코드를 발급하여 메일을 인증할 수 있습니다.
     
-### 📌 소셜 로그인 (Kakao, Google)
+### 📌 소셜 로그인(Kakao, Google)
     
 ![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/04c830ba-a8ed-4ae9-8376-b8ec1eb68e29)
     
