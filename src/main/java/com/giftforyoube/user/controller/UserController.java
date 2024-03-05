@@ -43,7 +43,7 @@ public class UserController {
     }
 
     // 2-1. 카카오 로그인
-    @GetMapping("/kakao/callback")
+    @GetMapping("/kakao/login")
     public ResponseEntity<BaseResponse<Void>> kakaoLogin(@RequestParam String code,
                                                          HttpServletResponse httpServletResponse) {
         try {
