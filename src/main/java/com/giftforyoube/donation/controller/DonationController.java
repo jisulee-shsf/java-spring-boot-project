@@ -91,16 +91,16 @@ public class DonationController {
 
     // 3-2. 후원 결제 취소
     @GetMapping("/donation/cancel")
-    public ResponseEntity<BaseResponse<Void>> cancelDonation() {
+    public ResponseEntity<BaseResponse<Long>> cancelDonation() {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new BaseResponse<>(BaseResponseStatus.DONATION_CANCEL));
+                .body(new BaseResponse<>(BaseResponseStatus.DONATION_CANCEL, fundingId));
     }
 
     // 3-3. 후원 결제 실패
     @GetMapping("/donation/fail")
-    public ResponseEntity<BaseResponse<Void>> failDonation() {
+    public ResponseEntity<BaseResponse<Long>> failDonation() {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new BaseResponse<>(BaseResponseStatus.DONATION_FAIL));
+                .body(new BaseResponse<>(BaseResponseStatus.DONATION_FAIL, fundingId));
     }
 
     // 4-1. 후원 정보 리스트 조회
