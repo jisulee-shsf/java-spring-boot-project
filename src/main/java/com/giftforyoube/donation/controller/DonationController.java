@@ -67,7 +67,7 @@ public class DonationController {
 
     // 3-1. 후원 결제 승인
     @GetMapping("/donation/approve")
-    public ResponseEntity<BaseResponse<Void>> approveDonation(@RequestParam("pg_token") String pgToken,
+    public ResponseEntity<BaseResponse<Long>> approveDonation(@RequestParam("pg_token") String pgToken,
                                                               @AuthenticationPrincipal UserDetailsImpl userDetails) {
         try {
             String tid = (String) session.getAttribute("tid");
@@ -82,7 +82,7 @@ public class DonationController {
                 log.error("SSE 알림 error: ", e);
             }
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS));
+                    .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, fundingId));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_FAILED));
