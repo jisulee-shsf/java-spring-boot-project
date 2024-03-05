@@ -2,102 +2,117 @@ package com.giftforyoube.user.entity;
 
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.funding.entity.Funding;
+import com.giftforyoube.global.common.BaseTimeEntity;
+import com.giftforyoube.global.jwt.dto.JwtTokenInfo;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.giftforyoube.global.jwt.util.DateTimeUtil.convertToLocalDateTime;
 
 @Entity
 @Getter
 @NoArgsConstructor
-@Component
-public class User {
+public class User extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true, nullable = false, length = 50)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String nickname;
 
-    @Column
+    @Column(length = 20)
     private Boolean isEmailNotificationAgreed = false;
 
-    // User 엔티티를 저장할 때 자동으로 연결된 Funding 엔티티도 저장되도록 cascade = CascadeType.ALL
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private UserType userType;
+
+    @Column(length = 20)
+    private Long kakaoId;
+
+    @Column(length = 50)
+    private String googleId;
+
+    @Column(length = 250)
+    private String accessToken;
+
+    private LocalDateTime accessTokenExpirationTime;
+
+    @Column(length = 250)
+    private String refreshToken;
+
+    private LocalDateTime refreshTokenExpirationTime;
+
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Funding> fundings = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Donation> donations = new ArrayList<>();
 
-    @Column
-    private Long kakaoId;
-
-    @Column
-    private String kakaoAccessToken;
-
-    @Column
-    private String googleId;
-
-    @Column
-    private String googleAccessToken;
-
-    // 1. 일반 회원가입
-    public User(String email, String password, String nickname, Boolean isEmailNotificationAgreed) {
+    @Builder
+    public User(Long id, String email, String password, String nickname, Boolean isEmailNotificationAgreed,
+                UserType userType, Long kakaoId, String googleId, String accessToken,
+                LocalDateTime accessTokenExpirationTime, String refreshToken,
+                LocalDateTime refreshTokenExpirationTime, List<Funding> fundings, List<Donation> donations) {
+        this.id = id;
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.isEmailNotificationAgreed = isEmailNotificationAgreed;
-    }
-
-    // 2-1. 카카오 로그인
-    public User(String email, String password, String nickname, Long kakaoId, String kakaoAccessToken, Boolean isEmailNotificationAgreed) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
+        this.userType = userType;
         this.kakaoId = kakaoId;
-        this.kakaoAccessToken = kakaoAccessToken;
-        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
+        this.googleId = googleId;
+        this.accessToken = accessToken;
+        this.accessTokenExpirationTime = accessTokenExpirationTime;
+        this.refreshToken = refreshToken;
+        this.refreshTokenExpirationTime = refreshTokenExpirationTime;
+        this.fundings = fundings;
+        this.donations = donations;
     }
 
-    public User kakaoIdAndAccessTokenUpdate(Long kakaoId, String kakaoAccessToken) {
+    public User updateKakaoId(Long kakaoId) {
         this.kakaoId = kakaoId;
-        this.kakaoAccessToken = kakaoAccessToken;
         return this;
     }
 
-    public User kakaoAccessTokenUpdate(String kakaoAccessToken) {
-        this.kakaoAccessToken = kakaoAccessToken;
-        return this;
-    }
-
-    // 2-2. 구글 로그인
-    public User(String email, String password, String nickname, String googleId, String googleAccessToken, Boolean isEmailNotificationAgreed) {
-        this.email = email;
-        this.password = password;
-        this.nickname = nickname;
+    public User updateGoogleId(String googleId) {
         this.googleId = googleId;
-        this.googleAccessToken = googleAccessToken;
-        this.isEmailNotificationAgreed = isEmailNotificationAgreed;
-    }
-
-    public User googleIdAndAccessTokenUpdate(String googleId, String googleAccessToken) {
-        this.googleId = googleId;
-        this.googleAccessToken = googleAccessToken;
         return this;
     }
 
-    public User googleAccessTokenUpdate(String googleAccessToken) {
-        this.googleAccessToken = googleAccessToken;
-        return this;
+    public void updateRefreshTokenInfo(JwtTokenInfo.RefreshTokenInfo refreshTokenInfo) {
+        this.refreshToken = refreshTokenInfo.getRefreshToken();
+        this.refreshTokenExpirationTime = convertToLocalDateTime(refreshTokenInfo.getRefreshTokenExpireTime());
+    }
+
+    public void updateAccessTokenInfo(JwtTokenInfo.AccessTokenInfo accessTokenInfo) {
+        this.accessToken = accessTokenInfo.getAccessToken();
+        this.accessTokenExpirationTime = convertToLocalDateTime(accessTokenInfo.getAccessTokenExpireTime());
+    }
+
+    public void expireRefreshTokenExpirationTime(LocalDateTime now) {
+        this.refreshTokenExpirationTime = now;
+    }
+
+    public void expireAccessTokenExpirationTime(LocalDateTime now) {
+        this.accessTokenExpirationTime = now;
+    }
+
+    // 테스트코드용 //
+    public void setId(Long id) {
+        this.id = id;
     }
 }

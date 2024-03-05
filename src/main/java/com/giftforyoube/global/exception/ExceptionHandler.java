@@ -11,7 +11,7 @@ public class ExceptionHandler {
     @org.springframework.web.bind.annotation.ExceptionHandler(value = {BaseException.class})
     protected ResponseEntity<BaseResponse<?>> handleBaseException(BaseException e) {
         BaseResponseStatus status = e.getStatus();
-        HttpStatus httpStatus = HttpStatus.resolve(status.getCode());
+        HttpStatus httpStatus = status.getHttpStatus();
 
         if (httpStatus == null) {
             httpStatus = HttpStatus.BAD_REQUEST;

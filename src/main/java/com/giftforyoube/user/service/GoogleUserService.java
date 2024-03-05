@@ -3,11 +3,15 @@ package com.giftforyoube.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.giftforyoube.global.jwt.JwtUtil;
-import com.giftforyoube.user.dto.GoogleUserInfoDto;
+import com.giftforyoube.global.jwt.dto.JwtTokenInfo;
+import com.giftforyoube.global.jwt.util.JwtTokenUtil;
+import com.giftforyoube.user.dto.OauthUserInfoDto;
 import com.giftforyoube.user.entity.User;
+import com.giftforyoube.user.entity.UserType;
 import com.giftforyoube.user.repository.UserRepository;
-import lombok.Getter;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +19,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -22,27 +27,18 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.UUID;
 
 @Slf4j
 @Service
-public class GoogleService {
+@RequiredArgsConstructor
+public class GoogleUserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
-    private final JwtUtil jwtUtil;
-
-    @Getter
-    private String googleAccessToken;
-
-    public GoogleService(PasswordEncoder passwordEncoder, UserRepository userRepository, RestTemplate restTemplate, JwtUtil jwtUtil) {
-        this.passwordEncoder = passwordEncoder;
-        this.userRepository = userRepository;
-        this.restTemplate = restTemplate;
-        this.jwtUtil = jwtUtil;
-    }
+    private final JwtTokenUtil jwtTokenUtil;
+    private final UserService userService;
 
     @Value("${google.client.id}")
     private String clientId;
@@ -51,19 +47,16 @@ public class GoogleService {
     @Value("${google.redirect.uri}")
     private String redirectUri;
 
-    public String googleLogin(String code) throws JsonProcessingException, UnsupportedEncodingException {
+    // 구글 유저 로그인 처리
+    public void googleLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
         log.info("[googleLogin] 구글 로그인 시도");
 
         String googleAccessToken = getGoogleAccessToken(code);
-        GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
-        User googleUser = registerGoogleUserIfNeeded(googleUserInfoDto);
-
-        String googleToken = jwtUtil.createToken(googleUser.getEmail());
-        googleToken = URLEncoder.encode(googleToken, "UTF-8").replaceAll("\\+", "%20");
-        return googleToken;
+        OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
+        registerGoogleUserIfNeeded(googleUserInfoDto, httpServletResponse);
     }
 
-    // 1. 구글 access token 요청
+    // 1. 구글 액세스 토큰 요청
     private String getGoogleAccessToken(String code) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://oauth2.googleapis.com/token")
@@ -86,12 +79,11 @@ public class GoogleService {
 
         JsonNode jsonNode = new ObjectMapper().readTree(response.getBody());
         String googleAccessToken = jsonNode.get("access_token").asText();
-        this.googleAccessToken = googleAccessToken;
         return googleAccessToken;
     }
 
-    // 2. 구글 사용자 정보 요청
-    private GoogleUserInfoDto getGoogleUserInfo(String googleAccessToken) throws JsonProcessingException {
+    // 2. 구글 유저 정보 요청
+    private OauthUserInfoDto.GoogleUserInfoDto getGoogleUserInfo(String googleAccessToken) throws JsonProcessingException {
         URI uri = UriComponentsBuilder
                 .fromUriString("https://www.googleapis.com/oauth2/v2/userinfo")
                 .queryParam("access_token", googleAccessToken)
@@ -100,12 +92,15 @@ public class GoogleService {
                 .toUri();
 
         ResponseEntity<String> ResponseEntity = restTemplate.getForEntity(uri, String.class);
-        GoogleUserInfoDto googleUserInfoDto = new ObjectMapper().readValue(ResponseEntity.getBody(), GoogleUserInfoDto.class);
+        OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = new ObjectMapper()
+                .readValue(ResponseEntity.getBody(), OauthUserInfoDto.GoogleUserInfoDto.class);
         return googleUserInfoDto;
     }
 
-    // 3. 구글 사용자 등록
-    private User registerGoogleUserIfNeeded(GoogleUserInfoDto googleUserInfoDto) {
+    // 3. 구글 유저 등록
+    @Transactional
+    public void registerGoogleUserIfNeeded(OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto,
+                                           HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
         String googleId = googleUserInfoDto.getId();
         User googleUser = userRepository.findByGoogleId(googleId).orElse(null);
 
@@ -114,17 +109,35 @@ public class GoogleService {
             User sameEmailUser = userRepository.findByEmail(googleEmail).orElse(null);
             if (sameEmailUser != null) {
                 googleUser = sameEmailUser;
-                googleUser = googleUser.googleIdAndAccessTokenUpdate(googleId, googleAccessToken);
+                googleUser = googleUser.updateGoogleId(googleId);
+
             } else {
                 String password = UUID.randomUUID().toString();
                 String encodedPassword = passwordEncoder.encode(password);
-                googleUser = new User(googleUserInfoDto.getEmail(), encodedPassword, googleUserInfoDto.getName(), googleId, googleAccessToken, false);
+                googleUser = User.builder()
+                        .email(googleUserInfoDto.getEmail())
+                        .password(encodedPassword)
+                        .nickname(googleUserInfoDto.getName())
+                        .isEmailNotificationAgreed(false)
+                        .userType(UserType.GOOGLE_USER)
+                        .googleId(googleId)
+                        .build();
             }
         }
 
-        googleUser = googleUser.googleAccessTokenUpdate(googleAccessToken);
-        userRepository.save(googleUser);
+        // 이메일 기반 JWT 토큰 정보 생성
+        String email = googleUser.getEmail();
+        JwtTokenInfo.AccessTokenInfo accessTokenInfo = jwtTokenUtil.createAccessTokenInfo(email);
+        JwtTokenInfo.RefreshTokenInfo refreshTokenInfo = jwtTokenUtil.createRefreshTokenInfo(email);
+
+        // 액세스 토큰을 쿠키에 추가해 반환
+        Cookie jwtCookie = jwtTokenUtil.addTokenToCookie(accessTokenInfo.getAccessToken());
+        httpServletResponse.addCookie(jwtCookie);
+        log.info("[googleLogin] 쿠키 전달 완료");
+
+        // JWT 토큰 정보 업데이트
+        userService.updateAccessToken(googleUser, accessTokenInfo);
+        userService.updateRefreshToken(googleUser, refreshTokenInfo);
         log.info("[googleLogin] 구글 로그인 완료");
-        return googleUser;
     }
 }

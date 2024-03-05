@@ -6,7 +6,6 @@ import lombok.Getter;
 public class BaseException extends RuntimeException {
 
     private BaseResponseStatus status;
-    private String message;
 
     public BaseException(BaseResponseStatus status) {
         super(status.getMessage());
