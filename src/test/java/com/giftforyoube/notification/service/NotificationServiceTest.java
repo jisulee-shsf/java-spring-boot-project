@@ -51,11 +51,18 @@ class NotificationServiceTest {
     @BeforeEach
     void setUp() {
         // 테스트를 위한 데이터 세팅
-        receiver = new User("user@example.com", "password", "testNickname", true);
+        receiver = User.builder()
+                .email("user@example.com")
+                .password("password")
+                .nickname("testNickname")
+                .isEmailNotificationAgreed(true)
+                .build();
+
         receiver.setId(1L);
         notificationType = NotificationType.DONATION;
         content = "Test content";
         url = "test.com";
+
         notification = Notification.builder()
                 .receiver(receiver)
                 .notificationType(notificationType)
@@ -99,7 +106,7 @@ class NotificationServiceTest {
         // then : 이메일이 전송되었는지 확인
         verify(mailingService, times(1)).sendNotificationEmail(any(Notification.class));
         // then : SSE Emitter 저장소가 조회되었는지 확인
-        verify(emitterRepository, times(1)).findAllEmitterStartWithByUserId(receiver.getNickname());
+        verify(emitterRepository, times(1)).findAllEmitterStartWithByUserId(receiver.getEmail());
     }
 
     @Test
