@@ -55,7 +55,7 @@
 | SSE (Server-Sent Events) | 서버에서 클라이언트로의 메세지 전달만 필요했기 때문에 단방향 통신 기술인 SSE가 가장 적합한 기술이라 판단하여 선택하였습니다. |
 | Social Login (Kakao, Google) | 펀딩 후원에 참여하기 위해 다수가 접근할 수 있는 점을 고려하여, 사용자의 접근성에 중점을 둔 Social Login(Kakao & Google) 기능 구현을 선택하였습니다.  |
 | Spring Security | 인증되지 않은 불특정 다수가 접근할 수 있는 점을 고려하여, 개인정보 보안성에 중점을 둔 Spring Security 기반의 로그인 기능 구현을 선택하였습니다. |
-| Kakaopay 온라인 결제 API | 원하는 펀딩에 후원을 진행하고, 후원 결제 내역을 수집하기 위해 Kakaopay 온라인 결제 기능 구현을 선택하였습니다. |
+| Kakaopay Online Payment API | 원하는 펀딩에 후원을 진행하고, 후원 결제 내역을 수집하기 위해 Kakaopay 온라인 결제 기능 구현을 선택하였습니다. |
 | Redis | 사용자들에게 빈번하게 보여지는 정보들은 캐시를 적용하여 처리하면 성능 개선을 할 수 있을 것이라고 생각하였고, 추후 사용자가 늘어남에 따라 동시성 문제도 발생할 수 있다고 생각하여 이를 제어할 수 있는 기능을 제공하는 해당 기술을 선택하였습니다. |
 | Meta tag 크롤링 | 사용자가 이미지를 직접 등록하는 것보다는 링크를 입력해서 자동으로 해당 페이지의 링크나 사진을 가져오는게 편할 것이라고 생각하여 기술을 선택하였습니다. |
 | Prometheus, Grafana, Node Exporter, Slack | 한정된 예산 상황에 맞춰 낮은 성능의 서버로 개발을 진행한 상태라, 유저테스트 시 서버 상태를 모니터링하여 스케일업을 대비하기 위해 기술을 선택하였습니다.  |
@@ -221,8 +221,8 @@ public RedisSerializer<Object> customRedisSerializer() {
 |:--:|:--:|
 |![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/cbb377ee-2f31-4e31-b42b-bd6f430c8e3a)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/10deb040-250b-4881-b3d4-4bcca6f6eb0a)|
 
-- 유효성 검증과 약관 동의를 포함된 회원가입 기능을 구현했습니다.
-- 개인정보 보안성에 중점을 둔 Spring Security 기반의 로그인 기능을 구현했습니다.
+- 유효성 검증과 약관 동의가 포함된 회원가입을 할 수 있습니다.
+- Spring Security로 사용자의 개인정보 보안성에 중점을 둔 로그인을 할 수 있습니다.
 
 ### 📌 일반 회원가입 시 이메일 인증
 
@@ -234,7 +234,7 @@ public RedisSerializer<Object> customRedisSerializer() {
     
 ![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/04c830ba-a8ed-4ae9-8376-b8ec1eb68e29)
     
-- 사용자의 접근성에 중점을 둔 Social Login(Kakao & Google) 기능 구현을 구현했습니다.
+- 사용자의 접근성에 중점을 둔 소셜 로그인(Kakao & Google)을 할 수 있습니다.
     
 ## ✅ 펀딩 등록
     
@@ -257,7 +257,7 @@ public RedisSerializer<Object> customRedisSerializer() {
 |:--:|:--:|:--:|:--:|
 |![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/b6ad4b27-693a-4ae5-9205-2c0522c589e9)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/1154407b-2e49-45f1-b205-05cc7eccc989)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/76857c5c-74c8-4e2e-8918-fda270a4a950)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/bec6d585-10ae-4478-9dcd-000ea168ff80)|
     
-- 원하는 펀딩에 후원을 진행하고, 후원 결제 내역을 수집하기 위해 Kakaopay 온라인 결제 기능을 구현했습니다.
+- Kakaopay 온라인 결제를 통해 원하는 펀딩에 테스트 결제로 후원할 수 있습니다.
     
 ## ✅ Giftipie에서 함께한 선물 - 통계 기능
     
