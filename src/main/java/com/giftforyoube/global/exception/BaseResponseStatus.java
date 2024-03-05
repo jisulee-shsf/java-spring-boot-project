@@ -25,8 +25,8 @@ public enum BaseResponseStatus {
     FUNDING_ITEM_LINK_SUCCESS(true, 2000, "펀딩 아이템이 저장되었습니다."),
 
     // 1-3. 후원
-    DONATION_READY_SUCCESS(true, 2000, "후원 결제 준비 요청이 완료되었습니다."),
-    DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제 승인 요청이 완료되었습니다."),
+    DONATION_READY_SUCCESS(true, 2000, "후원 결제준비 요청이 완료되었습니다."),
+    DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제승인 요청이 완료되었습니다."),
 
     /**
      * 2. 클라이언트 에러가 발생한 경우(4000)
@@ -76,6 +76,8 @@ public enum BaseResponseStatus {
     UNAUTHORIZED_FINISHED_FUNDING(false, 4000, "펀딩 종료 권한이 없습니다."),
 
     // 2-5. 후원
+    DONATION_READY_FAILED(false, 4000, "후원 결제 준비에 실패했습니다."),
+    DONATION_APPROVE_FAILED(false, 4000, "후원 결제 승인에 실패했습니다."),
     DONATION_FAIL(false, 4000, "후원 결제에 실패했습니다."),
     DONATION_CANCEL(false, 4000, "후원 결제가 취소되었습니다."),
 

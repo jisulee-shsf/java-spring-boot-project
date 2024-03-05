@@ -67,24 +67,26 @@ public class DonationController {
 
     // 3-1. 후원 결제 승인
     @GetMapping("/donation/approve")
-    public ResponseEntity<Void> approveDonation(@RequestParam("pg_token") String pgToken,
-                                                @AuthenticationPrincipal UserDetailsImpl userDetails) throws JsonProcessingException, URISyntaxException {
-        String tid = (String) session.getAttribute("tid");
-        String sponsorNickname = (String) session.getAttribute("sponsorNickname");
-        String sponsorComment = (String) session.getAttribute("sponsorComment");
-        donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(new URI(giftipieRedirectUrl + "fundingdetail/" + fundingId));
-
-        // 후원 결제 승인 시 알람 발송
+    public ResponseEntity<BaseResponse<Void>> approveDonation(@RequestParam("pg_token") String pgToken,
+                                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
         try {
-            donationService.sendDonationNotification(sponsorNickname, fundingId);
-        } catch (Exception e) {
-            log.error("SSE 알림 error: ", e);
-        }
+            String tid = (String) session.getAttribute("tid");
+            String sponsorNickname = (String) session.getAttribute("sponsorNickname");
+            String sponsorComment = (String) session.getAttribute("sponsorComment");
 
-        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+            donationService.approveDonation(tid, pgToken, sponsorNickname, sponsorComment, fundingId, userDetails);
+            // 후원 결제 승인 시 알람 발송
+            try {
+                donationService.sendDonationNotification(sponsorNickname, fundingId);
+            } catch (Exception e) {
+                log.error("SSE 알림 error: ", e);
+            }
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_FAILED));
+        }
     }
 
     // 3-2. 후원 결제 실패
