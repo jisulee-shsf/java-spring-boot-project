@@ -26,10 +26,10 @@ public enum BaseResponseStatus {
 
     // 1-3. 후원
     DONATION_RANKING_DELIVERY_SUCCESS(true, 2000, "후원 랭킹 전달이 완료되었습니다."),
-    DONATION_READY_SUCCESS(true, 2000, "후원 결제준비 요청이 완료되었습니다."),
-    DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제승인 요청이 완료되었습니다."),
-    DONATION_CANCEL(true, 2000, "후원 결제가 취소되었습니다."), // 클라이언트 요청으로 true 설정
-    DONATION_FAIL(true, 2000, "후원 결제에 실패했습니다."), // 클라이언트 요청으로 true 설정
+    DONATION_READY_SUCCESS(true, 2000, "후원 결제 준비 요청이 완료되었습니다."),
+    DONATION_APPROVE_SUCCESS(true, 2000, "후원 결제 승인 요청이 완료되었습니다."),
+    DONATION_CANCEL(true, 2000, "후원 결제가 취소되었습니다."), // 클라이언트 요청으로 200 & true 설정
+    DONATION_FAIL(true, 2000, "후원 결제에 실패했습니다."), // 클라이언트 요청으로 200 & true 설정
 
     /**
      * 2. 클라이언트 에러가 발생한 경우(4000)
@@ -54,7 +54,7 @@ public enum BaseResponseStatus {
     TOKEN_INVALID(false, 4000, "JWT 토큰이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED(false, 4000, "JWT 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다", HttpStatus.UNAUTHORIZED),
-    REFRESH_TOKEN_EXPIRED(false, 4000, "리프레시 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_EXPIRED(false, 4000, "로그인 인증이 만료되었습니다. 다시 로그인을 진행해 주세요.", HttpStatus.UNAUTHORIZED),
     ACCESS_TOKEN_ISSUE_FAILED(false, 4000, "액세스 토큰 재발급에 실패했습니다.", HttpStatus.UNAUTHORIZED),
     NOT_FOUND_USERDETAILS(false, 4000, "유저의 정보를 찾을 수 없습니다."),
 
@@ -79,9 +79,8 @@ public enum BaseResponseStatus {
     UNAUTHORIZED_FINISHED_FUNDING(false, 4000, "펀딩 종료 권한이 없습니다."),
 
     // 2-5. 후원
-    DONATION_RANKING_DELIVERY_FAILED(false, 4000, "후원 랭킹 전달이 실패했습니다."),
-    DONATION_READY_FAILED(false, 4000, "후원 결제 준비에 실패했습니다."),
-    DONATION_APPROVE_FAILED(false, 4000, "후원 결제 승인에 실패했습니다."),
+    DONATION_READY_FAILED(false, 4000, "후원 결제 준비 요청에 실패했습니다."),
+    DONATION_APPROVE_FAILED(false, 4000, "후원 결제 승인 요청에 실패했습니다."),
 
     /**
      * 3. 서버 에러가 발생한 경우(5000)
@@ -101,7 +100,10 @@ public enum BaseResponseStatus {
 
     // 3. 로그아웃
     LOGOUT_FAILED(false, 4000, "로그아웃에 실패했습니다."),
-    UNAUTHORIZED_GET_NOTIFICATION(false, 5000, "알림을 읽을 권한이 업습니다.");
+    UNAUTHORIZED_GET_NOTIFICATION(false, 5000, "알림을 읽을 권한이 업습니다."),
+
+    // 4. 후원
+    DONATION_RANKING_DELIVERY_FAILED(false, 5000, "후원 랭킹 전달에 실패했습니다.");
 
     private final boolean isSuccess;
     private final int code;
