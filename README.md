@@ -214,7 +214,18 @@ public RedisSerializer<Object> customRedisSerializer() {
 ## 🔎 주요기능
 
 ## ✅ 회원가입 / 로그인
+
+### 📌 일반 회원가입 / 로그인(Spring Security)
+
+|일반 회원가입|일반 로그인|
+|:--:|:--:|
+|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/cbb377ee-2f31-4e31-b42b-bd6f430c8e3a)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/10deb040-250b-4881-b3d4-4bcca6f6eb0a)|
+
+- 유효성 검증과 약관 동의를 포함된 회원가입 기능을 구현했습니다.
+- 개인정보 보안성에 중점을 둔 Spring Security 기반의 로그인 기능을 구현했습니다.
+
 ### 📌 일반 회원가입 시 이메일 인증
+
 ![회원가입인증메일짤](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/18a7f154-af62-4094-ae08-86cb99447975)
 
 - 실제 사용 중인 이메일인지 인증 메일을 발송하고, 인증 코드를 발급하여 메일을 인증할 수 있습니다.
@@ -223,8 +234,7 @@ public RedisSerializer<Object> customRedisSerializer() {
     
 ![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/04c830ba-a8ed-4ae9-8376-b8ec1eb68e29)
     
-- 사용자의 접근성을 고려한 소셜 로그인(Kakao, Google) 기능을 구현함에 따라,
-  더욱 편리하게 로그인할 수 있습니다.
+- 사용자의 접근성에 중점을 둔 Social Login(Kakao & Google) 기능 구현을 구현했습니다.
     
 ## ✅ 펀딩 등록
     
@@ -247,7 +257,7 @@ public RedisSerializer<Object> customRedisSerializer() {
 |:--:|:--:|:--:|:--:|
 |![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/b6ad4b27-693a-4ae5-9205-2c0522c589e9)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/1154407b-2e49-45f1-b205-05cc7eccc989)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/76857c5c-74c8-4e2e-8918-fda270a4a950)|![image](https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/bec6d585-10ae-4478-9dcd-000ea168ff80)|
     
-- Kakaopay 온라인 결제 기능을 구현함에 따라 테스트 결제로 원하는 펀딩에 후원할 수 있습니다.
+- 원하는 펀딩에 후원을 진행하고, 후원 결제 내역을 수집하기 위해 Kakaopay 온라인 결제 기능을 구현했습니다.
     
 ## ✅ Giftipie에서 함께한 선물 - 통계 기능
     
