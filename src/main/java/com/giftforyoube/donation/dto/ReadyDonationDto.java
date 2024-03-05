@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 public class ReadyDonationDto {
 
     @Getter
-    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public class RequestDto {
+    @Builder
+    public static class ReadyDonationRequestDto {
 
         private String sponsorNickname;
         private String sponsorComment;
@@ -19,10 +19,10 @@ public class ReadyDonationDto {
     }
 
     @Getter
-    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public class ResponseDto {
+    @Builder
+    public static class ReadyDonationResponseDto {
 
         private String tid;
         private String next_redirect_pc_url;

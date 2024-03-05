@@ -5,11 +5,11 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class GetDonationRankingResponseDto {
+public class DonationRankingResponseDto {
 
     private int donationRanking;
 
-    public GetDonationRankingResponseDto(int donationRanking) {
+    public DonationRankingResponseDto(int donationRanking) {
         this.donationRanking = donationRanking;
     }
 }
