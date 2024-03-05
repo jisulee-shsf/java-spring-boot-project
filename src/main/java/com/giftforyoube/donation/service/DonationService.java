@@ -1,9 +1,7 @@
 package com.giftforyoube.donation.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.giftforyoube.donation.dto.ApproveDonationResponseDto;
-import com.giftforyoube.donation.dto.ReadyDonationRequestDto;
-import com.giftforyoube.donation.dto.ReadyDonationResponseDto;
+import com.giftforyoube.donation.dto.ReadyDonationDto;
 import com.giftforyoube.donation.entity.Donation;
 import com.giftforyoube.donation.repository.DonationRepository;
 import com.giftforyoube.funding.entity.Funding;
@@ -19,12 +17,12 @@ import com.giftforyoube.notification.entity.NotificationType;
 import com.giftforyoube.notification.service.NotificationService;
 import com.giftforyoube.user.entity.User;
 import com.giftforyoube.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -36,28 +34,16 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DonationService {
 
     private final RestTemplate restTemplate;
     private final DonationRepository donationRepository;
     private final UserRepository userRepository;
     private final FundingRepository fundingRepository;
-    private final NotificationService notificationService;
     private final FundingSummaryRepository fundingSummaryRepository;
+    private final NotificationService notificationService;
     private final CacheService cacheService;
-
-    public DonationService(RestTemplate restTemplate, DonationRepository donationRepository,
-                           UserRepository userRepository, FundingRepository fundingRepository,
-                           NotificationService notificationService,
-                           FundingSummaryRepository fundingSummaryRepository, CacheService cacheService) {
-        this.restTemplate = restTemplate;
-        this.donationRepository = donationRepository;
-        this.userRepository = userRepository;
-        this.fundingRepository = fundingRepository;
-        this.notificationService = notificationService;
-        this.fundingSummaryRepository = fundingSummaryRepository;
-        this.cacheService = cacheService;
-    }
 
     @Value("${kakaopay.cid}")
     private String kakaopayCid;
@@ -70,44 +56,61 @@ public class DonationService {
     @Value("${kakaopay.fail.redirect.url}")
     private String kakaopayFailRedirectUrl;
 
+    // 1. 후원 랭킹 조회
     public int getDonationRanking(Long fundingId) {
-        int donationRanking = calculateDonationRanking(fundingId);
-        return donationRanking;
+        return calculateDonationRanking(fundingId);
     }
 
-    public ReadyDonationResponseDto readyDonation(ReadyDonationRequestDto readyDonationRequestDto) {
-        URI uri = buildKakaoPayUri("/online/v1/payment/ready");
-        HttpHeaders headers = buildKakaoPayHeaders();
-        Map<String, Object> body = buildKakaoPayReadyRequestBody(readyDonationRequestDto.getDonation());
+    // 2-1. 후원 결제 준비
+    public ReadyDonationDto.ReadyDonationResponseDto readyDonation(ReadyDonationDto.ReadyDonationRequestDto requestDto) {
+        log.info("[readyDonation] 후원 결제 준비 시도");
+
+        URI uri = buildUri("/online/v1/payment/ready");
+        HttpHeaders httpHeaders = buildHeaders();
+        Map<String, Object> body = buildReadyRequestBody(requestDto.getDonation());
+
+        RequestEntity<Map<String, Object>> requestEntity = RequestEntity
+                .post(uri)
+                .headers(httpHeaders)
+                .body(body);
+
+        ResponseEntity<ReadyDonationDto.ReadyDonationResponseDto> responseEntity =
+                restTemplate.exchange(requestEntity, ReadyDonationDto.ReadyDonationResponseDto.class);
+        ReadyDonationDto.ReadyDonationResponseDto responseBody = responseEntity.getBody();
+
+        log.info("[readyDonation] 후원 결제 준비 완료");
+
+        return ReadyDonationDto.ReadyDonationResponseDto.builder()
+                .tid(responseBody.getTid())
+                .next_redirect_pc_url(responseBody.getNext_redirect_pc_url())
+                .next_redirect_mobile_url(responseBody.getNext_redirect_mobile_url())
+                .build();
+    }
+
+    // 2-2. 후원 결제 승인
+    public void approveDonation(String tid, String pgToken,
+                                String sponsorNickname, String sponsorComment,
+                                Long fundingId, UserDetailsImpl userDetails) {
+        log.info("[readyDonation] 후원 결제 승인 완료");
+
+        URI uri = buildUri("/online/v1/payment/approve");
+        HttpHeaders headers = buildHeaders();
+        Map<String, Object> body = buildApproveRequestBody(tid, pgToken);
 
         RequestEntity<Map<String, Object>> requestEntity = RequestEntity
                 .post(uri)
                 .headers(headers)
                 .body(body);
 
-        ResponseEntity<ReadyDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ReadyDonationResponseDto.class);
-        ReadyDonationResponseDto readyDonationResponseDto = responseEntity.getBody();
-        log.info("[readyDonation] 후원 결제준비 완료");
-        return readyDonationResponseDto;
-    }
-
-    public void approveDonation(String tid, String pgToken, String sponsorNickname, String sponsorComment, Long fundingId, UserDetailsImpl userDetails) throws JsonProcessingException {
-        URI uri = buildKakaoPayUri("/online/v1/payment/approve");
-        HttpHeaders headers = buildKakaoPayHeaders();
-        Map<String, Object> body = buildKakaoPayApproveRequestBody(tid, pgToken);
-
-        RequestEntity<Map<String, Object>> requestEntity = RequestEntity
-                .post(uri)
-                .headers(headers)
-                .body(body);
-
-        ResponseEntity<ApproveDonationResponseDto> responseEntity = restTemplate.exchange(requestEntity, ApproveDonationResponseDto.class);
+        ResponseEntity<ApproveDonationResponseDto> responseEntity =
+                restTemplate.exchange(requestEntity, ApproveDonationResponseDto.class);
         ApproveDonationResponseDto approveDonationResponseDto = responseEntity.getBody();
-        saveDonationInfo(sponsorNickname, sponsorComment, approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
-        log.info("[approveDonation] 후원 결제승인 완료: " + fundingId + " 번 펀딩에 " + sponsorNickname + "님이 " + approveDonationResponseDto.getAmount().getTotal() + "원을 후원하셨습니다.");
+
+        saveDonationInfo(sponsorNickname, sponsorComment,
+                approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
     }
 
-    private URI buildKakaoPayUri(String path) {
+    private URI buildUri(String path) {
         return UriComponentsBuilder
                 .fromUriString("https://open-api.kakaopay.com")
                 .path(path)
@@ -116,14 +119,14 @@ public class DonationService {
                 .toUri();
     }
 
-    private HttpHeaders buildKakaoPayHeaders() {
+    private HttpHeaders buildHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "SECRET_KEY " + kakaopaySecretKey);
         headers.add("Content-Type", "application/json");
         return headers;
     }
 
-    private Map<String, Object> buildKakaoPayReadyRequestBody(int donationAmount) {
+    private Map<String, Object> buildReadyRequestBody(int donationAmount) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("cid", kakaopayCid);
         body.put("partner_order_id", "partner_order_id");
@@ -139,7 +142,7 @@ public class DonationService {
         return body;
     }
 
-    private Map<String, Object> buildKakaoPayApproveRequestBody(String tid, String pgToken) {
+    private Map<String, Object> buildApproveRequestBody(String tid, String pgToken) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("cid", kakaopayCid);
         body.put("tid", tid);
@@ -149,34 +152,36 @@ public class DonationService {
         return body;
     }
 
-    private void saveDonationInfo(String sponsorNickname, String sponsorComment, int donationAmount, Long fundingId, UserDetailsImpl userDetails) {
-        try {
-            Funding funding = fundingRepository.findById(fundingId)
-                    .orElseThrow(IllegalArgumentException::new);
+    private void saveDonationInfo(String sponsorNickname, String sponsorComment,
+                                  int donationAmount, Long fundingId, UserDetailsImpl userDetails) {
+        Funding funding = fundingRepository.findById(fundingId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND));
 
-            int donationRanking = calculateDonationRanking(fundingId);
-
-            User user = null;
-            if (userDetails != null) {
-                Long userId = userDetails.getUser().getId();
-                user = userRepository.findById(userId).orElse(null);
-            }
-            Donation donation = new Donation(sponsorNickname, sponsorComment, donationAmount, donationRanking, funding, user);
-            donationRepository.save(donation);
-
-            int currentAmount = funding.getCurrentAmount() + donationAmount;
-            funding.setCurrentAmount(currentAmount);
-            fundingRepository.save(funding);
-            if(funding.getStatus().equals(FundingStatus.FINISHED)){
-                updateStatisticsForSuccessfulFunding();
-                // 성공했을때 알림 발송
-                sendSuccessfulNotification(fundingId);
-            }
-            updateStatisticsForNewDonation(donationAmount);
-            cacheService.clearFundingCaches();
-        } catch (IllegalArgumentException e) {
-            throw new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND);
+        User user = null;
+        if (userDetails != null) {
+            Long userId = userDetails.getUser().getId();
+            user = userRepository.findById(userId).orElse(null);
         }
+        Donation donation = Donation.builder()
+                .sponsorNickname(sponsorNickname)
+                .sponsorComment(sponsorComment)
+                .donationAmount(donationAmount)
+                .donationRanking(calculateDonationRanking(fundingId))
+                .funding(funding)
+                .user(user)
+                .build();
+        donationRepository.save(donation);
+
+        int currentAmount = funding.getCurrentAmount() + donationAmount;
+        funding.setCurrentAmount(currentAmount);
+        fundingRepository.save(funding);
+        if (funding.getStatus().equals(FundingStatus.FINISHED)) {
+            updateStatisticsForSuccessfulFunding();
+            // 성공했을때 알림 발송
+            sendSuccessfulNotification(fundingId);
+        }
+        updateStatisticsForNewDonation(donationAmount);
+        cacheService.clearFundingCaches();
     }
 
     private int calculateDonationRanking(Long fundingId) {
@@ -194,7 +199,7 @@ public class DonationService {
     }
 
     // 후원 결제 승인 시 알림메시지 발송
-    public void sendDonationNotification (String sponsorNickname, Long fundingId) {
+    public void sendDonationNotification(String sponsorNickname, Long fundingId) {
         // 후원 결제 승인 후 알림 발송
         log.info("후원 결제 승인 후 알림 발송 시작");
 
@@ -206,7 +211,7 @@ public class DonationService {
     }
 
     // 펀딩 성공 시 알림메시지 발송
-    public void sendSuccessfulNotification (Long fundingId) {
+    public void sendSuccessfulNotification(Long fundingId) {
         // 펀딩 성공 시 알림 발송
         log.info("펀딩 성공 시 알림 발송");
 

@@ -1,10 +1,7 @@
 package com.giftforyoube.donation.repository;
 
 import com.giftforyoube.donation.entity.Donation;
-import com.giftforyoube.user.entity.User;
-import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 

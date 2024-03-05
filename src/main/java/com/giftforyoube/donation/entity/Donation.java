@@ -3,6 +3,7 @@ package com.giftforyoube.donation.entity;
 import com.giftforyoube.funding.entity.Funding;
 import com.giftforyoube.user.entity.User;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -35,7 +36,10 @@ public class Donation {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Donation(String sponsorNickname, String sponsorComment, int donationAmount, int donationRanking, Funding funding, User user) {
+    @Builder
+    public Donation(Long id, String sponsorNickname, String sponsorComment,
+                    int donationAmount, int donationRanking, Funding funding, User user) {
+        this.id = id;
         this.sponsorNickname = sponsorNickname;
         this.sponsorComment = sponsorComment;
         this.donationAmount = donationAmount;
