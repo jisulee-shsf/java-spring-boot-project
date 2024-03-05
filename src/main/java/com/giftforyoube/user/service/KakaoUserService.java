@@ -42,8 +42,8 @@ public class KakaoUserService {
 
     @Value("${kakao.rest.api.key}")
     private String restApiKey;
-    @Value("${kakao.redirect.uri}")
-    private String redirectUri;
+//    @Value("${kakao.redirect.uri}")
+//    private String redirectUri;
 
     // 카카오 유저 로그인 처리
     public void kakaoLogin(String code, HttpServletResponse httpServletResponse)
@@ -71,7 +71,7 @@ public class KakaoUserService {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
         body.add("client_id", restApiKey);
-        body.add("redirect_uri", redirectUri);
+        body.add("redirect_uri", "https://www.giftipie.me/api/kakao/callback");
         body.add("code", code);
 
         RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity.post(uri).headers(headers).body(body);
@@ -79,6 +79,7 @@ public class KakaoUserService {
 
         JsonNode jsonNode = new ObjectMapper().readTree(responseEntity.getBody());
         String kakaoAccessToken = jsonNode.get("access_token").asText();
+        log.info("[getKakaoAccessToken] kakaoAccessToken: " + kakaoAccessToken);
         return kakaoAccessToken;
     }
 
