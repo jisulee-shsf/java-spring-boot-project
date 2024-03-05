@@ -110,4 +110,9 @@ public class User extends BaseTimeEntity {
     public void expireAccessTokenExpirationTime(LocalDateTime now) {
         this.accessTokenExpirationTime = now;
     }
+
+    // 테스트코드용 //
+    public void setId(Long id) {
+        this.id = id;
+    }
 }
