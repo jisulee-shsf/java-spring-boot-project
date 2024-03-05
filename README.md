@@ -24,7 +24,7 @@
 
 | 이름 | 분담 | 깃허브 |
 | --- | --- | --- |
-| 고훈 | 펀딩 CRUD, SWAGGER, S3 이미지 업로드 기능, 펀딩 리스트 (전체, 진행중, 완료된 펀딩) 페이지네이션 기능 및 무한스크롤 기능 구현, 구글 애널리틱스 연동 | https://github.com/LyricZen | 
+| 고훈(VL) | 펀딩 CRUD, SWAGGER, S3 이미지 업로드 기능, 펀딩 리스트 (전체, 진행중, 완료된 펀딩) 페이지네이션 기능 및 무한스크롤 기능 구현, 구글 애널리틱스 연동 | https://github.com/LyricZen | 
 | 현민영 | CI-CD, AWS 서버 관리, Nginx, SSL, 모니터링 구현, 펀딩 수정/삭제, 내 펀딩 조회, 실시간 알림기능(SSE), 알림 이메일 발송, 회원가입 시 이메일 검증 메일 기능, 테스트코드 작성(NotificationService), UT 총무 | https://github.com/95hyun |
 | 김도현 | 펀딩 CRUD, Redis 캐시 적용 및 캐시 무효화, 메타 태그 크롤링을 통한 링크 상품 이미지 등록, Scheduler를 이용한 펀딩 자동 갱신, 펀딩 통계(Summary) 계산, D-Day 및 목표 금액 달성율 계산, Redisson 락 적용(링크 상품 등록, 펀딩 생성/수정/삭제) | https://github.com/DoKkangs |
 | 이지수 | 회원가입, 로그인(Spring Security), 로그아웃, 회원탈퇴 기능 구현 / Spring Security 기반 인증 및 인가 기능 구현 / Social Login(Kakao & Google) 기능 구현 / Access & Refresh token 사용 로직 설계 및 기능 구현 / Kakaopay 온라인 결제 API & Kakaopay 데모 연동을 통한 결제 기능(준비 & 승인) 구현 / Global Exception Handler를 사용한 전역 예외 처리 기능 구현 / Github Organization 생성 및 관리 | https://github.com/jisulee-shsf |
