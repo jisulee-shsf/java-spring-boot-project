@@ -57,6 +57,7 @@ public class KakaoUserService {
 
     // 1. 카카오 액세스 토큰 요청
     private String getKakaoAccessToken(String code) throws JsonProcessingException {
+        log.info("[getKakaoAccessToken] code: " + code);
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kauth.kakao.com")
                 .path("/oauth/token")
@@ -83,6 +84,7 @@ public class KakaoUserService {
 
     // 2. 카카오 유저 정보 요청
     private OauthUserInfoDto.KakaoUserInfoDto getKakaoUserInfo(String kakaoAccessToken) throws JsonProcessingException {
+        log.info("[getKakaoUserInfo] kakaoAccessToken: " + kakaoAccessToken);
         URI uri = UriComponentsBuilder
                 .fromUriString("https://kapi.kakao.com")
                 .path("/v2/user/me")
@@ -110,6 +112,7 @@ public class KakaoUserService {
     public void registerKakaoUserIfNeeded(OauthUserInfoDto.KakaoUserInfoDto kakaoUserInfoDto,
                                           HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
         Long kakaoId = kakaoUserInfoDto.getId();
+        log.info("[registerKakaoUserIfNeeded] kakaoId: " + kakaoId);
         User kakaoUser = userRepository.findByKakaoId(kakaoId).orElse(null);
 
         if (kakaoUser == null) {
@@ -134,6 +137,7 @@ public class KakaoUserService {
 
         // 이메일 기반 JWT 토큰 정보 생성
         String email = kakaoUser.getEmail();
+        log.info("[registerKakaoUserIfNeeded] email: " + email);
         JwtTokenInfo.AccessTokenInfo accessTokenInfo = jwtTokenUtil.createAccessTokenInfo(email);
         JwtTokenInfo.RefreshTokenInfo refreshTokenInfo = jwtTokenUtil.createRefreshTokenInfo(email);
 
