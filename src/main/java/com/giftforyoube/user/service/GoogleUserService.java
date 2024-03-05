@@ -44,8 +44,8 @@ public class GoogleUserService {
     private String clientId;
     @Value("${google.secret.password}")
     private String secretPassword;
-//    @Value("${google.redirect.uri}")
-//    private String redirectUri;
+    @Value("${google.redirect.uri}")
+    private String redirectUri;
 
     // 구글 유저 로그인 처리
     public void googleLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
@@ -71,7 +71,7 @@ public class GoogleUserService {
         body.add("grant_type", "authorization_code");
         body.add("client_id", clientId);
         body.add("client_secret", secretPassword);
-        body.add("redirect_uri", "https://www.giftipie.me/api/login/oauth2/code/google");
+        body.add("redirect_uri", redirectUri);
         body.add("code", code);
 
         RequestEntity<MultiValueMap<String, String>> requestEntity = RequestEntity.post(uri).headers(headers).body(body);
@@ -138,7 +138,6 @@ public class GoogleUserService {
         // JWT 토큰 정보 업데이트
         userService.updateAccessToken(googleUser, accessTokenInfo);
         userService.updateRefreshToken(googleUser, refreshTokenInfo);
-
         log.info("[googleLogin] 구글 로그인 완료");
     }
 }
