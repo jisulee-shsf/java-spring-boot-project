@@ -59,43 +59,36 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
 
                 // 3-1. 리프레시 토큰이 유효한 경우
-                try {
-                    log.info("[doFilterInternal] 액세스 토큰 재발급 시도");
+                log.info("[doFilterInternal] 액세스 토큰 재발급 시도");
 
-                    User user = userService.findUserByAccessToken(tokenSubstring);
-                    String refreshToken = user.getRefreshToken();
-                    String email = user.getEmail();
+                User user = userService.findUserByAccessToken(tokenSubstring);
+                String refreshToken = user.getRefreshToken();
+                String email = user.getEmail();
 
-                    if (userService.isRefreshTokenValid(refreshToken)) {
-                        JwtTokenInfo.AccessTokenInfo newAccessTokenInfo = jwtTokenUtil.createAccessTokenInfo(email);
-                        Cookie jwtCookie = jwtTokenUtil.addTokenToCookie(newAccessTokenInfo.getAccessToken());
-                        httpServletResponse.addCookie(jwtCookie);
+                if (userService.isRefreshTokenValid(refreshToken)) {
+                    JwtTokenInfo.AccessTokenInfo newAccessTokenInfo = jwtTokenUtil.createAccessTokenInfo(email);
+                    Cookie jwtCookie = jwtTokenUtil.addTokenToCookie(newAccessTokenInfo.getAccessToken());
+                    httpServletResponse.addCookie(jwtCookie);
 
-                        userService.updateAccessToken(user, newAccessTokenInfo);
-                        log.info("[doFilterInternal] 액세스 토큰 재발급 완료");
+                    userService.updateAccessToken(user, newAccessTokenInfo);
+                    log.info("[doFilterInternal] 액세스 토큰 재발급 완료");
 
-                        setAuthentication(email);
-                        filterChain.doFilter(httpServletRequest, httpServletResponse);
-                        return;
+                    setAuthentication(email);
+                    filterChain.doFilter(httpServletRequest, httpServletResponse);
+                    return;
 
-                    // 3-2. 리프레시 토큰이 만료된 경우
-                    } else {
-                        log.info("[doFilterInternal] 리프레시 토큰 만료");
+                // 3-2. 리프레시 토큰이 만료된 경우
+                } else {
+                    log.info("[doFilterInternal] 리프레시 토큰 만료");
 
-                        Cookie removedTokenCookie = jwtTokenUtil.removeTokenCookie();
-                        httpServletResponse.addCookie(removedTokenCookie);
+                    Cookie removedTokenCookie = jwtTokenUtil.removeTokenCookie();
+                    httpServletResponse.addCookie(removedTokenCookie);
 
-                        FilterResponseUtil.sendFilterResponse(httpServletResponse,
-                                HttpServletResponse.SC_UNAUTHORIZED,
-                                BaseResponseStatus.REFRESH_TOKEN_EXPIRED);
-                    }
-                } catch (Exception ex) {
                     FilterResponseUtil.sendFilterResponse(httpServletResponse,
                             HttpServletResponse.SC_UNAUTHORIZED,
-                            BaseResponseStatus.ACCESS_TOKEN_ISSUE_FAILED);
+                            BaseResponseStatus.REFRESH_TOKEN_EXPIRED);
                 }
             }
-
         // 1-2. 액세스 토큰이 없는 경우
         } else {
             filterChain.doFilter(httpServletRequest, httpServletResponse);
