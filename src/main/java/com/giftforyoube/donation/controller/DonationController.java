@@ -85,7 +85,7 @@ public class DonationController {
                     .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_SUCCESS, fundingId));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_FAILED));
+                    .body(new BaseResponse<>(BaseResponseStatus.DONATION_APPROVE_FAILED, fundingId));
         }
     }
 
