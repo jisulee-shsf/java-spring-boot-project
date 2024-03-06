@@ -46,15 +46,15 @@ public class DonationService {
     private final CacheService cacheService;
 
     @Value("${kakaopay.cid}")
-    private String kakaopayCid;
+    private String cid;
     @Value("${kakaopay.secret.key}")
-    private String kakaopaySecretKey;
+    private String secretKey;
     @Value("${kakaopay.approve.redirect.url}")
-    private String kakaopayApproveRedirectUrl;
+    private String approveRedirectUrl;
     @Value("${kakaopay.cancel.redirect.url}")
-    private String kakaopayCancelRedirectUrl;
+    private String cancelRedirectUrl;
     @Value("${kakaopay.fail.redirect.url}")
-    private String kakaopayFailRedirectUrl;
+    private String failRedirectUrl;
 
     // 1. 후원 랭킹 조회
     public int getDonationRanking(Long fundingId) {
@@ -91,7 +91,7 @@ public class DonationService {
     public void approveDonation(String tid, String pgToken,
                                 String sponsorNickname, String sponsorComment,
                                 Long fundingId, UserDetailsImpl userDetails) {
-        log.info("[readyDonation] 후원 결제 승인 완료");
+        log.info("[approveDonation] 후원 결제 승인 시도");
 
         URI uri = buildUri("/online/v1/payment/approve");
         HttpHeaders headers = buildHeaders();
@@ -108,60 +108,24 @@ public class DonationService {
 
         saveDonationInfo(sponsorNickname, sponsorComment,
                 approveDonationResponseDto.getAmount().getTotal(), fundingId, userDetails);
+        log.info("[approveDonation] 후원 결제 승인 완료");
     }
 
-    private URI buildUri(String path) {
-        return UriComponentsBuilder
-                .fromUriString("https://open-api.kakaopay.com")
-                .path(path)
-                .encode()
-                .build()
-                .toUri();
-    }
-
-    private HttpHeaders buildHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "SECRET_KEY " + kakaopaySecretKey);
-        headers.add("Content-Type", "application/json");
-        return headers;
-    }
-
-    private Map<String, Object> buildReadyRequestBody(int donationAmount) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("cid", kakaopayCid);
-        body.put("partner_order_id", "partner_order_id");
-        body.put("partner_user_id", "partner_user_id");
-        body.put("item_name", "🥧 Giftipie 🥧");
-        body.put("quantity", "1");
-        body.put("total_amount", donationAmount);
-        body.put("vat_amount", "0");
-        body.put("tax_free_amount", "0");
-        body.put("approval_url", kakaopayApproveRedirectUrl);
-        body.put("cancel_url", kakaopayCancelRedirectUrl);
-        body.put("fail_url", kakaopayFailRedirectUrl);
-        return body;
-    }
-
-    private Map<String, Object> buildApproveRequestBody(String tid, String pgToken) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("cid", kakaopayCid);
-        body.put("tid", tid);
-        body.put("partner_order_id", "partner_order_id");
-        body.put("partner_user_id", "partner_user_id");
-        body.put("pg_token", pgToken);
-        return body;
-    }
-
+    // 3. 후원 정보 저장 및 관련 처리 진행
     private void saveDonationInfo(String sponsorNickname, String sponsorComment,
                                   int donationAmount, Long fundingId, UserDetailsImpl userDetails) {
+        // fundingId 기반 펀딩 확인
         Funding funding = fundingRepository.findById(fundingId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND));
 
+        // 후원 유저 확인
         User user = null;
         if (userDetails != null) {
             Long userId = userDetails.getUser().getId();
             user = userRepository.findById(userId).orElse(null);
         }
+
+        // 후원 생성 및 DB 내 저장
         Donation donation = Donation.builder()
                 .sponsorNickname(sponsorNickname)
                 .sponsorComment(sponsorComment)
@@ -172,18 +136,21 @@ public class DonationService {
                 .build();
         donationRepository.save(donation);
 
+        // 후원 누적 금액 업데이트
         int currentAmount = funding.getCurrentAmount() + donationAmount;
         funding.setCurrentAmount(currentAmount);
         fundingRepository.save(funding);
+
+        // 펀딩 상태에 따라 통계 업데이트 및 알림 발송
         if (funding.getStatus().equals(FundingStatus.FINISHED)) {
             updateStatisticsForSuccessfulFunding();
-            // 성공했을때 알림 발송
             sendSuccessfulNotification(fundingId);
         }
         updateStatisticsForNewDonation(donationAmount);
         cacheService.clearFundingCaches();
     }
 
+    // 4. 후원 랭킹 계산
     private int calculateDonationRanking(Long fundingId) {
         List<Donation> donations = donationRepository.findByFundingIdOrderByDonationRankingDesc(fundingId);
         if (donations.isEmpty()) {
@@ -192,6 +159,52 @@ public class DonationService {
             int lastDonationRanking = donations.get(0).getDonationRanking();
             return lastDonationRanking + 1;
         }
+    }
+
+    // 5-1. URI 생성
+    private URI buildUri(String path) {
+        return UriComponentsBuilder
+                .fromUriString("https://open-api.kakaopay.com")
+                .path(path)
+                .encode()
+                .build()
+                .toUri();
+    }
+
+    // 5-2. HTTP 요청 헤더 생성
+    private HttpHeaders buildHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "SECRET_KEY " + secretKey);
+        headers.add("Content-Type", "application/json");
+        return headers;
+    }
+
+    // 5-3. 후원 결제 준비 요청 바디 생성
+    private Map<String, Object> buildReadyRequestBody(int donationAmount) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("cid", cid);
+        body.put("partner_order_id", "partner_order_id");
+        body.put("partner_user_id", "partner_user_id");
+        body.put("item_name", "🥧 Giftipie 🥧");
+        body.put("quantity", "1");
+        body.put("total_amount", donationAmount);
+        body.put("vat_amount", "0");
+        body.put("tax_free_amount", "0");
+        body.put("approval_url", approveRedirectUrl);
+        body.put("cancel_url", cancelRedirectUrl);
+        body.put("fail_url", failRedirectUrl);
+        return body;
+    }
+
+    // 5-4. 후원 결제 승인 요청 바디 생성
+    private Map<String, Object> buildApproveRequestBody(String tid, String pgToken) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("cid", cid);
+        body.put("tid", tid);
+        body.put("partner_order_id", "partner_order_id");
+        body.put("partner_user_id", "partner_user_id");
+        body.put("pg_token", pgToken);
+        return body;
     }
 
     public List<Donation> getDonationsByFundingId(Long fundingId) {

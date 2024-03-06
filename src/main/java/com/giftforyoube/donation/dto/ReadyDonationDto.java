@@ -9,10 +9,7 @@ public class ReadyDonationDto {
 
     @Getter
     @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
     public static class ReadyDonationRequestDto {
-
         private String sponsorNickname;
         private String sponsorComment;
         private int donation;
