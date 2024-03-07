@@ -26,9 +26,9 @@ import java.util.Date;
 @Component
 public class JwtTokenUtil {
 
-    @Value("${spring.jwt.accsss-token-expiration-time}")
+    @Value("1")
     private String accessTokenExpirationTime;
-    @Value("${spring.jwt.refresh-token-expiration-time}")
+    @Value("1")
     private String refreshTokenExpirationTime;
     @Value("${spring.jwt.secret.key}")
     private String tokenSecret;
