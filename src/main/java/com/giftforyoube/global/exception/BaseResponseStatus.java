@@ -40,12 +40,12 @@ public enum BaseResponseStatus {
 
     // 2-1. 회원가입 / 로그인 / 로그아웃 / 회원탈퇴
     EMAIL_ALREADY_EXISTS(false, 4000, "이미 가입된 이메일입니다."),
-    REGISTER_ACCOUNT_FAILED(false, 4000, "회원가입에 실패했습니다."),
-    LOGIN_FAILED(false, 4000, "로그인에 실패했습니다."),
-    KAKAO_LOGIN_FAILED(false, 4000, "카카오 로그인에 실패했습니다."),
-    GOOGLE_LOGIN_FAILED(false, 4000, "구글 로그인에 실패했습니다."),
+    LOGIN_FAILED(false, 4000, "로그인에 실패했습니다. 다시 로그인을 진행해 주세요."),
+    KAKAO_LOGIN_FAILED(false, 4000, "카카오 로그인에 실패했습니다. 다시 로그인을 진행해 주세요."),
+    GOOGLE_LOGIN_FAILED(false, 4000, "구글 로그인에 실패했습니다. 다시 로그인을 진행해 주세요."),
     USER_NOT_FOUND(false, 4000, "가입된 유저 정보가 없습니다."),
     PASSWORD_MISMATCH(false, 4000, "비밀번호가 일치하지 않습니다."),
+    LOGOUT_FAILED(false, 4000, "로그아웃에 실패했습니다."),
     DELETE_ACCOUNT_FAILED(false, 4000, "회원탈퇴에 실패했습니다."),
 
     // 2-2. 인가 / 인증
@@ -53,9 +53,8 @@ public enum BaseResponseStatus {
     TOKEN_NOT_FOUND(false, 4000, "JWT 토큰이 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_INVALID(false, 4000, "JWT 토큰이 유효하지 않습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED(false, 4000, "JWT 토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
-    AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다", HttpStatus.UNAUTHORIZED),
-    REFRESH_TOKEN_EXPIRED(false, 4000, "로그인 인증이 만료되었습니다. 다시 로그인을 진행해 주세요.", HttpStatus.UNAUTHORIZED),
-    ACCESS_TOKEN_ISSUE_FAILED(false, 4000, "액세스 토큰 재발급에 실패했습니다.", HttpStatus.UNAUTHORIZED),
+    REFRESH_TOKEN_EXPIRED(false, 4000, "로그인 인증이 만료되었습니다. 다시 로그인을 진행해 주세요."),
+    AUTHENTICATION_FAILED(false, 4000, "인증에 실패했습니다"),
     NOT_FOUND_USERDETAILS(false, 4000, "유저의 정보를 찾을 수 없습니다."),
 
     // 2-3. 알림
@@ -99,7 +98,6 @@ public enum BaseResponseStatus {
     NOTIFICATION_SEND_FAILED(false, 5000, "알림 전송에 실패했습니다."),
 
     // 3. 로그아웃
-    LOGOUT_FAILED(false, 4000, "로그아웃에 실패했습니다."),
     UNAUTHORIZED_GET_NOTIFICATION(false, 5000, "알림을 읽을 권한이 업습니다."),
 
     // 4. 후원

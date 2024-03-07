@@ -79,7 +79,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new BaseResponse<>(BaseResponseStatus.LOGOUT_SUCCESS));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new BaseResponse<>(BaseResponseStatus.LOGOUT_FAILED));
         }
     }
@@ -99,7 +99,7 @@ public class UserController {
         }
     }
 
-    // [Test] 유저 정보 조회
+    // 5. 유저 정보 조회(내부용)
     @GetMapping("/user-info")
     public void getUserInfoForTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         userService.getUserInfo(userDetails.getUser().getEmail());
