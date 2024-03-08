@@ -22,6 +22,17 @@ public enum BaseResponseStatus {
 
     // 1-2. 펀딩
     FUNDING_ITEM_LINK_SUCCESS(true, 2200, "펀딩 아이템이 저장되었습니다."),
+    FUNDING_CREATE_SUCCESS(true, 2201, "펀딩 등록이 완료되었습니다."),
+    FUNDING_FINISH_SUCCESS(true, 2202, "펀딩 종료가 완료되었습니다."),
+    FUNDING_UPDATE_SUCCESS(true, 2203, "펀딩 수정이 완료되었습니다."),
+    FUNDING_DELETE_SUCCESS(true, 2204, "펀딩 삭제가 완료되었습니다."),
+    MY_FUNDING_GET_SUCCESS(true, 2205, "내 펀딩 조회가 완료되었습니다."),
+    ACTIVE_MAIN_FUNDING_GET_SUCCESS(true, 2206, "메인 페이지 진행중인 펀딩 조회가 완료되었습니다."),
+    ALL_FUNDING_GET_SUCCESS(true, 2207, "전체 펀딩 조회가 완료되었습니다."),
+    ACTIVE_FUNDINGS_GET_SUCCESS(true, 2208, "진행중인 모든 펀딩 조회가 완료되었습니다."),
+    FINISHED_FUNDINGS_GET_SUCCESS(true, 2209, "종료된 모든 펀딩 조회가 완료되었습니다."),
+    FUNDING_DETAIL_GET_SUCCESS(true, 2210, "펀딩 상세페이지 조회가 완료되었습니다."),
+    FUNDINGS_SUMMARY_GET_SUCCESS(true, 2211, "펀딩 통계 정보 조회가 완료되었습니다."),
 
     // 1-3. 후원
     DONATION_RANKING_DELIVERY_SUCCESS(true, 2300, "후원 랭킹 전달이 완료되었습니다."),
@@ -66,6 +77,19 @@ public enum BaseResponseStatus {
     UNAUTHORIZED_DELETE_FUNDING(false, 4307, "펀딩 삭제 권한이 없습니다."),
     UNAUTHORIZED_READ_FUNDING(false, 4308, "펀딩 조회 권한이 없습니다."),
     UNAUTHORIZED_FINISHED_FUNDING(false, 4309, "펀딩 종료 권한이 없습니다."),
+    UNAUTHORIZED_TO_CREATE_FUNDING(false, 4310, "펀딩 등록 권한이 없습니다."),
+    FUNDING_ITEM_LINK_FAILED(false, 4311, "펀딩 상품 등록에 실패했습니다."),
+    FUNDING_CREATE_FAILED(false, 4312, "펀딩 등록에 실패했습니다."),
+    UNAUTHORIZED_TO_GET_MY_FUNDING(false, 4313, "내 펀딩 조회 권한이 없습니다."),
+    UNAUTHORIZED_TO_FINISH_FUNDING(false, 4314, "펀딩 종료 권한이 없습니다."),
+    UNABLE_TO_ACQUIRE_ROCK(false, 4315, "락을 획득 할 수 없습니다."),
+    UNABLE_TO_ACQUIRE_ROCK_INTERRUPT(false, 4316, "락을 획득하는 동안 문제가 발생했습니다."),
+    FUNDING_ALREADY_EXISTS(false, 4317, "이미 진행중인 펀딩이 있습니다."),
+    FUNDING_ITEM_NOT_FOUND(false, 4318, "링크 상품을 찾을 수 없습니다."),
+    UNABLE_TO_GET_LINK_IMAGE(false, 4319, "링크 상품 이미지를 가져올 수 없습니다."),
+    SERIALIZING_ERROR(false, 4320, "직열화하는 과정에서 오류가 발생했습니다."),
+    DESERIALIZING_ERROR(false, 4321, "역직열화하는 과정에서 오류가 발생했습니다."),
+
 
     // 2-4. 후원
     DONATION_READY_FAILED(false, 4400, "후원 결제 준비 요청에 실패했습니다."),

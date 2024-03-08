@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giftforyoube.funding.dto.*;
 import com.giftforyoube.funding.entity.FundingItem;
+import com.giftforyoube.global.exception.BaseException;
+import com.giftforyoube.global.exception.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -98,7 +100,7 @@ public class CacheService {
             String jsonContent = objectMapper.writeValueAsString(page.getContent());
             redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing funding page data", e);
+            throw new BaseException(BaseResponseStatus.SERIALIZING_ERROR);
         }
     }
 
@@ -120,7 +122,7 @@ public class CacheService {
             // 실제 페이지 크기와 전체 페이지 수 등은 DB 조회 없이 알 수 없으므로, 조정이 필요.
             return new PageImpl<>(content, pageable, content.size());
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error deserializing funding page data", e);
+            throw new BaseException(BaseResponseStatus.DESERIALIZING_ERROR);
         }
     }
 
@@ -138,7 +140,7 @@ public class CacheService {
             String jsonContent = objectMapper.writeValueAsString(cachedPage);
             redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing funding page data", e);
+            throw new BaseException(BaseResponseStatus.SERIALIZING_ERROR);
         }
     }
 
@@ -158,7 +160,7 @@ public class CacheService {
             });
             return new PageImpl<>(cachedPage.getContent(), pageable, cachedPage.getMetadata().getTotalElements());
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error deserializing funding page data", e);
+            throw new BaseException(BaseResponseStatus.DESERIALIZING_ERROR);
         }
     }
 
@@ -180,7 +182,7 @@ public class CacheService {
             String jsonContent = objectMapper.writeValueAsString(cache);
             redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1)); // 캐시 만료 시간은 필요에 따라 조정
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing funding data", e);
+            throw new BaseException(BaseResponseStatus.SERIALIZING_ERROR);
         }
     }
 
@@ -200,7 +202,7 @@ public class CacheService {
             FundingResponseDtoCache cache = objectMapper.readValue(jsonContent, FundingResponseDtoCache.class);
             return new SliceImpl<>(cache.getContent(), PageRequest.of(cache.getPage(), cache.getSize()), cache.isLast());
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error deserializing funding data", e);
+            throw new BaseException(BaseResponseStatus.DESERIALIZING_ERROR);
         }
     }
 
@@ -215,7 +217,7 @@ public class CacheService {
             String jsonContent = objectMapper.writeValueAsString(fundingResponseDto);
             redisTemplate.opsForValue().set(cacheKey, jsonContent, Duration.ofHours(1));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing funding detail", e);
+            throw new BaseException(BaseResponseStatus.SERIALIZING_ERROR);
         }
     }
 
@@ -232,7 +234,7 @@ public class CacheService {
         try {
             return objectMapper.readValue(jsonContent, FundingResponseDto.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error deserializing funding detail", e);
+            throw new BaseException(BaseResponseStatus.DESERIALIZING_ERROR);
         }
     }
 
