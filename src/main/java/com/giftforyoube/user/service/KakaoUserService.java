@@ -46,7 +46,7 @@ public class KakaoUserService {
     private String redirectUri;
 
     /**
-     * 카카오 로그인을 처리합니다.
+     * 카카오 로그인
      *
      * @param code 카카오 인가 코드
      * @param httpServletResponse HTTP 응답 객체

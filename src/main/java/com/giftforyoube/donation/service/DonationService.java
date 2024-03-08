@@ -56,12 +56,22 @@ public class DonationService {
     @Value("${kakaopay.fail.redirect.url}")
     private String failRedirectUrl;
 
-    // 1. 후원 랭킹 조회
+    /**
+     * 1. 후원 랭킹 조회
+     *
+     * @param fundingId 펀딩 ID
+     * @return 후원 랭킹
+     */
     public int getDonationRanking(Long fundingId) {
         return calculateDonationRanking(fundingId);
     }
 
-    // 2-1. 후원 결제 준비
+    /**
+     * 2-1. 후원 결제 준비
+     *
+     * @param requestDto 결제 준비 요청 DTO
+     * @return 결제 준비 응답 DTO
+     */
     public ReadyDonationDto.ReadyDonationResponseDto readyDonation(ReadyDonationDto.ReadyDonationRequestDto requestDto) {
         log.info("[readyDonation] 후원 결제 준비 시도");
 
@@ -87,7 +97,16 @@ public class DonationService {
                 .build();
     }
 
-    // 2-2. 후원 결제 승인
+    /**
+     * 2-2. 후원 결제 승인
+     *
+     * @param tid 결제 고유 번호
+     * @param pgToken 결제 승인 요청을 인증하는 토큰
+     * @param sponsorNickname 후원자 닉네임
+     * @param sponsorComment 후원자 코멘트
+     * @param fundingId 펀딩 ID
+     * @param userDetails 현재 유저의 UserDetailsImpl 객체
+     */
     public void approveDonation(String tid, String pgToken,
                                 String sponsorNickname, String sponsorComment,
                                 Long fundingId, UserDetailsImpl userDetails) {
@@ -111,7 +130,15 @@ public class DonationService {
         log.info("[approveDonation] 후원 결제 승인 완료");
     }
 
-    // 3. 후원 정보 저장 및 관련 처리 진행
+    /**
+     * 3. 후원 정보 저장 및 관련 처리 진행
+     *
+     * @param sponsorNickname 후원자 닉네임
+     * @param sponsorComment 후원자 코멘트
+     * @param donationAmount 후원 금액
+     * @param fundingId 펀딩 ID
+     * @param userDetails 현재 유저의 UserDetailsImpl 객체
+     */
     private void saveDonationInfo(String sponsorNickname, String sponsorComment,
                                   int donationAmount, Long fundingId, UserDetailsImpl userDetails) {
         // fundingId 기반 펀딩 확인
@@ -150,7 +177,12 @@ public class DonationService {
         cacheService.clearFundingCaches();
     }
 
-    // 4. 후원 랭킹 계산
+    /**
+     * 4. 후원 랭킹 계산
+     *
+     * @param fundingId 펀딩 ID
+     * @return 후원 랭킹
+     */
     private int calculateDonationRanking(Long fundingId) {
         List<Donation> donations = donationRepository.findByFundingIdOrderByDonationRankingDesc(fundingId);
         if (donations.isEmpty()) {
@@ -161,7 +193,12 @@ public class DonationService {
         }
     }
 
-    // 5-1. URI 생성
+    /**
+     * 5-1. URI 생성
+     *
+     * @param path URI 경로
+     * @return 생성된 URI
+     */
     private URI buildUri(String path) {
         return UriComponentsBuilder
                 .fromUriString("https://open-api.kakaopay.com")
@@ -171,7 +208,11 @@ public class DonationService {
                 .toUri();
     }
 
-    // 5-2. HTTP 요청 헤더 생성
+    /**
+     * 5-2. HTTP 요청 헤더 생성
+     *
+     * @return 생성된 HTTP 헤더
+     */
     private HttpHeaders buildHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "SECRET_KEY " + secretKey);
@@ -179,7 +220,12 @@ public class DonationService {
         return headers;
     }
 
-    // 5-3. 후원 결제 준비 요청 바디 생성
+    /**
+     * 5-3. 후원 결제 준비 요청 바디 생성
+     *
+     * @param donationAmount 후원 금액
+     * @return 생성된 요청 바디
+     */
     private Map<String, Object> buildReadyRequestBody(int donationAmount) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("cid", cid);
@@ -196,7 +242,13 @@ public class DonationService {
         return body;
     }
 
-    // 5-4. 후원 결제 승인 요청 바디 생성
+    /**
+     * 5-4. 후원 결제 승인 요청 바디 생성
+     *
+     * @param tid 결제 고유 번호
+     * @param pgToken 결제 승인 요청을 인증하는 토큰
+     * @return 생성된 요청 바디
+     */
     private Map<String, Object> buildApproveRequestBody(String tid, String pgToken) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("cid", cid);
@@ -207,11 +259,22 @@ public class DonationService {
         return body;
     }
 
+    /**
+     * 6. 펀딩 ID에 해당하는 후원 목록 조회
+     *
+     * @param fundingId 후원을 조회할 펀딩의 ID
+     * @return 펀딩 ID에 해당하는 후원 목록
+     */
     public List<Donation> getDonationsByFundingId(Long fundingId) {
         return donationRepository.findByFundingId(fundingId);
     }
 
-    // 후원 결제 승인 시 알림메시지 발송
+    /**
+     * 7-1. 후원 결제 승인 후 알림 메시지 발송
+     *
+     * @param sponsorNickname 후원자의 닉네임
+     * @param fundingId 후원이 발생한 펀딩의 ID
+     */
     public void sendDonationNotification(String sponsorNickname, Long fundingId) {
         // 후원 결제 승인 후 알림 발송
         log.info("후원 결제 승인 후 알림 발송 시작");
@@ -223,7 +286,11 @@ public class DonationService {
         notificationService.send(user, notificationType, content, url);
     }
 
-    // 펀딩 성공 시 알림메시지 발송
+    /**
+     * 7-2. 펀딩 성공 시 알림 메시지 발송
+     *
+     * @param fundingId 펀딩의 ID
+     */
     public void sendSuccessfulNotification(Long fundingId) {
         // 펀딩 성공 시 알림 발송
         log.info("펀딩 성공 시 알림 발송");
@@ -235,6 +302,11 @@ public class DonationService {
         notificationService.send(user, notificationType, content, url);
     }
 
+    /**
+     * 8-1. 후원 발생 시 통계 업데이트
+     *
+     * @param donationAmount 후원 금액
+     */
     // 후원 발생시 summary 에 데이터 추가하는 메서드
     private void updateStatisticsForNewDonation(int donationAmount) {
         FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
@@ -243,6 +315,9 @@ public class DonationService {
         fundingSummaryRepository.save(summary);
     }
 
+    /**
+     * 8-2. 펀딩 성공 시 통계 업데이트
+     */
     private void updateStatisticsForSuccessfulFunding() {
         FundingSummary summary = fundingSummaryRepository.findFirstByOrderByIdAsc().orElse(new FundingSummary());
         summary.setSuccessfulFundingsCount(summary.getSuccessfulFundingsCount() + 1);
