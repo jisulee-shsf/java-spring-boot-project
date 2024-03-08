@@ -47,7 +47,14 @@ public class GoogleUserService {
     @Value("${google.redirect.uri}")
     private String redirectUri;
 
-    // 구글 유저 로그인 처리
+    /**
+     * 구글 로그인을 처리합니다.
+     *
+     * @param code 구글 인가 코드
+     * @param httpServletResponse HTTP 응답 객체
+     * @throws JsonProcessingException JSON 처리 중 예외가 발생할 경우
+     * @throws UnsupportedEncodingException 문자 인코딩이 지원되지 않을 경우
+     */
     public void googleLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
         log.info("[googleLogin] 구글 로그인 시도");
 

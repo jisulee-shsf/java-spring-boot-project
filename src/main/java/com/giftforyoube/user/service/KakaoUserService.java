@@ -45,7 +45,14 @@ public class KakaoUserService {
     @Value("${kakao.redirect.uri}")
     private String redirectUri;
 
-    // 카카오 유저 로그인 처리
+    /**
+     * 카카오 로그인을 처리합니다.
+     *
+     * @param code 카카오 인가 코드
+     * @param httpServletResponse HTTP 응답 객체
+     * @throws JsonProcessingException JSON 처리 중 예외가 발생할 경우
+     * @throws UnsupportedEncodingException 문자 인코딩이 지원되지 않을 경우
+     */
     public void kakaoLogin(String code, HttpServletResponse httpServletResponse)
             throws JsonProcessingException, UnsupportedEncodingException {
         log.info("[kakaoLogin] 카카오 로그인 시도");
