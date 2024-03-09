@@ -40,7 +40,7 @@ public class DonationController {
                     .body(new BaseResponse<>(BaseResponseStatus.DONATION_RANKING_DELIVERY_SUCCESS,
                             new DonationRankingResponseDto(donationRanking)));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new BaseResponse<>(BaseResponseStatus.DONATION_RANKING_DELIVERY_FAILED));
         }
     }
