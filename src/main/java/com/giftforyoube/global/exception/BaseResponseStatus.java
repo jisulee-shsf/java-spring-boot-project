@@ -68,8 +68,9 @@ public enum BaseResponseStatus {
     UNAUTHORIZED_FINISHED_FUNDING(false, 4309, "펀딩 종료 권한이 없습니다."),
 
     // 2-4. 후원
-    DONATION_READY_FAILED(false, 4400, "후원 결제 준비 요청에 실패했습니다."),
-    DONATION_APPROVE_FAILED(false, 4401, "후원 결제 승인 요청에 실패했습니다."),
+    DONATION_RANKING_DELIVERY_FAILED(false, 4400, "후원 랭킹 전달에 실패했습니다."),
+    DONATION_READY_FAILED(false, 4401, "후원 결제 준비 요청에 실패했습니다."),
+    DONATION_APPROVE_FAILED(false, 4402, "후원 결제 승인 요청에 실패했습니다."),
 
     // 2-5. 알림
     NOTIFICATION_NOT_FOUND(false, 4500, "알림을 찾을 수 없습니다."),
@@ -91,12 +92,9 @@ public enum BaseResponseStatus {
     // 3-1. 이메일
     EMAIL_SEND_FAILED(false, 5100, "이메일 전송에 실패했습니다."),
 
-    // 3-2. 후원
-    DONATION_RANKING_DELIVERY_FAILED(false, 5200, "후원 랭킹 전달에 실패했습니다."),
-
-    // 3-3. 알림
-    NOTIFICATION_SEND_FAILED(false, 5300, "알림 전송에 실패했습니다."),
-    UNAUTHORIZED_GET_NOTIFICATION(false, 5301, "알림을 읽을 권한이 업습니다.");
+    // 3-2. 알림
+    NOTIFICATION_SEND_FAILED(false, 5200, "알림 전송에 실패했습니다."),
+    UNAUTHORIZED_GET_NOTIFICATION(false, 5201, "알림을 읽을 권한이 업습니다.");
 
     private final boolean isSuccess;
     private final int code;
