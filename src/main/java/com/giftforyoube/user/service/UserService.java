@@ -188,7 +188,7 @@ public class UserService {
     }
 
     /**
-     * 8. 유저 정보 조회(내부 테스트용)
+     * 8. 유저 정보 조회
      *
      * @param email 조회할 유저의 이메일
      */

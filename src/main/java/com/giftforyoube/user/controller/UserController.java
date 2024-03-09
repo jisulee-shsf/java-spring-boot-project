@@ -99,7 +99,7 @@ public class UserController {
         }
     }
 
-    // 5. 유저 정보 조회(내부용)
+    // 5. 유저 정보 조회
     @GetMapping("/user-info")
     public void getUserInfoForTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         userService.getUserInfo(userDetails.getUser().getEmail());
