@@ -66,14 +66,14 @@ public class FundingService {
         try {
             lockAcquired = lock.tryLock(10, 2, TimeUnit.MINUTES); // 락 획득 시도
             if (!lockAcquired) {
-                throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
+                throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK);
             }
             FundingItem fundingItem = previewItem(requestDto.getItemLink());
             cacheService.saveToCache(fundingItem, userId.toString());
             return FundingItemResponseDto.fromEntity(fundingItem);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+            throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK_INTERRUPT);
         } finally {
             if (lockAcquired) {
                 lock.unlock(); // 락 해제
@@ -103,19 +103,19 @@ public class FundingService {
             // 락 획득 시도를 최적화
             lockAcquired = lock.tryLock(10, 2, TimeUnit.SECONDS); // 예: 5초 대기, 1초로 리스 타임 조정
             if (!lockAcquired) {
-                throw new IllegalStateException("해당 사용자에 대한 락을 획득할 수 없습니다 : " + userId);
+                throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK);
             }
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new UsernameNotFoundException("해당 회원을 찾을 수 없습니다."));
+                    .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
             boolean hasActiveFunding = user.getFundings().stream()
                     .anyMatch(funding -> funding.getStatus() == FundingStatus.ACTIVE);
             if (hasActiveFunding) {
-                throw new IllegalStateException("이미 진행중인 펀딩이 있습니다.");
+                throw new BaseException(BaseResponseStatus.FUNDING_ALREADY_EXISTS);
             }
             String userCacheKey = cacheService.buildCacheKey(userId.toString());
             FundingItem fundingItem = cacheService.getCachedFundingProduct(userCacheKey);
             if (fundingItem == null) {
-                throw new IllegalStateException("링크 상품을 찾을 수 없습니다.");
+                throw new BaseException(BaseResponseStatus.FUNDING_ITEM_NOT_FOUND);
             }
             LocalDate currentDate = LocalDate.now();
             FundingStatus status = requestDto.getEndDate().isBefore(currentDate) ? FundingStatus.FINISHED : FundingStatus.ACTIVE;
@@ -127,7 +127,7 @@ public class FundingService {
             return FundingResponseDto.fromEntity(funding);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+            throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK_INTERRUPT);
         } finally {
             if (lockAcquired) {
                 lock.unlock();
@@ -153,7 +153,7 @@ public class FundingService {
 
         // DB에서 조회
         Funding funding = fundingRepository.findById(fundingId)
-                .orElseThrow(() -> new NullPointerException("해당 펀딩을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.FUNDING_NOT_FOUND));
         FundingResponseDto fundingResponseDto = FundingResponseDto.fromEntity(funding);
 
         // 결과를 캐시에 저장
@@ -340,7 +340,7 @@ public class FundingService {
         RLock lock = redissonClient.getLock(lockKey);
         try {
             if (!lock.tryLock(10, 2, TimeUnit.MINUTES)) {
-                throw new IllegalStateException("펀딩 수정을 위한 락을 획득할 수 없습니다.");
+                throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK);
             }
 
             // 펀딩 id 유효성 검사 및 수정 로직
@@ -357,7 +357,7 @@ public class FundingService {
             return FundingResponseDto.fromEntity(funding);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+            throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK_INTERRUPT);
         } finally {
             if(lock.isLocked() && lock.isHeldByCurrentThread()){
                 lock.unlock();
@@ -383,7 +383,7 @@ public class FundingService {
         RLock lock = redissonClient.getLock(lockKey);
         try {
             if (!lock.tryLock(10, 2, TimeUnit.MINUTES)) {
-                throw new IllegalStateException("펀딩 삭제를 위한 락을 획득할 수 없습니다.");
+                throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK);
             }
 
             // 펀딩 id 유효성 검사 및 삭제 로직
@@ -400,7 +400,7 @@ public class FundingService {
             cacheService.clearFundingCaches(); // 캐시 무효화
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("락을 획득하는 동안 문제가 발생하였습니다.", e);
+            throw new BaseException(BaseResponseStatus.UNABLE_TO_ACQUIRE_ROCK_INTERRUPT);
         } finally {
             if(lock.isLocked() && lock.isHeldByCurrentThread()){
                 lock.unlock();
@@ -457,7 +457,7 @@ public class FundingService {
         Document document = Jsoup.connect(itemLink).timeout(TIMEOUT).get();
         String itemImage = getMetaTagContent(document, "og:image");
         if (itemImage == null) {
-            throw new IOException("링크 상품 이미지를 가져올 수 없습니다.");
+            throw new BaseException(BaseResponseStatus.UNABLE_TO_GET_LINK_IMAGE);
         }
         return new FundingItem(itemLink, itemImage);
     }
