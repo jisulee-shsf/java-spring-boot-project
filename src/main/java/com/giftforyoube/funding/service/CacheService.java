@@ -48,7 +48,6 @@ public class CacheService {
      * @param userId USER의 ID
      * @throws JsonProcessingException
      */
-
     public void saveToCache(FundingItem fundingItem, String userId) throws JsonProcessingException {
         log.info("[saveToCache] 캐쉬에 저장하기");
 
@@ -64,7 +63,6 @@ public class CacheService {
      * @return 캐시에저 가져온 FundingItem 객체 반환
      * @throws JsonProcessingException
      */
-
     public FundingItem getCachedFundingProduct(String cacheKey) throws JsonProcessingException {
         log.info("[getCachedFundingProduct] 캐시에서 FundingItem 객체를 가져오기");
 
@@ -266,8 +264,6 @@ public class CacheService {
             log.error("Error serializing funding summary to cache", e);
         }
     }
-
-
 
     /**
      * 펀딩 생성, 업데이트, 삭제 시 캐시 삭제

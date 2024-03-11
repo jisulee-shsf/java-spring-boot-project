@@ -76,6 +76,9 @@ public class FundingResponseDto implements Serializable {
         // D-Day와 목표금액 달성율 계산
         long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), funding.getEndDate());
         String dday = (daysRemaining != 0) ? ((daysRemaining > 0) ? "D-" + daysRemaining : "종료") : "D-Day";
+        if(funding.getStatus().equals(FundingStatus.FINISHED)){
+            dday = "종료";
+        }
         int achievementRate = (funding.getTargetAmount() == 0) ? 0 : (int) Math.round((double) funding.getCurrentAmount() / funding.getTargetAmount() * 100);
 
         return FundingResponseDto.builder()
