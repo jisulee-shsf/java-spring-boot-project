@@ -12,14 +12,12 @@ import com.giftforyoube.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -29,7 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GoogleUserService {
@@ -55,9 +52,8 @@ public class GoogleUserService {
      * @throws JsonProcessingException JSON 처리 중 예외가 발생할 경우
      * @throws UnsupportedEncodingException 문자 인코딩이 지원되지 않을 경우
      */
-    public void googleLogin(String code, HttpServletResponse httpServletResponse) throws JsonProcessingException, UnsupportedEncodingException {
-        log.info("[googleLogin] 구글 로그인 시도");
-
+    public void googleLogin(String code, HttpServletResponse httpServletResponse)
+            throws JsonProcessingException, UnsupportedEncodingException {
         String googleAccessToken = getGoogleAccessToken(code);
         OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto = getGoogleUserInfo(googleAccessToken);
         registerGoogleUserIfNeeded(googleUserInfoDto, httpServletResponse);
@@ -105,7 +101,6 @@ public class GoogleUserService {
     }
 
     // 3. 구글 유저 등록
-    @Transactional
     public void registerGoogleUserIfNeeded(OauthUserInfoDto.GoogleUserInfoDto googleUserInfoDto,
                                            HttpServletResponse httpServletResponse) throws UnsupportedEncodingException {
         String googleId = googleUserInfoDto.getId();
@@ -140,11 +135,9 @@ public class GoogleUserService {
         // 액세스 토큰을 쿠키에 추가해 반환
         Cookie jwtCookie = jwtTokenUtil.addTokenToCookie(accessTokenInfo.getAccessToken());
         httpServletResponse.addCookie(jwtCookie);
-        log.info("[googleLogin] 쿠키 전달 완료");
 
-        // JWT 토큰 정보 업데이트
+        // JWT 토큰 정보 업데이트 후 유저 등록
         userService.updateAccessToken(googleUser, accessTokenInfo);
         userService.updateRefreshToken(googleUser, refreshTokenInfo);
-        log.info("[googleLogin] 구글 로그인 완료");
     }
 }
