@@ -5,6 +5,7 @@ import com.giftforyoube.global.exception.BaseResponse;
 import com.giftforyoube.global.exception.BaseResponseStatus;
 import com.giftforyoube.global.security.UserDetailsImpl;
 import com.giftforyoube.user.dto.DeleteRequestDto;
+import com.giftforyoube.user.dto.OauthLoginRequestDto;
 import com.giftforyoube.user.dto.SignupRequestDto;
 import com.giftforyoube.user.service.GoogleUserService;
 import com.giftforyoube.user.service.KakaoUserService;
@@ -13,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +21,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -43,11 +42,11 @@ public class UserController {
     }
 
     // 2-1. 카카오 로그인
-    @GetMapping("/kakao/login")
-    public ResponseEntity<BaseResponse<Void>> kakaoLogin(@RequestParam String code,
+    @PostMapping("/kakao/login")
+    public ResponseEntity<BaseResponse<Void>> kakaoLogin(@RequestBody OauthLoginRequestDto oauthLoginRequestDto,
                                                          HttpServletResponse httpServletResponse) {
         try {
-            kakaoUserService.kakaoLogin(code, httpServletResponse);
+            kakaoUserService.kakaoLogin(oauthLoginRequestDto.getCode(), httpServletResponse);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new BaseResponse<>(BaseResponseStatus.KAKAO_LOGIN_SUCCESS));
         } catch (Exception e) {
@@ -57,11 +56,11 @@ public class UserController {
     }
 
     // 2-2. 구글 로그인
-    @GetMapping("/google/login")
-    public ResponseEntity<BaseResponse<Void>> googleLogin(@RequestParam String code,
+    @PostMapping("/google/login")
+    public ResponseEntity<BaseResponse<Void>> googleLogin(@RequestBody OauthLoginRequestDto oauthLoginRequestDto,
                                                           HttpServletResponse httpServletResponse) {
         try {
-            googleUserService.googleLogin(code, httpServletResponse);
+            googleUserService.googleLogin(oauthLoginRequestDto.getCode(), httpServletResponse);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new BaseResponse<>(BaseResponseStatus.GOOGLE_LOGIN_SUCCESS));
         } catch (Exception e) {
@@ -97,11 +96,5 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new BaseResponse<>(BaseResponseStatus.DELETE_ACCOUNT_FAILED));
         }
-    }
-
-    // 5. 유저 정보 조회
-    @GetMapping("/user-info")
-    public void getUserInfoForTest(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        userService.getUserInfo(userDetails.getUser().getEmail());
     }
 }

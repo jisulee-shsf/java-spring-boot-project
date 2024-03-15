@@ -20,7 +20,6 @@ public class OauthUserInfoDto {
 
     @Getter
     @NoArgsConstructor
-    @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class GoogleUserInfoDto {
 
