@@ -38,10 +38,10 @@
 ## 🏗️ 서비스 아키텍처
 
 ### ✅ 전체 아키텍처
-<img width="1231" alt="스크린샷 2024-03-04 오후 3 14 36" src="https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/762eff01-1e18-4ff7-bf2f-556ecf91fa3f">
+<img width="1231" alt="Giftipie 전체 아키텍처" src="https://github.com/95hyun/Algorithm/assets/151743721/0628f865-7998-4587-86e7-d8645c590e68">
 
 ### ✅ Back-End
-<img width="735" alt="스크린샷 2024-03-04 오후 3 22 58" src="https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/e61a432f-ed01-474a-8090-2f6e05ff431a">
+<img width="1060" alt="giftipie아키텍처백엔드" src="https://github.com/95hyun/Algorithm/assets/151743721/caf183e2-a5db-422c-be70-edd8271a1b6f">
 
 
 ## 📌 기술적 의사결정
