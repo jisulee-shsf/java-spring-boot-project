@@ -1,0 +1,118 @@
+# github repository actions 페이지에 나타날 이름
+name: CI/CD using github actions & docker
+
+# event trigger
+# main이나 develop 브랜치에 push가 되었을 때 실행
+on:
+  push:
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
+
+jobs:
+  CI-CD:
+    runs-on: ubuntu-latest
+    steps:
+
+      # JDK setting - github actions에서 사용할 JDK 설정
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # gradle caching - 빌드 시간 향상
+      - name: Gradle Caching
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 환경별 yml 파일 생성(1) - application.yml
+      - name: make application.yml
+        if: |
+          contains(github.ref, 'main') ||
+          contains(github.ref, 'develop')
+        run: |
+          cd ./src/main/resources
+          touch ./application.yml
+          echo "${{ secrets.YML }}" > ./application.yml
+        shell: bash
+
+      # gradle build
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+
+      # docker build & push
+      - name: Docker build & push to dev
+        if: |
+          contains(github.ref, 'main') ||
+          contains(github.ref, 'develop')
+        run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/giftipie_dev .
+          docker push ${{ secrets.DOCKER_USERNAME }}/giftipie_dev
+
+      ## pull to develop
+      - name: Pull to dev
+        uses: appleboy/ssh-action@master
+        id: pull-dev
+        if: |
+          contains(github.ref, 'main') ||
+          contains(github.ref, 'develop')
+        with:
+          host: ${{ secrets.HOST_DEV }} # EC2 퍼블릭 IPv4 DNS
+          username: ${{ secrets.USERNAME }} # ubuntu
+          port: 22
+          key: ${{ secrets.PRIVATE_KEY }}
+          envs: GITHUB_SHA
+          script: |
+            sudo docker ps
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/giftipie_dev
+
+  docker-pull-and-run:
+    runs-on: [self-hosted, dev]
+    if: ${{ needs.CI-CD.result == 'success' }}
+    needs: [ CI-CD ]
+    steps:
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name : 배포 스크립트 실행
+        run: |
+          sh /deploy.sh
+          sudo docker image prune -f
+
+#      ## deploy to develop
+#      - name: Deploy to dev
+#        uses: appleboy/ssh-action@master
+#        id: deploy-dev
+#        if: contains(github.ref, 'be/dev')
+#        with:
+#          host: ${{ secrets.HOST_DEV }} # EC2 퍼블릭 IPv4 DNS
+#          username: ${{ secrets.USERNAME }} # ubuntu
+#          port: 22
+#          key: ${{ secrets.PRIVATE_KEY }}
+#          envs: GITHUB_SHA
+#          script: |
+#            sudo docker ps
+#            docker stop $(docker ps -a -q)
+#            docker rm $(docker ps -a -q)
+#            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/deliveryrepository_dev
+#            sudo docker run -d -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/deliveryrepository_dev
+#            sudo docker image prune -f
