@@ -1,3 +1,5 @@
+<img width="879" alt="항해18기 최고 인기 프로젝트상 Giftipie" src="https://github.com/95hyun/Algorithm/assets/151743721/7da5f361-1875-4a98-915b-f28b914b85aa">
+
 <img width="879" alt="스크린샷 2024-03-05 오전 2 41 59" src="https://github.com/Gift-For-You-Project/gift-for-you-BE/assets/151743721/54402b89-3772-4603-bcef-89f847dcedea">
 
 # 기프티파이(Giftipie)
