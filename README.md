@@ -19,7 +19,7 @@
 #### 📌 [구현 결과]
 - 회원가입 및 로그인 기능: 유저 테스트 기준, 총 29건의 평균 평점은 9점이며 10점이 55.2%(16건)로 가장 높은 비율을 차지함
   
-|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/fd7579d2-278d-41dd-8ecb-f012a170627f)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/d61b76ca-1655-4239-b2ac-3760a688a000)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/9b35f028-3b77-477f-9130-e7f6c7bfdbb8)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/aad0e02e-745a-4c8b-bba7-4e86bde78a06)|
+|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/178c44da-31f7-46c7-a3d2-526c7b01c98f)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/664328a2-b013-482a-9024-f3517f0b1dd3)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/9b35f028-3b77-477f-9130-e7f6c7bfdbb8)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/aad0e02e-745a-4c8b-bba7-4e86bde78a06)|
 |:---:|:---:|:---:|:---:|
 
 - 결제 기능: 유저 테스트 기준, 총 30건의 평균 평점은 9점이며 10점이 53.3%(16건)로 가장 높은 비율을 차지함
