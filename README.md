@@ -18,12 +18,12 @@
 |Access token & Refresh token 사용 로직 구현　|[blog](https://jisulee-shsf.tistory.com/431)|[blog](https://jisulee-shsf.tistory.com/415)|[blog](https://jisulee-shsf.tistory.com/457)|[code](./src/main/java/com/giftforyoube/global/jwt/filter/JwtAuthorizationFilter.java)|
 ##
 #### 📌 [구현 결과] 유저 테스트 기준 작성
-- 회원가입 및 로그인 기능: [총 29건의 평균 평점은 9점이며 10점이 55.2%(16건)로 가장 높은 비율을 차지함](https://jisulee-shsf.tistory.com/455)
+- 회원가입 및 로그인 기능: [총 24건의 피드백 평균 평점은 9점이며, 10점이 56.5%(13건)로 가장 높은 비율을 차지함](https://jisulee-shsf.tistory.com/455)
   
 |![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/178c44da-31f7-46c7-a3d2-526c7b01c98f)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/664328a2-b013-482a-9024-f3517f0b1dd3)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/9b35f028-3b77-477f-9130-e7f6c7bfdbb8)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/aad0e02e-745a-4c8b-bba7-4e86bde78a06)|
 |:---:|:---:|:---:|:---:|
 
-- 결제 기능: [총 30건의 평균 평점은 9점이며 10점이 53.3%(16건)로 가장 높은 비율을 차지함](https://jisulee-shsf.tistory.com/462)
+- 결제 기능: [총 29건의 피드백 평균 평점은 9.1점이며, 10점이 55.2%(16건)로 가장 높은 비율을 차지함](https://jisulee-shsf.tistory.com/462)
   
 |![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/318dd62a-a6b3-47cd-9096-fe976a0251dd)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/be9832c8-ea19-4f0d-ad0d-f4a778421450)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/0c48a130-a16b-45cb-a12e-38fd991b58de)|
 |:---:|:---:|:---:|
