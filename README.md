@@ -15,7 +15,7 @@
 |Spring Security를 사용한 일반 로그인 기능 구현　|[blog](https://jisulee-shsf.tistory.com/438)|[blog](https://jisulee-shsf.tistory.com/432)|-|[code](./src/main/java/com/giftforyoube/global/jwt/filter/JwtAuthenticationFilter.java)|
 |OAuth 2.0에 기반한 소셜 로그인 기능 구현　|[blog](https://jisulee-shsf.tistory.com/437)|[blog](https://jisulee-shsf.tistory.com/432)|[blog](https://jisulee-shsf.tistory.com/464)|[code](./src/main/java/com/giftforyoube/user/service)|
 |kakaopay 온라인 결제 API를 통한 결제 기능 구현　|[blog](https://jisulee-shsf.tistory.com/434)|[blog](https://jisulee-shsf.tistory.com/433)|-|[code](./src/main/java/com/giftforyoube/donation/service/DonationService.java)|
-|access token & refresh token 사용 로직 구현　|[blog](https://jisulee-shsf.tistory.com/431)|[blog](https://jisulee-shsf.tistory.com/415)|[blog](https://jisulee-shsf.tistory.com/457)|[code](./src/main/java/com/giftforyoube/global/jwt/filter/JwtAuthorizationFilter.java)|
+|access token & refresh token 사용 로직 구현　|[blog](https://jisulee-shsf.tistory.com/431)|[blog](https://jisulee-shsf.tistory.com/415)|[blog](https://jisulee-shsf.tistory.com/454)|[code](./src/main/java/com/giftforyoube/global/jwt/filter/JwtAuthorizationFilter.java)|
 ##
 #### 📌 [구현 결과] 유저 테스트 기준
 - [회원가입 및 로그인 기능](https://jisulee-shsf.tistory.com/455): 총 24건의 평균 평점은 9점이며, 10점이 56.5%(13건)로 가장 높은 비율 차지
