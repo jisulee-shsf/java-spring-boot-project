@@ -20,12 +20,12 @@
 #### 📌 [구현 결과] 유저 테스트 기준
 - [회원가입 및 로그인 기능](https://jisulee-shsf.tistory.com/455): 총 24건의 평균 평점은 9점이며, 10점이 56.5%(13건)로 가장 높은 비율 차지
   
-|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/178c44da-31f7-46c7-a3d2-526c7b01c98f)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/664328a2-b013-482a-9024-f3517f0b1dd3)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/9b35f028-3b77-477f-9130-e7f6c7bfdbb8)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/aad0e02e-745a-4c8b-bba7-4e86bde78a06)|
+|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/178c44da-31f7-46c7-a3d2-526c7b01c98f)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/664328a2-b013-482a-9024-f3517f0b1dd3)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/22ca58e5-60da-4cc9-8012-b05e8a4a30a6)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/a2378ecd-7f14-42c2-9318-314dea65438d)|
 |:---:|:---:|:---:|:---:|
 
 - [결제 기능](https://jisulee-shsf.tistory.com/462): 총 29건의 평균 평점은 9.1점이며, 10점이 55.2%(16건)로 가장 높은 비율 차지
   
-|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/318dd62a-a6b3-47cd-9096-fe976a0251dd)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/be9832c8-ea19-4f0d-ad0d-f4a778421450)|![image](https://github.com/jisulee-shsf/save-postgresql/assets/109773795/0c48a130-a16b-45cb-a12e-38fd991b58de)|
+|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/adc7606e-1f43-48af-bfd7-cbd6f0ef1527)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/6b17a156-0cdd-4299-8b1e-aca644d1c291)|![image](https://github.com/jisulee-shsf/java-spring-boot-project/assets/109773795/0b368858-a5e9-48df-9c5a-02b9bd4aa212)|
 |:---:|:---:|:---:|
 
 ####
